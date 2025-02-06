@@ -7,7 +7,24 @@ export const ContextData = createContext(null);
 const DataProvider = ({ children }) => {
     // ****************************************************************
     const [user, setUser] = useState(null);
+    const [userName, setUserName] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [categories, setCategories] = useState([]); // State to store categories
+    // ****************************************************************
+    useEffect(() => {
+        if (user?.uid) {
+            switch(user.uid) {
+                case import.meta.env.VITE_SARWAR:
+                    setUserName('Sarwar');
+                    break;
+                default:
+                    setUserName(null);
+            }
+        }else{
+            setUserName(null);
+        }
+    }, [user]);
+
     // ****************************************************************
     // Token validation logic
     const validateToken = async () => {
@@ -34,6 +51,7 @@ const DataProvider = ({ children }) => {
         }
         setLoading(false); // Stop loading after token validation
     };
+
     // ****************************************************************
     const logOut = async () => {
         setLoading(true);
@@ -85,8 +103,11 @@ const DataProvider = ({ children }) => {
     const info = {
         user,
         setUser,
+        userName,
         loading,
         setLoading,
+        categories, 
+        setCategories,
         logOut,
     };
 

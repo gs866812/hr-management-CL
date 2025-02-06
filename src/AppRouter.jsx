@@ -5,6 +5,7 @@ import Protected from "./Component/Protected/Protected";
 import Home from "./Pages/Home";
 import Login from "./Component/Login/Login";
 import Settings from "./Component/Pages/Settings";
+import Expense from "./Pages/Expense/Expense";
 
 
 export const router = createBrowserRouter([
@@ -18,8 +19,8 @@ export const router = createBrowserRouter([
     ), errorElement: <NotFound/>,
     children: [
       { path: "/", element: <Home /> },
+      { path: "/expense", element: <Expense /> },
       { path: "/settings", element: <Settings /> },
-      
 
     ],
   },

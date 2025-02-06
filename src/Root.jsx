@@ -14,7 +14,7 @@ const Root = () => {
                 <Header/>
             </header>
             <div className="flex">
-                <div className="w-[20%] px-5 h-auto overflow-y-scroll sticky top-0">
+                <div className="w-[20%] px-5 h-[100vh] overflow-y-scroll sticky top-0 border-r">
                     <Navbar />
                 </div>
 
@@ -22,7 +22,7 @@ const Root = () => {
                     <Outlet />
                 </div>
 
-                <ToastContainer  />
+                <ToastContainer position="bottom-right" autoClose={2000}/>
             </div>
         </div>
     );

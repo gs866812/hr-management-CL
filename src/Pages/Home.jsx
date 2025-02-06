@@ -1,17 +1,23 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useContext } from 'react';
 import { ContextData } from '../DataProvider';
+import AdminDashboard from '../Component/Admin/AdminDashboard';
+
 
 const Home = () => {
 
-    // const user = useSelector((state) => state.user.user);
-    const {user} = useContext(ContextData);
-    
+    const { user } = useContext(ContextData);
+
 
     return (
-        <div>
-            <button className="btn btn-primary">Primary Button</button>
-        </div>
+        <>
+            {
+                user?.uid === 'wkDNrcHvtsdSYmRAxtkZAYWOx373' ?
+                    <AdminDashboard /> : 
+                    <div className="flex justify-center items-center lg:p-20 mt-5 lg:mt-0">
+                        <span className="loading loading-ring loading-lg flex justify-center items-center"></span>
+                    </div>
+            }
+        </>
     );
 };
 

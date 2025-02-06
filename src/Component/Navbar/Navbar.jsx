@@ -4,11 +4,13 @@ import { IoSettingsOutline } from 'react-icons/io5';
 import { LuCalendarClock, LuUsers } from 'react-icons/lu';
 import { MdOutlineDashboard } from 'react-icons/md';
 import { PiClipboardText } from 'react-icons/pi';
+import { RiCurrencyLine } from 'react-icons/ri';
 import { Link, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
 
     const location = useLocation();
+
     const [isOpenExpense, setIsOpenGeneral] = useState(false);
 
     const toggleDropdownGeneral = () => {
@@ -19,7 +21,7 @@ const Navbar = () => {
     return (
         <div className='flex flex-col mb-[1px]'>
             {/* ********************************************************* */}
-            <Link to='/' className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location === '/' ? 'bg-[#6E3FF3] text-white' : 'hover:bg-[#6E3FF3] hover:text-white'
+            <Link to='/' className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/' ? 'bg-[#6E3FF3] text-white' : 'hover:bg-[#6E3FF3] hover:text-white'
                 }`}>
                 <MdOutlineDashboard />
                 <span>Dashboard</span>
@@ -41,13 +43,13 @@ const Navbar = () => {
                 {isOpenExpense && (
                     <div className="rounded-md p-2 bg-gray-100">
                         {/* ************************************************* */}
-                        <Link to='/noticeBoard' className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location === '/noticeBoard' ? 'bg-[#6E3FF3] text-white' : 'hover:bg-[#6E3FF3] hover:text-white'
+                        <Link to='/noticeBoard' className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/noticeBoard' ? 'bg-[#6E3FF3] text-white' : 'hover:bg-[#6E3FF3] hover:text-white'
                             }`}>
                             <PiClipboardText />
                             <span>Notice Board</span>
                         </Link>
                         {/* ************************************************* */}
-                        <Link to='/employee' className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location === '/employee' ? 'bg-[#6E3FF3] text-white' : 'hover:bg-[#6E3FF3] hover:text-white'
+                        <Link to='/employee' className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/employee' ? 'bg-[#6E3FF3] text-white' : 'hover:bg-[#6E3FF3] hover:text-white'
                             }`}>
                             <LuUsers />
                             <span>Employee</span>
@@ -57,18 +59,18 @@ const Navbar = () => {
             </section>
             {/* ********************************************************* */}
 
-            <Link to='/expense' className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location === '/settings' ? 'bg-[#6E3FF3] text-white' : 'hover:bg-[#6E3FF3] hover:text-white'
+            <Link to='/expense' className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/expense' ? 'bg-[#6E3FF3] text-white' : 'hover:bg-[#6E3FF3] hover:text-white'
                 }`}>
-                <IoSettingsOutline />
+                <RiCurrencyLine />
                 <span>Expense</span>
             </Link>
-            <Link to='/settings' className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location === '/settings' ? 'bg-[#6E3FF3] text-white' : 'hover:bg-[#6E3FF3] hover:text-white'
+            <Link to='/settings' className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/settings' ? 'bg-[#6E3FF3] text-white' : 'hover:bg-[#6E3FF3] hover:text-white'
                 }`}>
                 <IoSettingsOutline />
                 <span>Setting</span>
             </Link>
             {/* ********************************************************* */}
-            <Link to='/leave' className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location === '/leave' ? 'bg-[#6E3FF3] text-white' : 'hover:bg-[#6E3FF3] hover:text-white'
+            <Link to='/leave' className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/leave' ? 'bg-[#6E3FF3] text-white' : 'hover:bg-[#6E3FF3] hover:text-white'
                 }`}>
                 <LuCalendarClock />
                 <span>Leave</span>
