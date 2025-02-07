@@ -1,15 +1,14 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import useAxiosSecure from '../../../utils/useAxiosSecure';
-import { setRefetch } from '../../../redux/refetchSlice';
+import useAxiosSecure from '../../utils/useAxiosSecure';
+import { setRefetch } from '../../redux/refetchSlice';
 import { toast } from 'react-toastify';
-import { ContextData } from '../../../DataProvider';
-import useAxiosProtect from '../../../utils/useAxiosProtect';
-import moment from 'moment/moment';
+import { ContextData } from '../../DataProvider';
+import useAxiosProtect from '../../utils/useAxiosProtect';
 import DatePicker from 'react-datepicker';
 
 const ExpenseModal = ({ onExpenseData, searchOption }) => {
-    // ********************************************************************************************************************
+    // *************************************************************************************************
     const { user, userName, categories, setCategories } = useContext(ContextData);
 
     const axiosSecure = useAxiosSecure();
@@ -37,7 +36,7 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
 
 
 
-    // ********************************************************************************************************************
+    // *************************************************************************************************
     useEffect(() => {
         const fetchCategory = async () => {
             try {
@@ -50,12 +49,12 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
                 setCategories(response.data.category);
 
             } catch (error) {
-                console.error('Error fetching data:', error.message);
+                toast.error('Error fetching data:', error.message);
             }
         };
         fetchCategory();
     }, [refetch]);
-    // ********************************************************************************************************************
+    // *************************************************************************************************
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({
@@ -69,11 +68,11 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
             setShowNewCategoryInput(false);
         }
     };
-    // ********************************************************************************************************************
+    // *************************************************************************************************
     const handleNewCategoryChange = (e) => {
         setNewCategory(e.target.value);
     };
-    // ********************************************************************************************************************
+    // *************************************************************************************************
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -110,7 +109,7 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
         handleReset();
 
     };
-    // ********************************************************************************************************************
+    // *************************************************************************************************
     const handleReset = () => {
         setFormData({
             expenseName: '',
@@ -124,7 +123,7 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
         setShowNewCategoryInput(false);
         setSelectedDate(new Date());
     };
-    // ********************************************************************************************************************
+    // *************************************************************************************************
 
     return (
         <div>

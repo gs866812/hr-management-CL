@@ -4,8 +4,11 @@ import NotFound from "./Component/NotFound/NotFound";
 import Protected from "./Component/Protected/Protected";
 import Home from "./Pages/Home";
 import Login from "./Component/Login/Login";
-import Settings from "./Component/Pages/Settings";
-import Expense from "./Pages/Expense/Expense";
+import RecentOrders from "./Component/Admin/RecentOrders";
+import OrdersDeadline from "./Component/Admin/OrdersDeadline";
+import Expense from "./Pages/Expense";
+import Settings from "./Pages/Settings";
+
 
 
 export const router = createBrowserRouter([
@@ -20,6 +23,8 @@ export const router = createBrowserRouter([
     children: [
       { path: "/", element: <Home /> },
       { path: "/expense", element: <Expense /> },
+      { path: "/recentOrders", element: <RecentOrders /> },
+      { path: "/ordersDeadline", element: <OrdersDeadline /> },
       { path: "/settings", element: <Settings /> },
 
     ],

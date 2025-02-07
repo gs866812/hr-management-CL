@@ -12,13 +12,13 @@ const DataProvider = ({ children }) => {
     const [categories, setCategories] = useState([]); // State to store categories
     // ****************************************************************
     useEffect(() => {
-        if (user?.uid) {
-            switch(user.uid) {
+        if (user?.email) {
+            switch(user.email) {
                 case import.meta.env.VITE_SARWAR:
-                    setUserName('Sarwar');
+                    setUserName('g_sarwar');
                     break;
                 default:
-                    setUserName(null);
+                    setUserName("Client");
             }
         }else{
             setUserName(null);

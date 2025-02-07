@@ -1,19 +1,19 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { FaRegEdit } from "react-icons/fa";
-import ExpenseModal from './Modal/ExpenseModal';
-import { ContextData } from '../../DataProvider';
+import { ContextData } from '../DataProvider';
 import DatePicker from 'react-datepicker';
 import { useDispatch, useSelector } from 'react-redux';
-import { setRefetch } from '../../redux/refetchSlice';
-import useAxiosSecure from '../../utils/useAxiosSecure';
+import { setRefetch } from '../redux/refetchSlice';
+import useAxiosSecure from '../utils/useAxiosSecure';
 import { toast } from 'react-toastify';
 import moment from 'moment';
+import ExpenseModal from '../Component/Modal/ExpenseModal';
 
 const Expense = () => {
     const { userName, categories } = useContext(ContextData);
     // ***************************************************************************************************************
     const [expenseList, setExpenseList] = useState([]); // State to store categories
-    const [searchExpense, setSearchExpense] = useState([]); // State to store categories
+    const [searchExpense, setSearchExpense] = useState(''); // State to store categories
     const [expenseItem, setExpenseItem] = useState([]); // State to store categories
     const [editId, setEditId] = useState(''); // State to store categories
 
@@ -71,11 +71,13 @@ const Expense = () => {
     // ***************************************************************************************************************
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const newAmount = parseFloat(formData.expenseAmount);
+        // 1. Prepare the data:
+        const dataToUpdate = { ...formData, expenseAmount: newAmount }; // Create a copy
+
 
         try {
-            // 1. Prepare the data:
-            const dataToUpdate = { ...formData }; // Create a copy
-
+            
             // 2. Send the update request:
             const response = await axiosSecure.put(`/editExpense/${editId}`, dataToUpdate); // Or your API endpoint
 
@@ -157,7 +159,7 @@ const Expense = () => {
                                         <tr key={index}>
                                             <td>{moment(expenseList.expenseDate).format("DD.MM.YYYY")}</td>
                                             <td>{expenseList.expenseName}</td>
-                                            <td>{expenseList.expenseAmount}</td>
+                                            <td>{parseFloat(expenseList.expenseAmount).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
                                             <td>{expenseList.expenseCategory}</td>
                                             <td>{expenseList.expenseStatus}</td>
                                             <td>{expenseList.expenseNote}</td>
@@ -320,6 +322,7 @@ const Expense = () => {
                 </dialog>
             </div>
             {/******************************************************************************************************/}
+            
         </div>
     );
 };
