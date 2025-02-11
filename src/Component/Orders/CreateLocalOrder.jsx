@@ -1,21 +1,23 @@
-import moment from 'moment/moment';
-import React, { useContext, useState } from 'react';
+import moment from "moment-timezone";
+import React, { useContext, useEffect, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import { ContextData } from '../../DataProvider';
+
 
 const CreateLocalOrder = () => {
     const { userName } = useContext(ContextData);
     const [deadline, setDeadline] = useState(null);
+    const [totalPrice, setTotalPrice] = useState('');
     // ************************************************************************************************
     const [formData, setFormData] = useState({
-            userName: "",
-            client_ID:"",
-            orderName: '',
-            orderQTY: '',
-            orderPrice: '',
-            orderDeadLine: '',
-            orderInstructions: '',
-        });
+        userName: "",
+        clientID: "",
+        orderName: '',
+        orderQTY: '',
+        orderPrice: '',
+        orderDeadLine: '',
+        orderInstructions: '',
+    });
     // ************************************************************************************************
     const handleDeadlineChange = (date) => {
         const timezoneOffset = date.getTimezoneOffset(); // Get the offset in minutes
@@ -46,15 +48,54 @@ const CreateLocalOrder = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
     // ************************************************************************************************
+    const handlePricePerImageChange = (e) => {
+        const QTY = parseInt(formData.orderQTY);
+        const pricePerImage = parseFloat(e.target.value || 0);
+        const totalPrice = parseFloat(QTY * pricePerImage);
+        console.log(totalPrice);
+    };
+    // ************************************************************************************************
+    const calculateCountdown = () => {
+        if (!deadline) return null;
+
+        const deadlineMoment = moment(deadline.date, deadline.timezone);
+        
+        // //Convert to your timezone
+        const gmt6Deadline = deadlineMoment.clone().tz('Asia/Dhaka'); // Replace 'Asia/Dhaka' with your IANA timezone name if needed
+
+        const now = moment();
+        const diff = gmt6Deadline.diff(now); // Difference in milliseconds
+
+        if (diff <= 0) {
+            return "Deadline Passed";
+        }
+
+        const duration = moment.duration(diff);
+        const formattedCountdown = `${duration.days()}d ${duration.hours()}h ${duration.minutes()}m ${duration.seconds()}s`;
+
+        return formattedCountdown;
+    };
+
+    const [countdown, setCountdown] = useState(calculateCountdown());
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCountdown(calculateCountdown());
+        }, 1000); // Update every second
+
+        return () => clearInterval(interval); // Clean up on unmount
+    }, [deadline]); // Re-calculate when deadline changes
+    // ************************************************************************************************
     const handleAssignOrder = (e) => {
         e.preventDefault();
-        console.log(formData, deadline);
+        const updateOrder = { ...formData, userName: userName, orderDeadLine: deadline };
+        console.log(updateOrder);
     };
     // ************************************************************************************************
     return (
         <div>
             <div>
-                <h2 className='text-2xl font-semibold'>Creating new order:</h2>
+                <h2 className='text-2xl font-semibold'>Creating new order: {countdown}</h2>
 
                 <form onSubmit={handleAssignOrder} className='mt-5 border p-5 rounded-md border-gray-400'>
                     <div className='flex gap-5 justify-between w-full'>
@@ -66,8 +107,8 @@ const CreateLocalOrder = () => {
                                 <div>
                                     <input
                                         type="text"
-                                        id="client_ID"
-                                        name="client_ID"
+                                        id="clientID"
+                                        name="clientID"
                                         value={formData?.client_ID}
                                         onChange={handleChange}
                                         className="w-full p-1 border border-gray-300 rounded-md outline-none"
@@ -79,13 +120,13 @@ const CreateLocalOrder = () => {
 
                             <section className="grid grid-cols-2">
                                 <div>
-                                    <label className="font-medium">Order Name:</label>
+                                    <label className="font-medium">Order/Folder Name:</label>
                                 </div>
                                 <div>
                                     <input
                                         type="text"
-                                        id="order_name"
-                                        name="order-name"
+                                        id="orderName"
+                                        name="orderName"
                                         // value={formData?.orderName}
                                         onChange={handleChange}
                                         className="w-full p-1 border border-gray-300 rounded-md outline-none"
@@ -101,8 +142,8 @@ const CreateLocalOrder = () => {
                                 </div>
                                 <div>
                                     <textarea
-                                        id="instructions"
-                                        name="instructions"
+                                        id="orderInstructions"
+                                        name="orderInstructions"
                                         // value={formData?.orderInstructions}
                                         onChange={handleChange}
                                         className="w-full p-2 border border-gray-300 rounded-md"
@@ -123,9 +164,8 @@ const CreateLocalOrder = () => {
                                 <div>
                                     <input
                                         type="number"
-                                        id="order_number"
-                                        name="order-number"
-                                        // value={formData?.orderQTY}
+                                        id="orderQTY"
+                                        name="orderQTY"
                                         onChange={handleChange}
                                         className="w-full p-1 border border-gray-300 rounded-md outline-none"
                                         placeholder="Enter Order QTY"
@@ -136,19 +176,35 @@ const CreateLocalOrder = () => {
 
                             <section className="grid grid-cols-2">
                                 <div>
-                                    <label className="font-medium">Order Price:</label>
+                                    <label className="font-medium">Price/image ($):</label>
                                 </div>
                                 <div>
                                     <input
                                         type="number"
-                                        id="order_price"
-                                        name="order-price"
-                                        // value={formData?.orderPrice}
-                                        onChange={handleChange}
+                                        id="orderPrice"
+                                        name="orderPrice"
+                                        defaultValue={0}
+                                        onChange={handlePricePerImageChange}
                                         min="0"
                                         className="w-full p-1 border border-gray-300 rounded-md outline-none"
-                                        placeholder="Enter order price"
+                                        placeholder="Enter price per image IE: 0.50"
                                         required
+                                    />
+                                </div>
+                            </section>
+                            <section className="grid grid-cols-2">
+                                <div>
+                                    <label className="font-medium">Total price ($):</label>
+                                </div>
+                                <div>
+                                    <input
+                                        type="text"
+                                        id="totalPrice"
+                                        name="totalPrice"
+                                        value={totalPrice}
+                                        className="w-full p-1 border border-gray-300 rounded-md outline-none"
+                                        placeholder="Total price"
+                                        readOnly
                                     />
                                 </div>
                             </section>
