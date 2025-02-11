@@ -1,13 +1,10 @@
-import axios from "axios";
-
-
+import axios from 'axios';
 
 const axiosSecure = axios.create({
-    baseURL: 'http://localhost:5000',
+    baseURL: 'https://webbriks.backendsafe.com',
 });
 
 const useAxiosSecure = () => {
-
     return axiosSecure;
 };
 

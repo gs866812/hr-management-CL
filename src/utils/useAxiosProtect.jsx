@@ -1,9 +1,9 @@
-import axios from "axios";
-import { useContext, useEffect } from "react";
-import { ContextData } from "../DataProvider";
+import axios from 'axios';
+import { useContext, useEffect } from 'react';
+import { ContextData } from '../DataProvider';
 
 const axiosProtect = axios.create({
-    baseURL: "http://localhost:5000",
+    baseURL: 'https://webbriks.backendsafe.com',
 });
 
 const useAxiosProtect = () => {
@@ -12,7 +12,7 @@ const useAxiosProtect = () => {
     useEffect(() => {
         const requestInterceptor = axiosProtect.interceptors.request.use(
             (config) => {
-                const token = localStorage.getItem("jwtToken");
+                const token = localStorage.getItem('jwtToken');
                 if (token) {
                     config.headers.Authorization = `Bearer ${token}`;
                 }
@@ -25,9 +25,9 @@ const useAxiosProtect = () => {
             (response) => response,
             async (error) => {
                 if (error.response?.status === 401) {
-                    console.warn("Unauthorized: Logging out...");
+                    console.warn('Unauthorized: Logging out...');
                     await logOut(); // Cleanup
-                    window.location.href = "/login"; // Redirect
+                    window.location.href = '/login'; // Redirect
                 }
                 return Promise.reject(error);
             }
