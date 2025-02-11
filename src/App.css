@@ -2,15 +2,11 @@
 @plugin "daisyui";
 @import "react-datepicker/dist/react-datepicker.css";
 
-input{
+input, textarea, select, .outline-local{
     outline: none;
 }
-textarea{
-    outline: none;
-}
-select{
-    outline: none;
-}
+
+
 table, tr, td, th{
     border: 1px solid gray;
 }

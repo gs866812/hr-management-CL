@@ -3,14 +3,19 @@ import { FaRegEdit } from "react-icons/fa";
 import { ContextData } from '../DataProvider';
 import DatePicker from 'react-datepicker';
 import { useDispatch, useSelector } from 'react-redux';
-import { setRefetch } from '../redux/refetchSlice';
 import useAxiosSecure from '../utils/useAxiosSecure';
-import { toast } from 'react-toastify';
 import moment from 'moment';
 import ExpenseModal from '../Component/Modal/ExpenseModal';
+import { toast } from 'react-toastify';
+import { selectPresentUser } from '../redux/userSlice';
+import { selectUserName } from '../redux/userNameSlice';
+import { setRefetch } from '../redux/refetchSlice';
 
 const Expense = () => {
-    const { userName, categories } = useContext(ContextData);
+    const { categories, userName } = useContext(ContextData);
+    const axiosSecure = useAxiosSecure();
+
+
     // ***************************************************************************************************************
     const [expenseList, setExpenseList] = useState([]); // State to store categories
     const [searchExpense, setSearchExpense] = useState(''); // State to store categories
@@ -20,7 +25,7 @@ const Expense = () => {
 
 
     const [formData, setFormData] = useState({
-        userName: userName || '',
+        userName: "",
         expenseDate: new Date(),
         expenseName: '',
         expenseCategory: '',
@@ -31,7 +36,9 @@ const Expense = () => {
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
-    const axiosSecure = useAxiosSecure();
+
+    const presentUser = useSelector(selectPresentUser);
+    const currentUserName = useSelector(selectUserName);
 
     // ***************************************************************************************************************
     useEffect(() => {
@@ -47,7 +54,7 @@ const Expense = () => {
                 console.warn("Expense not found for ID:", editId); // Corrected ID variable
             }
         }
-    }, [editId, expenseList, userName]);
+    }, [editId, expenseList]);
     // ***************************************************************************************************************
     const getExpenseData = (expenses) => {
         setExpenseList(expenses);
@@ -56,6 +63,7 @@ const Expense = () => {
     const handleEditExpense = (id) => {
         document.getElementById('edit-expense-modal').showModal();
         setEditId(id);
+        formData.userName = presentUser?.userName;
 
     };
     // ***************************************************************************************************************
@@ -65,7 +73,6 @@ const Expense = () => {
 
     // ***************************************************************************************************************
     const handleDateChange = (date) => {
-        console.log("Date selected by user:", date);
         setFormData({ ...formData, expenseDate: date }); // Update with Date object
     };
     // ***************************************************************************************************************
@@ -73,33 +80,29 @@ const Expense = () => {
         e.preventDefault();
         const newAmount = parseFloat(formData.expenseAmount);
         // 1. Prepare the data:
-        const dataToUpdate = { ...formData, expenseAmount: newAmount }; // Create a copy
+        const dataToUpdate = { ...formData, userName:userName, expenseAmount: newAmount }; // Create a copy
+        console.log(dataToUpdate);
+        
 
 
         try {
             
-            // 2. Send the update request:
             const response = await axiosSecure.put(`/editExpense/${editId}`, dataToUpdate); // Or your API endpoint
 
-            // 3. Handle the response:
-            if (response.status === 200) { // Or 204 No Content, depending on your API
+
+            if (response.data.message === "No changes made") { 
+                toast.warn("No changes found");
+                
+                                
+            }else if(response.data.message === "Expense updated successfully"){
                 dispatch(setRefetch(!refetch));
                 const modal = document.querySelector(`#edit-expense-modal`);
                 modal.close();
-                toast.success("Expense updated successfully:", response.data);
-                // Optionally:
-                // - Close the modal: document.getElementById('edit-expense-modal').close();
-                // - Refresh the expense list in the parent component (if needed).
-                // - Reset the form data.
-                // - Show a success message to the user.
-            } else {
-                console.error("Error updating expense:", response.status, response.data);
-                // Show an error message to the user.
+                toast.success("Expense updated successfully");
             }
-
+             
         } catch (error) {
-            console.error("Error updating expense:", error);
-            // Show an error message to the user.
+            toast.error("Error updating expense", error.message);
         }
     };
     // ***************************************************************************************************************

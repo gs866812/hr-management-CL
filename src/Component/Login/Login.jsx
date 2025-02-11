@@ -7,6 +7,8 @@ import auth from '../../firebase.config';
 import axios from 'axios';
 import { ContextData } from '../../DataProvider';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 
 
 const Login = () => {
@@ -34,12 +36,12 @@ const Login = () => {
                 localStorage.setItem('jwtToken', res.data.token); // Store token in localStorage
                 setUser(user); // Set the user context
                 navigate('/'); // Redirect after login
-            };
-            console.log("User logged in:");
+            }
             navigate('/');
         } catch (error) {
-            console.error("Login error:", error.message);
-            throw error;
+            Swal.fire({
+                title: "Invalid credentials"
+            });
         }
 
 

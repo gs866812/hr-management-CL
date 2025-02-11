@@ -7,24 +7,31 @@ export const ContextData = createContext(null);
 const DataProvider = ({ children }) => {
     // ****************************************************************
     const [user, setUser] = useState(null);
-    const [userName, setUserName] = useState(null);
     const [loading, setLoading] = useState(true);
     const [categories, setCategories] = useState([]); // State to store categories
+    const [userName, setUserName] = useState(null);
+
+
+
+
+
     // ****************************************************************
     useEffect(() => {
-        if (user?.email) {
-            switch(user.email) {
-                case import.meta.env.VITE_SARWAR:
-                    setUserName('g_sarwar');
-                    break;
-                default:
-                    setUserName("Client");
-            }
-        }else{
-            setUserName(null);
+        if (user) {
+          switch (user?.email) {
+            case import.meta.env.VITE_SARWAR:
+              setUserName("g_sarwar");
+              break;
+            case import.meta.env.VITE_ASAD:
+              setUserName("asad100");
+              break;
+            default:
+              setUserName("Client");
+          }
+        } else {
+          setUserName(null); // Reset userName if there's no user or email
         }
-    }, [user]);
-
+      }, [user]);
     // ****************************************************************
     // Token validation logic
     const validateToken = async () => {
@@ -67,6 +74,7 @@ const DataProvider = ({ children }) => {
         }
     };
     // ****************************************************************
+
     useEffect(() => {
         const handleStorageChange = () => {
             const token = localStorage.getItem('jwtToken');
@@ -94,6 +102,7 @@ const DataProvider = ({ children }) => {
         };
     }, []);
 
+
     // ****************************************************************
     // Validate token on app load
     useEffect(() => {
@@ -106,7 +115,7 @@ const DataProvider = ({ children }) => {
         userName,
         loading,
         setLoading,
-        categories, 
+        categories,
         setCategories,
         logOut,
     };

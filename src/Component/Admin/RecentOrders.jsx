@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import AssignOrderModal from '../Modal/AssignOrderModal';
+import { Link } from 'react-router-dom';
 
 const RecentOrders = () => {
     const [searchOrder, setSearchOrder] = useState('');
@@ -19,13 +21,15 @@ const RecentOrders = () => {
                                 size="13"
                             />
                         </label>
-                        <button className="bg-[#6E3FF3] text-white px-2 rounded-md py-1 cursor-pointer" onClick={() => document.getElementById('add-new-expense-modal').showModal()}>
+
+                        <Link to="/createLocalOrder" className="bg-[#6E3FF3] text-white px-2 rounded-md py-1 cursor-pointer">
                             Assign an order
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </div>
             {/******************************************************************************************************/}
+            <AssignOrderModal/>
             {/******************************************************************************************************/}
         </div>
     );

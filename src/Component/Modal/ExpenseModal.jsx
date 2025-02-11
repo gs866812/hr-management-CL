@@ -140,16 +140,16 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
                             <div className="flex items-center">
                                 <label htmlFor="expenseName" className="font-medium">Expense Date:</label>
                             </div>
-                            <div>
+                            <div className='border rounded-md border-gray-300'>
                                 <label>
                                     <DatePicker
                                         dateFormat="dd.MM.yyyy"
                                         selected={selectedDate} // Pass the Date object
                                         onChange={(date) => setSelectedDate(date)}        // Handle Date object
                                         placeholderText="Select date"
-                                        maxDate={new Date}
+                                        maxDate={new Date()}
                                         required
-                                        className="py-1 px-2 rounded-md outline-none border"
+                                        className="py-1 px-2 rounded-md border-none"
                                     />
                                 </label>
                             </div>
@@ -212,6 +212,7 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
                                     id="expenseAmount"
                                     name="expenseAmount"
                                     value={formData.expenseAmount}
+                                    min='0'
                                     onChange={handleChange}
                                     className="w-full p-2 border border-gray-300 rounded-md"
                                     placeholder="Enter expense amount"
