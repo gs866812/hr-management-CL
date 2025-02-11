@@ -11,46 +11,46 @@ const DataProvider = ({ children }) => {
     const [categories, setCategories] = useState([]); // State to store categories
     const [userName, setUserName] = useState(null);
 
-
-
-
-
     // ****************************************************************
     useEffect(() => {
         if (user) {
-          switch (user?.email) {
-            case import.meta.env.VITE_SARWAR:
-              setUserName("g_sarwar");
-              break;
-            case import.meta.env.VITE_ASAD:
-              setUserName("asad100");
-              break;
-            default:
-              setUserName("Client");
-          }
+            switch (user?.email) {
+                case import.meta.env.VITE_SARWAR:
+                    setUserName('g_sarwar');
+                    break;
+                case import.meta.env.VITE_ASAD:
+                    setUserName('asad100');
+                    break;
+                default:
+                    setUserName('Client');
+            }
         } else {
-          setUserName(null); // Reset userName if there's no user or email
+            setUserName(null); // Reset userName if there's no user or email
         }
-      }, [user]);
+    }, [user]);
     // ****************************************************************
     // Token validation logic
     const validateToken = async () => {
-        const token = localStorage.getItem("jwtToken");
+        const token = localStorage.getItem('jwtToken');
         if (token) {
             try {
-                const response = await axios.post("http://localhost:5000/validate-token", null, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const response = await axios.post(
+                    'https://webbriks.backendsafe.com/validate-token',
+                    null,
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }
+                );
                 if (response.data.success) {
                     setUser(response.data.user); // Set user if token is valid
                     // setTokenReady(true);
                 } else {
-                    localStorage.removeItem("jwtToken");
+                    localStorage.removeItem('jwtToken');
                     setUser(null);
                 }
             } catch (error) {
-                console.error("Error validating token:", error);
-                localStorage.removeItem("jwtToken");
+                console.error('Error validating token:', error);
+                localStorage.removeItem('jwtToken');
                 setUser(null);
             }
         } else {
@@ -68,7 +68,7 @@ const DataProvider = ({ children }) => {
             localStorage.removeItem('user'); // Remove user data
             setUser(null); // Clear user
         } catch (error) {
-            console.error("Error logging out:", error); // Handle any errors
+            console.error('Error logging out:', error); // Handle any errors
         } finally {
             setLoading(false); // Always stop loading, whether successful or not
         }
@@ -102,7 +102,6 @@ const DataProvider = ({ children }) => {
         };
     }, []);
 
-
     // ****************************************************************
     // Validate token on app load
     useEffect(() => {
@@ -122,7 +121,5 @@ const DataProvider = ({ children }) => {
 
     return <ContextData.Provider value={info}>{children}</ContextData.Provider>;
 };
-
-
 
 export default DataProvider;

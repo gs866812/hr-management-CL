@@ -10,14 +10,13 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 
-
 const Login = () => {
     // ****************************************************************
     const { setUser, setLoading } = useContext(ContextData);
     const [showPassword, setShowPassword] = useState(false);
     // const [user, setUser] = useState([]);
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     // ****************************************************************
 
     const navigate = useNavigate();
@@ -25,13 +24,19 @@ const Login = () => {
     const handleAdminEmailLogin = async (e) => {
         e.preventDefault();
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const userCredential = await signInWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
             const user = userCredential.user;
             const emailData = { email: user.email };
 
-
             // Call backend to generate JWT
-            const res = await axios.post('http://localhost:5000/jwt', emailData);
+            const res = await axios.post(
+                'https://webbriks.backendsafe.com/jwt',
+                emailData
+            );
             if (res.data.token) {
                 localStorage.setItem('jwtToken', res.data.token); // Store token in localStorage
                 setUser(user); // Set the user context
@@ -40,19 +45,20 @@ const Login = () => {
             navigate('/');
         } catch (error) {
             Swal.fire({
-                title: "Invalid credentials"
+                title: 'Invalid credentials',
             });
         }
-
-
     };
     // ****************************************************************
     return (
-        <div className='max-w-screen-2xl mx-auto'>
+        <div className="max-w-screen-2xl mx-auto">
             <div className="text-center border p-10 rounded-md w-96 mx-auto mt-20">
                 <h2>Login</h2>
 
-                <form className="flex flex-col gap-5 mt-5" onSubmit={handleAdminEmailLogin}>
+                <form
+                    className="flex flex-col gap-5 mt-5"
+                    onSubmit={handleAdminEmailLogin}
+                >
                     <label className="input input-bordered flex items-center gap-2">
                         <MdOutlineMail />
                         <input
@@ -68,7 +74,7 @@ const Login = () => {
                     <label className="input input-bordered flex items-center gap-2 relative">
                         <RiLockPasswordLine />
                         <input
-                            type={showPassword ? "text" : "password"}
+                            type={showPassword ? 'text' : 'password'}
                             name="password"
                             placeholder="Password"
                             onChange={(e) => setPassword(e.target.value)}
@@ -79,13 +85,21 @@ const Login = () => {
                             onClick={() => setShowPassword(!showPassword)}
                             className="absolute right-4 cursor-pointer"
                         >
-                            {showPassword ? <IoEyeOutline /> : <IoEyeOffOutline />}
+                            {showPassword ? (
+                                <IoEyeOutline />
+                            ) : (
+                                <IoEyeOffOutline />
+                            )}
                         </span>
                     </label>
 
-                    <input type="submit" value='Submit' className="py-2 px-5 rounded-md w-full custom-button bg-[#6E3FF3] text-white cursor-pointer" />
-                    <div className='text-sm flex justify-between'>
-                        <Link to='/'>Forgot password</Link>
+                    <input
+                        type="submit"
+                        value="Submit"
+                        className="py-2 px-5 rounded-md w-full custom-button bg-[#6E3FF3] text-white cursor-pointer"
+                    />
+                    <div className="text-sm flex justify-between">
+                        <Link to="/">Forgot password</Link>
                         <Link to="/client-login">Login as Admin</Link>
                     </div>
                 </form>
