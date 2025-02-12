@@ -13,6 +13,7 @@ import { Link, useLocation } from 'react-router-dom';
 const Navbar = () => {
     const [isOpenGeneral, setIsOpenGeneral] = useState(false);
     const [isOpenOrder, setIsOpenOrder] = useState(false);
+    const [isOpenOrderManagement, setIsOpenOrderManagement] = useState(false);
 
     const location = useLocation();
     // ************************************************************************************************
@@ -21,6 +22,9 @@ const Navbar = () => {
     };
     const toggleDropdownOrder = () => {
         setIsOpenOrder(!isOpenOrder);
+    };
+    const toggleDropdownOrderManagement = () => {
+        setIsOpenOrderManagement(!isOpenOrderManagement);
     };
     // ************************************************************************************************
 
@@ -158,6 +162,100 @@ const Navbar = () => {
                         >
                             <FaClockRotateLeft />
                             <span>Orders Deadline</span>
+                        </Link>
+                    </div>
+                )}
+            </section>
+            {/*************************************************************/}
+
+            {/* ********************************************************* order management section*/}
+
+            <section
+                className={`${
+                    isOpenOrderManagement ? 'bg-gray-100' : ''
+                } rounded-md mb-[1px]`}
+            >
+                <div
+                    className={`flex items-center justify-between cursor-pointer p-2 w-full gap-2 hover:bg-gray-100 mb-[1px] rounded-md ${
+                        isOpenOrderManagement ? 'hover:bg-gray-100' : ''
+                    }`}
+                    onClick={toggleDropdownOrderManagement}
+                >
+                    <div className="flex items-center gap-2">
+                        {/* <FcElectricity className="text-xl" /> */}
+                        <span>Order Management</span>
+                    </div>
+                    <span>
+                        {isOpenOrderManagement ? (
+                            <FaAngleUp />
+                        ) : (
+                            <FaAngleDown />
+                        )}
+                    </span>
+                </div>
+
+                {isOpenOrderManagement && (
+                    <div className="rounded-md p-2 bg-gray-100">
+                        {/* ************************************************* */}
+                        <Link
+                            to="/order-management"
+                            className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                                location.pathname === '/order-management'
+                                    ? 'bg-[#6E3FF3] text-white'
+                                    : 'hover:bg-[#6E3FF3] hover:text-white'
+                            }`}
+                        >
+                            <CiInboxIn />
+                            <span>Order Management</span>
+                        </Link>
+                        {/* ************************************************* */}
+                        <Link
+                            to="/order-management/completed-orders"
+                            className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                                location.pathname ===
+                                '/order-management/completed-orders'
+                                    ? 'bg-[#6E3FF3] text-white'
+                                    : 'hover:bg-[#6E3FF3] hover:text-white'
+                            }`}
+                        >
+                            <FaClockRotateLeft />
+                            <span>Completed Order</span>
+                        </Link>
+                        <Link
+                            to="/order-management/active-orders"
+                            className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                                location.pathname ===
+                                '/order-management/active-orders'
+                                    ? 'bg-[#6E3FF3] text-white'
+                                    : 'hover:bg-[#6E3FF3] hover:text-white'
+                            }`}
+                        >
+                            <FaClockRotateLeft />
+                            <span>Active Order</span>
+                        </Link>
+                        <Link
+                            to="/order-management/canceled-orders"
+                            className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                                location.pathname ===
+                                '/order-management/canceled-orders'
+                                    ? 'bg-[#6E3FF3] text-white'
+                                    : 'hover:bg-[#6E3FF3] hover:text-white'
+                            }`}
+                        >
+                            <FaClockRotateLeft />
+                            <span>Cancel Order</span>
+                        </Link>
+                        <Link
+                            to="/order-management/pending-orders"
+                            className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                                location.pathname ===
+                                '/order-management/pending-orders'
+                                    ? 'bg-[#6E3FF3] text-white'
+                                    : 'hover:bg-[#6E3FF3] hover:text-white'
+                            }`}
+                        >
+                            <FaClockRotateLeft />
+                            <span>Pending Order</span>
                         </Link>
                     </div>
                 )}
