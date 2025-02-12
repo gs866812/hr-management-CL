@@ -10,6 +10,11 @@ import Expense from './Pages/Expense';
 import Settings from './Pages/Settings';
 import CreateLocalOrder from './Component/Admin/CreateLocalOrder';
 import MyExpense from './Pages/MyExpense';
+import OrderManagement from './Pages/OrderManagement';
+import ActiveOrders from './Component/orderManagement/sub-menu/ActiveOrders';
+import CompletedOrders from './Component/orderManagement/sub-menu/CompletedOrders';
+import CanceledOrders from './Component/orderManagement/sub-menu/CanceledOrders';
+import PendingOrders from './Component/orderManagement/sub-menu/PendingOrders';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
@@ -29,6 +34,24 @@ export const router = createBrowserRouter([
             { path: '/createLocalOrder', element: <CreateLocalOrder /> },
             { path: '/ordersDeadline', element: <OrdersDeadline /> },
             { path: '/settings', element: <Settings /> },
+            // my component
+            { path: '/order-management', element: <OrderManagement /> },
+            {
+                path: '/order-management/active-orders',
+                element: <ActiveOrders />,
+            },
+            {
+                path: '/order-management/completed-orders',
+                element: <CompletedOrders />,
+            },
+            {
+                path: '/order-management/canceled-orders',
+                element: <CanceledOrders />,
+            },
+            {
+                path: '/order-management/pending-orders',
+                element: <PendingOrders />,
+            },
         ],
     },
 ]);
