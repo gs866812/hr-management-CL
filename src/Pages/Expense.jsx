@@ -80,22 +80,21 @@ const Expense = () => {
         e.preventDefault();
         const newAmount = parseFloat(formData.expenseAmount);
         // 1. Prepare the data:
-        const dataToUpdate = { ...formData, userName:userName, expenseAmount: newAmount }; // Create a copy     
+        const dataToUpdate = { ...formData, userName:userName, expenseAmount: newAmount }; // Create a copy  
+        console.log(dataToUpdate);   
         try {
             
             const response = await axiosSecure.put(`/editExpense/${editId}`, dataToUpdate); // Or your API endpoint
 
-
-            if (response.data.message === "No changes made") { 
-                toast.warn("No changes found");
-                
-                                
-            }else if(response.data.message === "Expense updated successfully"){
+            if (response.data.message == 'Expense updated successfully') { 
                 dispatch(setRefetch(!refetch));
                 const modal = document.querySelector(`#edit-expense-modal`);
                 modal.close();
-                toast.success("Expense updated successfully");
-            }
+                toast.success(response.data.message);                
+            }else if(response.data.message == 'No changes found'){
+                toast.warn(response.data.message); 
+            }else
+                toast.warn(response.data.message);
              
         } catch (error) {
             toast.error("Error updating expense", error.message);

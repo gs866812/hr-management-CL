@@ -8,7 +8,7 @@ import RecentOrders from './Component/Admin/RecentOrders';
 import OrdersDeadline from './Component/Admin/OrdersDeadline';
 import Expense from './Pages/Expense';
 import Settings from './Pages/Settings';
-import CreateLocalOrder from './Component/Orders/CreateLocalOrder';
+import CreateLocalOrder from './Component/Admin/CreateLocalOrder';
 import MyExpense from './Pages/MyExpense';
 
 export const router = createBrowserRouter([

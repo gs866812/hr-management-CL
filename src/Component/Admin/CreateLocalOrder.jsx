@@ -2,12 +2,20 @@ import moment from "moment-timezone";
 import React, { useContext, useEffect, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import { ContextData } from '../../DataProvider';
+import useAxiosSecure from "../../utils/useAxiosSecure";
+import { useDispatch, useSelector } from "react-redux";
+import { setRefetch } from "../../redux/refetchSlice";
+import { toast } from "react-toastify";
 
 
 const CreateLocalOrder = () => {
+    const axiosSecure = useAxiosSecure();
     const { userName } = useContext(ContextData);
     const [deadline, setDeadline] = useState(null);
-    const [totalPrice, setTotalPrice] = useState('');
+    const [totalPrice, setTotalPrice] = useState(0);
+    const [orderQuantity, setOrderQuantity] = useState(0);
+    const [imagePrice, setImagePrice] = useState(0);
+
     // ************************************************************************************************
     const [formData, setFormData] = useState({
         userName: "",
@@ -17,7 +25,11 @@ const CreateLocalOrder = () => {
         orderPrice: '',
         orderDeadLine: '',
         orderInstructions: '',
+        orderStatus: '',
     });
+
+    const dispatch = useDispatch();
+    const refetch = useSelector((state) => state.refetch.refetch);
     // ************************************************************************************************
     const handleDeadlineChange = (date) => {
         const timezoneOffset = date.getTimezoneOffset(); // Get the offset in minutes
@@ -47,19 +59,24 @@ const CreateLocalOrder = () => {
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
+
+
     // ************************************************************************************************
-    const handlePricePerImageChange = (e) => {
-        const QTY = parseInt(formData.orderQTY);
-        const pricePerImage = parseFloat(e.target.value || 0);
-        const totalPrice = parseFloat(QTY * pricePerImage);
-        console.log(totalPrice);
-    };
+    const qty = parseInt(orderQuantity);
+    console.log(qty);
+    const price = parseFloat(imagePrice);
+    console.log(price);
+
+
+    useEffect(() => {
+        setTotalPrice(qty * price);
+    }, [qty, price]);
     // ************************************************************************************************
     const calculateCountdown = () => {
         if (!deadline) return null;
 
         const deadlineMoment = moment(deadline.date, deadline.timezone);
-        
+
         // //Convert to your timezone
         const gmt6Deadline = deadlineMoment.clone().tz('Asia/Dhaka'); // Replace 'Asia/Dhaka' with your IANA timezone name if needed
 
@@ -88,14 +105,36 @@ const CreateLocalOrder = () => {
     // ************************************************************************************************
     const handleAssignOrder = (e) => {
         e.preventDefault();
-        const updateOrder = { ...formData, userName: userName, orderDeadLine: deadline };
+        const updateOrder = { ...formData, orderQTY: orderQuantity, orderPrice: totalPrice, userName: userName, orderDeadLine: deadline, orderStatus: "Pending" };
         console.log(updateOrder);
+
+        const postLocalOrder = async () => {
+            try {
+                // Simulate an API call
+                const response = await axiosSecure.post('/createLocalOrder', updateOrder);
+                if (response.data.insertedId) {
+                    dispatch(setRefetch(!refetch));
+                    toast.success('Order created successfully');
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error.message);
+            }
+        };
+        postLocalOrder();
+        resetOrder();
+        
     };
+
+    const resetOrder = () => {
+        setOrderQuantity(0);
+        setImagePrice(0);
+        setDeadline('');
+    }
     // ************************************************************************************************
     return (
         <div>
             <div>
-                <h2 className='text-2xl font-semibold'>Creating new order: {countdown}</h2>
+                <h2 className='text-2xl font-semibold'>Creating new order:</h2>
 
                 <form onSubmit={handleAssignOrder} className='mt-5 border p-5 rounded-md border-gray-400'>
                     <div className='flex gap-5 justify-between w-full'>
@@ -163,10 +202,10 @@ const CreateLocalOrder = () => {
                                 </div>
                                 <div>
                                     <input
-                                        type="number"
+                                        type="text"
                                         id="orderQTY"
                                         name="orderQTY"
-                                        onChange={handleChange}
+                                        onChange={(e) => setOrderQuantity(e.target.value)}
                                         className="w-full p-1 border border-gray-300 rounded-md outline-none"
                                         placeholder="Enter Order QTY"
                                         required
@@ -180,12 +219,10 @@ const CreateLocalOrder = () => {
                                 </div>
                                 <div>
                                     <input
-                                        type="number"
+                                        type="text"
                                         id="orderPrice"
                                         name="orderPrice"
-                                        defaultValue={0}
-                                        onChange={handlePricePerImageChange}
-                                        min="0"
+                                        onChange={(e) => setImagePrice(e.target.value)}
                                         className="w-full p-1 border border-gray-300 rounded-md outline-none"
                                         placeholder="Enter price per image IE: 0.50"
                                         required
@@ -233,7 +270,8 @@ const CreateLocalOrder = () => {
                     {/* ************************* */}
                     <div className='flex items-center justify-between mt-5'>
                         <button
-                            type="reset"
+                        type="reset"
+                            onClick={resetOrder}
                             className="bg-yellow-500 text-white py-2 px-3 rounded-md transition-colors cursor-pointer"
                         >
                             Reset
