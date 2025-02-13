@@ -79,7 +79,7 @@ const CreateLocalOrder = () => {
 
         // //Convert to your timezone
         const gmt6Deadline = deadlineMoment.clone().tz('Asia/Dhaka'); // Replace 'Asia/Dhaka' with your IANA timezone name if needed
-
+        console.log(new Date());
         const now = moment();
         const diff = gmt6Deadline.diff(now); // Difference in milliseconds
 

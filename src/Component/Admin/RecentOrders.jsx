@@ -96,7 +96,7 @@ const RecentOrders = () => {
                                                 <td>{order.orderName}</td>
                                                 <td>{order.orderQTY}</td>
                                                 <td>{order.orderPrice}</td>
-                                                <td>{<Countdown date={deadlineTimestamp + 10000} />}</td>
+                                                <td>{<Countdown date={'Wed Feb 12 2025 18:30:00 GMT+0600'} />}</td>
                                                 <td>{order.orderStatus}</td>
                                                 <td>{order.userName}</td>
                                                 <td className='w-[5%]'>
