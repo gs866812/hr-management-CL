@@ -15,6 +15,7 @@ const RecentOrders = () => {
     const [localOrder, setLocalOrder] = useState([]);
 
 
+
     // ****************************************************************************************
     const axiosProtect = useAxiosProtect();
 
@@ -36,14 +37,14 @@ const RecentOrders = () => {
     // ****************************************************************************************
     const calculateDeadlineTimestamp = (orderDeadline) => { // Calculate timestamp
         if (!orderDeadline || !orderDeadline.date || !orderDeadline.timezoneName) return null;
-    
+
         const deadlineMoment = moment.utc(orderDeadline.date);
         const gmt6Deadline = deadlineMoment.clone().tz(orderDeadline.timezoneName);
-    
-        return gmt6Deadline.valueOf(); // Get timestamp in milliseconds
-      };
 
- 
+        return gmt6Deadline.valueOf(); // Get timestamp in milliseconds
+    };
+
+
     // ****************************************************************************************
     return (
         <div>
@@ -88,15 +89,29 @@ const RecentOrders = () => {
                             {
                                 localOrder.length > 0 ? (
                                     localOrder.map((order, index) => {
-                                        const deadlineTimestamp = calculateDeadlineTimestamp(order?.orderDeadline);
                                         return (
                                             <tr key={index}>
-                                                
                                                 <td>{order.clientID}</td>
                                                 <td>{order.orderName}</td>
                                                 <td>{order.orderQTY}</td>
                                                 <td>{order.orderPrice}</td>
-                                                <td>{<Countdown date={'Wed Feb 12 2025 18:30:00 GMT+0600'} />}</td>
+                                                <td>
+                                                    {order?.orderDeadLine && (
+                                                        <Countdown
+                                                            date={moment(order.orderDeadLine).valueOf()} // Convert to timestamp
+                                                            renderer={({ days, hours, minutes, seconds }) => (
+                                                                <span>
+                                                                    {String(days).padStart(2, "0")} days{" "}
+                                                                    {String(hours).padStart(2, "0")} h{" "}
+                                                                    {String(minutes).padStart(2, "0")} min{" "}
+                                                                    {String(seconds).padStart(2, "0")} sec
+                                                                </span>
+                                                            )}
+                                                        />
+                                                    )}
+                                                </td>
+
+
                                                 <td>{order.orderStatus}</td>
                                                 <td>{order.userName}</td>
                                                 <td className='w-[5%]'>

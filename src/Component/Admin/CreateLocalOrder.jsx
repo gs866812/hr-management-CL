@@ -6,16 +6,44 @@ import useAxiosSecure from "../../utils/useAxiosSecure";
 import { useDispatch, useSelector } from "react-redux";
 import { setRefetch } from "../../redux/refetchSlice";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import useAxiosProtect from "../../utils/useAxiosProtect";
 
 
 const CreateLocalOrder = () => {
     const axiosSecure = useAxiosSecure();
-    const { userName } = useContext(ContextData);
+    const {user, userName } = useContext(ContextData);
+
+
+    const [clientID, setClientID] = useState([]);
     const [deadline, setDeadline] = useState(null);
     const [totalPrice, setTotalPrice] = useState(0);
     const [orderQuantity, setOrderQuantity] = useState(0);
     const [imagePrice, setImagePrice] = useState(0);
 
+    
+    const dispatch = useDispatch();
+    const refetch = useSelector((state) => state.refetch.refetch);
+
+    // ************************************************************************************************
+    const axiosProtect = useAxiosProtect();
+
+    useEffect(() => {
+            const fetchClientID = async () => {
+                try {
+                    const response = await axiosProtect.get('/getClientID', {
+                        params: {
+                            userEmail: user?.email,
+                        },
+                    });
+                    setClientID(response?.data);
+    
+                } catch (error) {
+                    toast.error('Error fetching data:', error.message);
+                }
+            };
+            fetchClientID();
+        }, [refetch]);
     // ************************************************************************************************
     const [formData, setFormData] = useState({
         userName: "",
@@ -28,8 +56,7 @@ const CreateLocalOrder = () => {
         orderStatus: '',
     });
 
-    const dispatch = useDispatch();
-    const refetch = useSelector((state) => state.refetch.refetch);
+    
     // ************************************************************************************************
     const handleDeadlineChange = (date) => {
         const timezoneOffset = date.getTimezoneOffset(); // Get the offset in minutes
@@ -63,50 +90,29 @@ const CreateLocalOrder = () => {
 
     // ************************************************************************************************
     const qty = parseInt(orderQuantity);
-    console.log(qty);
+
     const price = parseFloat(imagePrice);
-    console.log(price);
+
 
 
     useEffect(() => {
         setTotalPrice(qty * price);
     }, [qty, price]);
+
+
+
     // ************************************************************************************************
-    const calculateCountdown = () => {
-        if (!deadline) return null;
-
-        const deadlineMoment = moment(deadline.date, deadline.timezone);
-
-        // //Convert to your timezone
-        const gmt6Deadline = deadlineMoment.clone().tz('Asia/Dhaka'); // Replace 'Asia/Dhaka' with your IANA timezone name if needed
-        console.log(new Date());
-        const now = moment();
-        const diff = gmt6Deadline.diff(now); // Difference in milliseconds
-
-        if (diff <= 0) {
-            return "Deadline Passed";
-        }
-
-        const duration = moment.duration(diff);
-        const formattedCountdown = `${duration.days()}d ${duration.hours()}h ${duration.minutes()}m ${duration.seconds()}s`;
-
-        return formattedCountdown;
-    };
-
-    const [countdown, setCountdown] = useState(calculateCountdown());
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setCountdown(calculateCountdown());
-        }, 1000); // Update every second
-
-        return () => clearInterval(interval); // Clean up on unmount
-    }, [deadline]); // Re-calculate when deadline changes
-    // ************************************************************************************************
+    const navigate = useNavigate();
     const handleAssignOrder = (e) => {
         e.preventDefault();
-        const updateOrder = { ...formData, orderQTY: orderQuantity, orderPrice: totalPrice, userName: userName, orderDeadLine: deadline, orderStatus: "Pending" };
-        console.log(updateOrder);
+        const deadlineMoment = moment(deadline.date, deadline.timezone);
+        const gmt6Deadline = deadlineMoment.clone().tz('Asia/Dhaka'); 
+        const newDeadline = gmt6Deadline._i;
+
+        const updateOrder = { ...formData, orderQTY: orderQuantity, orderPrice: totalPrice, userName: userName, orderDeadLine: newDeadline, orderStatus: "Pending" };
+
+
+        
 
         const postLocalOrder = async () => {
             try {
@@ -122,6 +128,7 @@ const CreateLocalOrder = () => {
         };
         postLocalOrder();
         resetOrder();
+        navigate('/recentOrders');
         
     };
 
@@ -144,16 +151,22 @@ const CreateLocalOrder = () => {
                                     <label className="font-medium">Client ID:</label>
                                 </div>
                                 <div>
-                                    <input
-                                        type="text"
-                                        id="clientID"
-                                        name="clientID"
-                                        value={formData?.client_ID}
-                                        onChange={handleChange}
-                                        className="w-full p-1 border border-gray-300 rounded-md outline-none"
-                                        placeholder="Enter client ID"
-                                        required
-                                    />
+                                    <select
+                                    id="clientID"
+                                    name="clientID"
+                                    value={formData?.clientID}
+                                    onChange={handleChange}
+                                    className="w-full p-1 border border-gray-300 rounded-md outline-none"
+                                    required
+                                >
+                                    <option value="">Select ID</option>
+                                    {clientID.map((client, index) => (
+                                        <option key={index} value={client.clientID}>
+                                            {client.clientID}
+                                        </option>
+                                    ))}
+                                </select>
+
                                 </div>
                             </section>
 

@@ -15,6 +15,7 @@ import ActiveOrders from './Component/orderManagement/sub-menu/ActiveOrders';
 import CompletedOrders from './Component/orderManagement/sub-menu/CompletedOrders';
 import CanceledOrders from './Component/orderManagement/sub-menu/CanceledOrders';
 import PendingOrders from './Component/orderManagement/sub-menu/PendingOrders';
+import Clients from './Component/Clients/Clients';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
@@ -34,6 +35,7 @@ export const router = createBrowserRouter([
             { path: '/createLocalOrder', element: <CreateLocalOrder /> },
             { path: '/ordersDeadline', element: <OrdersDeadline /> },
             { path: '/settings', element: <Settings /> },
+            { path: '/clients', element: <Clients /> },
             // my component
             { path: '/order-management', element: <OrderManagement /> },
             {

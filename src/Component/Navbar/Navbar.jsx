@@ -7,7 +7,7 @@ import { IoSettingsOutline } from 'react-icons/io5';
 import { LuCalendarClock, LuUsers } from 'react-icons/lu';
 import { MdOutlineDashboard } from 'react-icons/md';
 import { PiClipboardText } from 'react-icons/pi';
-import { RiCurrencyLine } from 'react-icons/ri';
+import { RiCurrencyLine, RiUser2Fill } from 'react-icons/ri';
 import { Link, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
@@ -260,6 +260,18 @@ const Navbar = () => {
                     </div>
                 )}
             </section>
+            {/*************************************************************/}
+            <Link
+                to="/clients"
+                className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                    location.pathname === '/clients'
+                        ? 'bg-[#6E3FF3] text-white'
+                        : 'hover:bg-[#6E3FF3] hover:text-white'
+                }`}
+            >
+                <RiUser2Fill />
+                <span>Clients</span>
+            </Link>
             {/*************************************************************/}
             <Link
                 to="/settings"
