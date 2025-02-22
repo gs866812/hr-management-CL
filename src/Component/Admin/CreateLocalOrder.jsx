@@ -54,6 +54,8 @@ const CreateLocalOrder = () => {
         orderDeadLine: '',
         orderInstructions: '',
         orderStatus: '',
+        completeTime: 0,
+        lastUpdated: Math.floor(Date.now() / 1000),
     });
 
     

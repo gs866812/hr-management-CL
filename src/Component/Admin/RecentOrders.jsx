@@ -1,11 +1,14 @@
 import React, { useContext, useEffect, useState } from 'react';
 import AssignOrderModal from '../Modal/AssignOrderModal';
-import { Link } from 'react-router-dom';
+import { IoEyeOutline } from "react-icons/io5";
+import { Link, useNavigate } from 'react-router-dom';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import { ContextData } from '../../DataProvider';
 import { useSelector } from 'react-redux';
 import moment from 'moment';
 import Countdown from 'react-countdown';
+import { toast } from 'react-toastify';
+
 
 const RecentOrders = () => {
     const { user, userName } = useContext(ContextData);
@@ -13,6 +16,11 @@ const RecentOrders = () => {
 
     const [searchOrder, setSearchOrder] = useState('');
     const [localOrder, setLocalOrder] = useState([]);
+    const [viewOrder, setViewOrder] = useState('');
+
+    const navigate = useNavigate();
+
+    console.log(viewOrder);
 
 
 
@@ -34,17 +42,13 @@ const RecentOrders = () => {
         };
         fetchLocalOrder();
     }, [refetch]);
+
+
     // ****************************************************************************************
-    const calculateDeadlineTimestamp = (orderDeadline) => { // Calculate timestamp
-        if (!orderDeadline || !orderDeadline.date || !orderDeadline.timezoneName) return null;
-
-        const deadlineMoment = moment.utc(orderDeadline.date);
-        const gmt6Deadline = deadlineMoment.clone().tz(orderDeadline.timezoneName);
-
-        return gmt6Deadline.valueOf(); // Get timestamp in milliseconds
+    const handleViewOrder = (id) => {
+        // navigate(`${id}`);
+        window.open(`/recentOrders/${id}`, "_blank"); 
     };
-
-
     // ****************************************************************************************
     return (
         <div>
@@ -116,7 +120,7 @@ const RecentOrders = () => {
                                                 <td>{order.userName}</td>
                                                 <td className='w-[5%]'>
                                                     <div className='flex justify-center'>
-                                                        Edit
+                                                    <IoEyeOutline className='text-xl cursor-pointer' onClick={() => handleViewOrder(order?._id)}/>
                                                     </div>
                                                 </td>
                                             </tr>

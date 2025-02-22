@@ -10,3 +10,18 @@ input, textarea, select, .outline-local{
 table, tr, td, th{
     border: 1px solid gray;
 }
+
+.scroll-container {
+    overflow-y: hidden; /* Hide vertical scrollbar */
+    overflow-x: auto; 
+}
+
+.custom-scrollbar {
+    scrollbar-width: none;  /* Hide scrollbar for Firefox */
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for Chrome, Safari, Edge */
+  }
+  
+
