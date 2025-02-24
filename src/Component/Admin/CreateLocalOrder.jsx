@@ -12,7 +12,7 @@ import useAxiosProtect from "../../utils/useAxiosProtect";
 
 const CreateLocalOrder = () => {
     const axiosSecure = useAxiosSecure();
-    const {user, userName } = useContext(ContextData);
+    const { user, userName } = useContext(ContextData);
 
 
     const [clientID, setClientID] = useState([]);
@@ -21,29 +21,53 @@ const CreateLocalOrder = () => {
     const [orderQuantity, setOrderQuantity] = useState(0);
     const [imagePrice, setImagePrice] = useState(0);
 
-    
+    const [services, setServices] = useState([]);
+    const [returnFile, setReturnFile] = useState('Original Format and BG');
+    const [colorChangeInstruction, setColorChangeInstruction] = useState('');
+
+
+
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
 
     // ************************************************************************************************
+    const handleServiceChange = (event) => {
+        const selectedService = event.target.value;
+
+        if (selectedService !== "Select services") {
+            if (!services.includes(selectedService)) { // Only add if NOT already in the array
+                setServices([...services, selectedService]);
+                if (selectedService === "Color change") {
+                    document.getElementById('colorChange').showModal();
+                }
+            }
+            // If already selected, do nothing (or you could optionally add a visual cue)
+        }
+    };
+    // ************************************************************************************************
+
+    const handleServiceRemove = (serviceToRemove) => {
+        setServices(services.filter(service => service !== serviceToRemove));
+    };
+    // ************************************************************************************************
     const axiosProtect = useAxiosProtect();
 
     useEffect(() => {
-            const fetchClientID = async () => {
-                try {
-                    const response = await axiosProtect.get('/getClientID', {
-                        params: {
-                            userEmail: user?.email,
-                        },
-                    });
-                    setClientID(response?.data);
-    
-                } catch (error) {
-                    toast.error('Error fetching data:', error.message);
-                }
-            };
-            fetchClientID();
-        }, [refetch]);
+        const fetchClientID = async () => {
+            try {
+                const response = await axiosProtect.get('/getClientID', {
+                    params: {
+                        userEmail: user?.email,
+                    },
+                });
+                setClientID(response?.data);
+
+            } catch (error) {
+                toast.error('Error fetching data:', error.message);
+            }
+        };
+        fetchClientID();
+    }, [refetch]);
     // ************************************************************************************************
     const [formData, setFormData] = useState({
         userName: "",
@@ -54,11 +78,13 @@ const CreateLocalOrder = () => {
         orderDeadLine: '',
         orderInstructions: '',
         orderStatus: '',
+        needServices: [],
+        returnFormat: '',
         completeTime: 0,
-        lastUpdated: Math.floor(Date.now() / 1000),
+        lastUpdated: 0,
     });
 
-    
+
     // ************************************************************************************************
     const handleDeadlineChange = (date) => {
         const timezoneOffset = date.getTimezoneOffset(); // Get the offset in minutes
@@ -70,6 +96,7 @@ const CreateLocalOrder = () => {
         };
         setDeadline(deadlineWithTimezone);
     };
+
     // ************************************************************************************************
     const getSelectedDate = () => {
         if (deadline) {
@@ -104,17 +131,30 @@ const CreateLocalOrder = () => {
 
 
     // ************************************************************************************************
+
+    const handleColorChange = (e) => {
+        e.preventDefault();
+        setColorChangeInstruction(e.target.colorChange.value);
+
+        // const modal = document.querySelector(`#edit-expense-modal`);
+        // modal.close();
+
+        document.querySelector(`#colorChange`).close();
+    };
+    // ************************************************************************************************
     const navigate = useNavigate();
     const handleAssignOrder = (e) => {
         e.preventDefault();
         const deadlineMoment = moment(deadline.date, deadline.timezone);
-        const gmt6Deadline = deadlineMoment.clone().tz('Asia/Dhaka'); 
+        const gmt6Deadline = deadlineMoment.clone().tz('Asia/Dhaka');
         const newDeadline = gmt6Deadline._i;
 
-        const updateOrder = { ...formData, orderQTY: orderQuantity, orderPrice: totalPrice, userName: userName, orderDeadLine: newDeadline, orderStatus: "Pending" };
+        const updateOrder = { ...formData, needServices: services, returnFormat: returnFile, orderQTY: orderQuantity, orderPrice: totalPrice, userName: userName, orderDeadLine: newDeadline, orderStatus: "Pending" };
+
+        console.log(updateOrder);
 
 
-        
+
 
         const postLocalOrder = async () => {
             try {
@@ -131,7 +171,7 @@ const CreateLocalOrder = () => {
         postLocalOrder();
         resetOrder();
         navigate('/recentOrders');
-        
+
     };
 
     const resetOrder = () => {
@@ -154,21 +194,68 @@ const CreateLocalOrder = () => {
                                 </div>
                                 <div>
                                     <select
-                                    id="clientID"
-                                    name="clientID"
-                                    value={formData?.clientID}
-                                    onChange={handleChange}
-                                    className="w-full p-1 border border-gray-300 rounded-md outline-none"
-                                    required
-                                >
-                                    <option value="">Select ID</option>
-                                    {clientID.map((client, index) => (
-                                        <option key={index} value={client.clientID}>
-                                            {client.clientID}
-                                        </option>
-                                    ))}
-                                </select>
+                                        id="clientID"
+                                        name="clientID"
+                                        value={formData?.clientID}
+                                        onChange={handleChange}
+                                        className="w-full p-1 border border-gray-300 rounded-md outline-none"
+                                        required
+                                    >
+                                        <option value="">Select ID</option>
+                                        {clientID.map((client, index) => (
+                                            <option key={index} value={client.clientID}>
+                                                {client.clientID}
+                                            </option>
+                                        ))}
+                                    </select>
 
+                                </div>
+                            </section>
+
+                            <section className="grid grid-cols-2">
+                                <div>
+                                    <label className="font-medium">Services you need:</label>
+                                </div>
+                                <div>
+                                    <select className="w-full p-1 border border-gray-300 rounded-md outline-none" onChange={handleServiceChange}>
+                                        <option value="Select services">Select services</option>
+                                        <option value="Clipping path">Clipping path</option>
+                                        <option value="Multi clipping path">Multi clipping path</option>
+                                        <option value="Transparent background">Transparent background</option>
+                                        <option value="White background">White background</option>
+                                        <option value="Color background">Color background</option>
+                                        <option value="Hair masking">Hair masking</option>
+                                        <option value="Single Selection">Single Selection</option>
+                                        <option value="Multi Selection">Multi Selection</option>
+                                        <option value="Drop shadow">Drop shadow</option>
+                                        <option value="Natural shadow">Natural shadow</option>
+                                        <option value="Reflection shadow">Reflection shadow</option>
+                                        <option value="Image manipulation">Image manipulation</option>
+                                        <option value="Neck join">Neck join</option>
+                                        <option value="Ghost mannequin effect">Ghost mannequin effect</option>
+                                        <option value="Basic retouching">Basic retouching</option>
+                                        <option value="High-end retouching">High-end retouching</option>
+                                        <option value="Jewelry retouching">Jewelry retouching</option>
+                                        <option value="Skin retouching">Skin retouching</option>
+                                        <option value="Color change">Color change</option>
+                                        <option value="Color correction">Color correction</option>
+                                        <option value="Image resizing">Image resizing</option>
+                                        <option value="Raster to vector">Raster to vector</option>
+                                        <option value="Lighting adjustment">Lighting adjustment</option>
+                                        <option value="White balance">White balance</option>
+                                    </select>
+                                    <section className="mt-2 space-y-1 flex flex-wrap">
+                                        {
+                                            services.length > 0 ?
+                                                services.map((service, index) => (
+                                                    <span key={index} className=" p-1 bg-[#6E3FF3] text-white mr-1 text-[12px] rounded-md">
+                                                        {service}
+                                                        <button onClick={() => handleServiceRemove(service)} className="text-red-500 ml-1 cursor-pointer bg-white rounded-full px-1" title="Remove service">X</button>
+                                                    </span>
+
+                                                )) : null
+                                        }
+                                    </section>
                                 </div>
                             </section>
 
@@ -177,6 +264,7 @@ const CreateLocalOrder = () => {
                                     <label className="font-medium">Order/Folder Name:</label>
                                 </div>
                                 <div>
+
                                     <input
                                         type="text"
                                         id="orderName"
@@ -244,6 +332,7 @@ const CreateLocalOrder = () => {
                                     />
                                 </div>
                             </section>
+
                             <section className="grid grid-cols-2">
                                 <div>
                                     <label className="font-medium">Total price ($):</label>
@@ -258,6 +347,29 @@ const CreateLocalOrder = () => {
                                         placeholder="Total price"
                                         readOnly
                                     />
+                                </div>
+                            </section>
+
+                            <section className="grid grid-cols-2">
+                                <div>
+                                    <label className="font-medium">Returned file format:</label>
+                                </div>
+                                <div>
+                                    <select className="w-full p-1 border border-gray-300 rounded-md outline-none" value={returnFile} onChange={(e) => setReturnFile(e.target.value)}>
+                                        <option value="Select return file format">Select return file format</option>
+                                        <option value="Original Format and BG">Original Format and BG</option>
+                                        <option value="JPG - White BG">JPG - White BG</option>
+                                        <option value="PNG - Transparent">PNG - Transparent</option>
+                                        <option value="PSD - Layer Mask">PSD - Layer Mask</option>
+                                        <option value="PSD - Layered File">PSD - Layered File</option>
+                                        <option value="PSD - Original BG">PSD - Original BG</option>
+                                        <option value="TIFF - Original BG">TIFF - Original BG</option>
+                                        <option value="TIFF - Transparent BG">TIFF - Transparent BG</option>
+                                        <option value="PSF Pages">PSF Pages</option>
+                                        <option value="PSB - Layered file">PSB - Layered file</option>
+                                        <option value="PDF">PDF</option>
+
+                                    </select>
                                 </div>
                             </section>
 
@@ -285,7 +397,7 @@ const CreateLocalOrder = () => {
                     {/* ************************* */}
                     <div className='flex items-center justify-between mt-5'>
                         <button
-                        type="reset"
+                            type="reset"
                             onClick={resetOrder}
                             className="bg-yellow-500 text-white py-2 px-3 rounded-md transition-colors cursor-pointer"
                         >
@@ -300,6 +412,27 @@ const CreateLocalOrder = () => {
                     </div>
                 </form>
             </div>
+            {/* ********************************service modal */}
+            <dialog id="colorChange" className="modal">
+                <div className="modal-box">
+                    <form method="dialog">
+                        {/* if there is a button in form, it will close the modal */}
+                        <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onClick={() => handleServiceRemove('Color change')}>✕</button>
+                    </form>
+                    <h3 className="font-bold text-lg">Color change instruction</h3>
+                    <form className="mt-3" onSubmit={handleColorChange}>
+                        <textarea
+                            id="colorChange"
+                            name="colorChange"
+                            className="w-full p-2 border border-gray-300 rounded-md"
+                            placeholder="Input the color code you want to change to or write instruction for color change."
+                            rows="2"
+                        />
+                        <button className="bg-[#6E3FF3] text-white py-1 px-2 rounded-md hover:bg-[#6E3FF3] transition-colors cursor-pointer mt-2">Save</button>
+                    </form>
+                </div>
+            </dialog>
+            {/* *********************************************** */}
         </div>
     );
 };

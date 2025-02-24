@@ -6,6 +6,7 @@ import { useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import { ContextData } from '../../DataProvider';
+import logo from '../../../public/main_logo.png';
 
 
 const Header = () => {
@@ -21,11 +22,11 @@ const Header = () => {
     };
     // ************************************************************
     return (
-        <div className='max-w-screen-2xl mx-auto '>
+        <div className='mx-auto '>
             <div className='lg:px-8 flex justify-between items-center border'>
                 <div>
                     {/**********main-logo*****************/}
-                    <Link to='/'>Logo</Link>
+                    <Link to='/'><img src={logo} alt="Webbriks.com" className='w-[10%]'/></Link>
                 </div>
 
                 <div className='flex justify-center items-center gap-3 py-2'>

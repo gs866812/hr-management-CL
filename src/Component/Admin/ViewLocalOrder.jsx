@@ -147,9 +147,13 @@ const ViewLocalOrder = () => {
                         {/********************* * order details left side ************/}
                         <div className='w-[70%] overflow-y-auto custom-scrollbar'>
                             <section className='shadow-md rounded-md p-4'>
-                                <h2 className='font-semibold'> Order details: </h2>
+                                <h2 className='font-semibold text-xl'> Order details </h2>
                                 <h2 className=''>Order Name: {localOrder?.orderName}</h2>
+                                <h2 className='mt-2'>Services: {
+                                    localOrder?.needServices?.map((service, index) => <span key={index} className='mr-1 font-semibold bg-gray-300 rounded-sm p-1 text-sm'>{service}</span>)
+                                    }</h2>
                                 <p className='bg-gray-300 rounded-md p-2 mt-5'>{`${localOrder?.orderInstructions}`}</p>
+                                <h2 className='mt-5'>Return file format: <span>{localOrder?.returnFormat}</span></h2>
                             </section>
 
                         </div>
