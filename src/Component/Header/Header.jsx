@@ -6,11 +6,11 @@ import { useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import { ContextData } from '../../DataProvider';
-import logo from '../../../public/main_logo.png';
+import logo from '/main_logo.png';
 
 
 const Header = () => {
-    const { logOut} = useContext(ContextData);
+    const { logOut, user} = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
     // ************************************************************
     const navigate = useNavigate(); // Next.js router for navigation
@@ -44,15 +44,40 @@ const Header = () => {
 
                     {/*/*****************************user start******************************/}
                     <div className='flex justify-center items-center gap-2'>
-                        <div className='w-10 h-10'>
+                        <div className='w-10 h-10 relative'>
                             <img
                                 className='rounded-full border'
                                 alt="Tailwind CSS Navbar component"
-                                src="https://iili.io/2BqJhuf.png" />
+                                src={
+                                    user?.email === import.meta.env.VITE_SARWAR?
+                                    'https://iili.io/2BqJhuf.png' :
+                                    user?.email === import.meta.env.VITE_ASAD?
+                                    'https://iili.io/2zUIGaf.jpg' :
+                                    user?.email === import.meta.env.VITE_DULU?
+                                    'https://iili.io/3JkVvmN.webp' : null
+                                } />
                         </div>
                         <div>
-                            <h2 className='font-bold'>Name</h2>
-                            <p className='text-gray-500 text-sm'>Designation</p>
+                            <h2 className='fon-semi-bold'>
+                                {
+                                    user?.email === import.meta.env.VITE_SARWAR?
+                                    'G Sarwar' :
+                                    user?.email === import.meta.env.VITE_ASAD?
+                                    'Asad' :
+                                    user?.email === import.meta.env.VITE_DULU?
+                                    'Kamal' : null
+                                }
+                            </h2>
+                            <p className='text-gray-500 text-sm'>
+                                {
+                                    user?.email === import.meta.env.VITE_SARWAR?
+                                    'Developer' :
+                                    user?.email === import.meta.env.VITE_ASAD?
+                                    'Admin' :
+                                    user?.email === import.meta.env.VITE_DULU?
+                                    'Admin' : null
+                                }
+                            </p>
                         </div>
 
                         <div className="dropdown dropdown-hover dropdown-end">

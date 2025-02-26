@@ -22,8 +22,12 @@ const CreateLocalOrder = () => {
     const [imagePrice, setImagePrice] = useState(0);
 
     const [services, setServices] = useState([]);
+    const [dateTime, setDateTime] = useState(null);
     const [returnFile, setReturnFile] = useState('Original Format and BG');
     const [colorChangeInstruction, setColorChangeInstruction] = useState('');
+    const [imageResizeInstruction, setImageResizeInstruction] = useState('');
+
+    // console.log(colorChangeInstruction, imageResizeInstruction);
 
 
 
@@ -40,6 +44,9 @@ const CreateLocalOrder = () => {
                 if (selectedService === "Color change") {
                     document.getElementById('colorChange').showModal();
                 }
+                else if (selectedService === "Image resizing") {
+                    document.getElementById('imageResizing').showModal();
+                }
             }
             // If already selected, do nothing (or you could optionally add a visual cue)
         }
@@ -48,6 +55,12 @@ const CreateLocalOrder = () => {
 
     const handleServiceRemove = (serviceToRemove) => {
         setServices(services.filter(service => service !== serviceToRemove));
+        if (serviceToRemove === "Color change") {
+            setColorChangeInstruction('');
+        }else if(serviceToRemove === "Image resizing"){
+            setImageResizeInstruction('');
+        }
+
     };
     // ************************************************************************************************
     const axiosProtect = useAxiosProtect();
@@ -71,6 +84,7 @@ const CreateLocalOrder = () => {
     // ************************************************************************************************
     const [formData, setFormData] = useState({
         userName: "",
+        date: "",
         clientID: "",
         orderName: '',
         orderQTY: '',
@@ -81,6 +95,8 @@ const CreateLocalOrder = () => {
         needServices: [],
         returnFormat: '',
         completeTime: 0,
+        colorCode: '',
+        imageResize: '',
         lastUpdated: 0,
     });
 
@@ -141,6 +157,13 @@ const CreateLocalOrder = () => {
 
         document.querySelector(`#colorChange`).close();
     };
+    // --------------------------------------------------
+    const handleImageResize = (e) => {
+        e.preventDefault();
+        setImageResizeInstruction(e.target.imageResizing.value);
+
+        document.querySelector(`#imageResizing`).close();
+    };
     // ************************************************************************************************
     const navigate = useNavigate();
     const handleAssignOrder = (e) => {
@@ -148,10 +171,12 @@ const CreateLocalOrder = () => {
         const deadlineMoment = moment(deadline.date, deadline.timezone);
         const gmt6Deadline = deadlineMoment.clone().tz('Asia/Dhaka');
         const newDeadline = gmt6Deadline._i;
+        setDateTime(moment().format('DD-MMM-YYYY HH:mm:ss'));
 
-        const updateOrder = { ...formData, needServices: services, returnFormat: returnFile, orderQTY: orderQuantity, orderPrice: totalPrice, userName: userName, orderDeadLine: newDeadline, orderStatus: "Pending" };
 
-        console.log(updateOrder);
+        const updateOrder = { ...formData, date:dateTime, needServices: services, colorCode: colorChangeInstruction, imageResize: imageResizeInstruction, returnFormat: returnFile, orderQTY: orderQuantity, orderPrice: totalPrice, userName: userName, orderDeadLine: newDeadline, orderStatus: "Pending" };
+
+        
 
 
 
@@ -426,6 +451,26 @@ const CreateLocalOrder = () => {
                             name="colorChange"
                             className="w-full p-2 border border-gray-300 rounded-md"
                             placeholder="Input the color code you want to change to or write instruction for color change."
+                            rows="2"
+                        />
+                        <button className="bg-[#6E3FF3] text-white py-1 px-2 rounded-md hover:bg-[#6E3FF3] transition-colors cursor-pointer mt-2">Save</button>
+                    </form>
+                </div>
+            </dialog>
+            {/* *********************************************** */}
+            <dialog id="imageResizing" className="modal">
+                <div className="modal-box">
+                    <form method="dialog">
+                        {/* if there is a button in form, it will close the modal */}
+                        <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onClick={() => handleServiceRemove('Image resizing')}>✕</button>
+                    </form>
+                    <h3 className="font-bold text-lg">image resizing instruction</h3>
+                    <form className="mt-3" onSubmit={handleImageResize}>
+                        <textarea
+                            id="imageResizing"
+                            name="imageResizing"
+                            className="w-full p-2 border border-gray-300 rounded-md"
+                            placeholder="Input your required image size."
                             rows="2"
                         />
                         <button className="bg-[#6E3FF3] text-white py-1 px-2 rounded-md hover:bg-[#6E3FF3] transition-colors cursor-pointer mt-2">Save</button>

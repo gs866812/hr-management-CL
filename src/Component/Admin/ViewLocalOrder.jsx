@@ -151,9 +151,21 @@ const ViewLocalOrder = () => {
                                 <h2 className=''>Order Name: {localOrder?.orderName}</h2>
                                 <h2 className='mt-2'>Services: {
                                     localOrder?.needServices?.map((service, index) => <span key={index} className='mr-1 font-semibold bg-gray-300 rounded-sm p-1 text-sm'>{service}</span>)
-                                    }</h2>
-                                <p className='bg-gray-300 rounded-md p-2 mt-5'>{`${localOrder?.orderInstructions}`}</p>
-                                <h2 className='mt-5'>Return file format: <span>{localOrder?.returnFormat}</span></h2>
+                                }</h2>
+                                <p className='bg-gray-300 rounded-md p-2 mt-5'>{localOrder?.orderInstructions}</p>
+
+                                <div className='text-sm mt-5 flex justify-between'>
+                                    {
+                                        localOrder?.colorCode &&
+                                        <p>Color change to: {localOrder?.colorCode}</p>
+                                    }
+                                    {
+                                        localOrder?.imageResize &&
+                                        <p>Image resize to: {localOrder?.imageResize}</p>
+                                    }
+                                    
+                                </div>
+                                <h2 className='mt-2'>Return file format: <span>{localOrder?.returnFormat}</span></h2>
                             </section>
 
                         </div>
@@ -190,6 +202,7 @@ const ViewLocalOrder = () => {
                                         />
                                     )}
                                 </div>
+                                <p className='text-sm mt-2'>Order place on: {localOrder?.date}</p>
                             </section>
                             {/* ------------------------------------------------------------------------ */}
                             <section className='shadow-md rounded-md p-4 mt-5 space-y-2'>
