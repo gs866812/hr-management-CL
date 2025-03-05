@@ -11,6 +11,9 @@ const DataProvider = ({ children }) => {
     const [categories, setCategories] = useState([]); // State to store categories
     const [userName, setUserName] = useState(null);
 
+    const [itemsPerPage, setItemsPerPage] = useState(20);
+    const [currentPage, setCurrentPage] = useState(1);
+
     // ****************************************************************
     useEffect(() => {
         if (user) {
@@ -120,6 +123,10 @@ const DataProvider = ({ children }) => {
         categories,
         setCategories,
         logOut,
+        itemsPerPage, 
+        setItemsPerPage,
+        currentPage, 
+        setCurrentPage
     };
 
     return <ContextData.Provider value={info}>{children}</ContextData.Provider>;

@@ -8,11 +8,13 @@ import useAxiosProtect from '../../utils/useAxiosProtect';
 import DatePicker from 'react-datepicker';
 
 const ExpenseModal = ({ onExpenseData, searchOption }) => {
+    console.log(searchOption);
     // *************************************************************************************************
-    const { user, userName, categories, setCategories } = useContext(ContextData);
+    const { user, userName, categories, setCategories, currentPage, itemsPerPage } = useContext(ContextData);
 
     const axiosSecure = useAxiosSecure();
     const axiosProtect = useAxiosProtect();
+
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [formData, setFormData] = useState({
         userName: '',
@@ -37,23 +39,28 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
 
 
     // *************************************************************************************************
+    console.log(currentPage, itemsPerPage, searchOption);
     useEffect(() => {
-        const fetchCategory = async () => {
+        const fetchExpenseData = async () => {
             try {
                 const response = await axiosProtect.get('/getExpense', {
                     params: {
                         userEmail: user?.email,
+                        page: currentPage,
+                        size: itemsPerPage,
+                        search: searchOption,
                     },
                 });
-                onExpenseData(response.data.result);
+                onExpenseData(response.data);
+                console.log(response.data);
                 setCategories(response.data.category);
 
             } catch (error) {
                 toast.error('Error fetching data:', error.message);
             }
         };
-        fetchCategory();
-    }, [refetch]);
+        fetchExpenseData();
+    }, [refetch, currentPage, itemsPerPage, searchOption, axiosProtect]);
     // *************************************************************************************************
     const handleChange = (e) => {
         const { name, value } = e.target;

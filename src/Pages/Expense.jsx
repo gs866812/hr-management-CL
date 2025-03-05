@@ -12,7 +12,7 @@ import { selectUserName } from '../redux/userNameSlice';
 import { setRefetch } from '../redux/refetchSlice';
 
 const Expense = () => {
-    const { categories, userName } = useContext(ContextData);
+    const { categories, userName, currentPage, setCurrentPage, itemsPerPage, setItemsPerPage } = useContext(ContextData);
     const axiosSecure = useAxiosSecure();
 
 
@@ -23,7 +23,7 @@ const Expense = () => {
     const [editId, setEditId] = useState(''); // State to store categories
 
     const [expenseCount, setExpenseCount] = useState(0); // State to store
-    const [itemsPerPage, setItemsPerPage] = useState(20);
+    
 
 
 
@@ -60,7 +60,8 @@ const Expense = () => {
     }, [editId, expenseList]);
     // ***************************************************************************************************************
     const getExpenseData = (expenses) => {
-        setExpenseList(expenses);
+        setExpenseList(expenses?.expense);
+        setExpenseCount(expenses?.count);
     };
     // ***************************************************************************************************************
     const handleEditExpense = (id) => {
@@ -388,11 +389,11 @@ const Expense = () => {
                 </dialog>
             </div>
             {/*********************************pagination***********************************************************/}
-            {expenseCount > 10 && (
+            {expenseCount > 20 && (
                 <div className="my-8 flex justify-center gap-1">
                     <button
                         onClick={handlePrevPage}
-                        className="py-2 px-3 bg-green-500 text-white rounded-md hover:bg-gray-600"
+                        className="py-2 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600"
                         disabled={currentPage === 1}
                     >
                         Prev
@@ -401,7 +402,7 @@ const Expense = () => {
                         <button
                             key={index}
                             onClick={() => typeof page === "number" && handlePageClick(page)}
-                            className={`py-2 px-5 bg-green-500 text-white rounded-md hover:bg-gray-600 ${currentPage === page ? "!bg-gray-600" : ""
+                            className={`py-2 px-5 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600 ${currentPage === page ? "!bg-yellow-600" : ""
                                 }`}
                             disabled={typeof page !== "number"}
                         >
@@ -410,7 +411,7 @@ const Expense = () => {
                     ))}
                     <button
                         onClick={handleNextPage}
-                        className="py-2 px-3 bg-green-500 text-white rounded-md hover:bg-gray-600"
+                        className="py-2 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600"
                         disabled={currentPage === numberOfPages}
                     >
                         Next
@@ -421,7 +422,7 @@ const Expense = () => {
                         onChange={handleItemsPerPage}
                         name=""
                         id=""
-                        className="py-2 px-1 rounded-md bg-green-500 text-white outline-none"
+                        className="py-2 px-1 rounded-md bg-[#6E3FF3] text-white outline-none hover:bg-yellow-600"
                     >
                         <option value="20">20</option>
                         <option value="50">50</option>
