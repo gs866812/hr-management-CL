@@ -22,14 +22,14 @@ const Header = () => {
     };
     // ************************************************************
     return (
-        <div className='mx-auto '>
-            <div className='lg:px-8 flex justify-between items-center border'>
+        <div className='mx-auto'>
+            <div className='lg:px-8 flex justify-between items-center'>
                 <div>
                     {/**********main-logo*****************/}
                     <Link to='/'><img src={logo} alt="Webbriks.com" className='w-[10%]'/></Link>
                 </div>
 
-                <div className='flex justify-center items-center gap-3 py-2'>
+                <div className='flex justify-center items-center gap-3 py-2 w-[300px]'>
 
                     {/*************************message and notifications start*******************************/}
 
@@ -43,16 +43,16 @@ const Header = () => {
 
 
                     {/*/*****************************user start******************************/}
-                    <div className='flex justify-center items-center gap-2'>
-                        <div className='w-10 h-10 relative'>
+                    <div className='flex justify-center items-center gap-2 w-auto'>
+                        <div className='w-8 h-8 relative'>
                             <img
-                                className='rounded-full border'
+                                className='rounded-full w-full h-full object-cover'
                                 alt="Tailwind CSS Navbar component"
                                 src={
                                     user?.email === import.meta.env.VITE_SARWAR?
                                     'https://iili.io/2BqJhuf.png' :
-                                    user?.email === import.meta.env.VITE_ASAD?
-                                    'https://iili.io/2zUIGaf.jpg' :
+                                    user?.email === import.meta.env.VITE_MUKUL?
+                                    'https://iili.io/33qPNZx.jpg' :
                                     user?.email === import.meta.env.VITE_DULU?
                                     'https://iili.io/3JkVvmN.webp' : null
                                 } />
@@ -62,8 +62,8 @@ const Header = () => {
                                 {
                                     user?.email === import.meta.env.VITE_SARWAR?
                                     'G Sarwar' :
-                                    user?.email === import.meta.env.VITE_ASAD?
-                                    'Asad' :
+                                    user?.email === import.meta.env.VITE_MUKUL?
+                                    'HR Admin' :
                                     user?.email === import.meta.env.VITE_DULU?
                                     'Kamal' : null
                                 }

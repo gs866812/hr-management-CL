@@ -15,8 +15,12 @@ const ViewLocalOrder = () => {
     const axiosSecure = useAxiosSecure();
 
     const [localOrder, setLocalOrder] = useState({});
-    const [totalSeconds, setTotalSeconds] = useState(0);
-    const intervalRef = useRef(null);
+    const [isRunning, setIsRunning] = useState(false);
+    // const [totalSeconds, setTotalSeconds] = useState(0);
+    const [totalSeconds, setTotalSeconds] = useState(parseInt(localOrder?.lastUpdated) || 0);
+    // const savedTotalSeconds = useRef(parseInt(parseInt(localOrder?.lastUpdated) || 0) || 0); // Store initial saved value
+    const savedTotalSeconds = useRef(parseInt(localOrder?.lastUpdated) || 0); // Store initial saved value
+    // const intervalRef = useRef(null);
 
 
     const dispatch = useDispatch();
@@ -52,26 +56,51 @@ const ViewLocalOrder = () => {
             }
         };
         fetchSingleOrder();
-    }, [refetch]);
+    }, [refetch, totalSeconds]);
     // ************************************************************************************************
     // Start timer when allowed
     useEffect(() => {
-        if (localOrder?.orderStatus !== "Pending" && localOrder.orderStatus !== "Hold") {
-            intervalRef.current = setInterval(() => {
-                setTotalSeconds((prev) => prev + 1);
+        let intervalId;
+
+        if (isRunning) {
+            intervalId = setInterval(() => {
+                setTotalSeconds((prevSeconds) => prevSeconds + 1);
             }, 1000);
         }
 
-        return () => clearInterval(intervalRef.current);
-    }, [localOrder.orderStatus]);
+        return () => clearInterval(intervalId); // Clean up interval on unmount or isRunning change
+    }, [isRunning]);
+
+    useEffect(() => {
+        // Only add saved seconds ONCE when component mounts AND timer is not running.
+        // This ensures it's added only when starting or on reload if the timer was off.
+        if (!isRunning) {
+            setTotalSeconds(prevSeconds => prevSeconds + savedTotalSeconds.current);
+            savedTotalSeconds.current = 0; // Prevent adding it again
+        }
+    }, []);
+
+
     // ************************************************************************************************
     // Convert seconds to days, hours, minutes, seconds
     const formatTime = (seconds) => {
-        const days = Math.floor(seconds / 86400);
-        const hours = Math.floor((seconds % 86400) / 3600);
+        const days = Math.floor(seconds / (3600 * 24));
+        const hours = Math.floor((seconds % (3600 * 24)) / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
-        const secs = seconds % 60;
-        return `${days}d ${hours}h ${minutes}m ${secs}s`;
+        const remainingSeconds = seconds % 60;
+    
+        return `${days}d ${hours}h ${minutes}m ${remainingSeconds}s`;
+      };
+    // ************************************************************************************************
+    const handleReadyToQC = () => {
+        const readyToQC = document.getElementById('readyToQC');
+        const readyToUploadElement = document.getElementById('readyToUpload');
+        readyToUploadElement.classList.remove('hidden');
+        readyToQC.classList.add('hidden');
+    };
+    const handleReadyToUpload = () => {
+        // const readyToQC = document.getElementById('readyToUpload');
+        // readyToUploadElement.classList.remove('hidden');
     };
     // ************************************************************************************************
 
@@ -93,6 +122,7 @@ const ViewLocalOrder = () => {
                             },
                         });
                         if (response.data.modifiedCount > 0) {
+                            setIsRunning(true);
                             dispatch(setRefetch(!refetch));
                             Swal.fire({
                                 title: "Order Started!",
@@ -113,7 +143,7 @@ const ViewLocalOrder = () => {
     // ************************************************************************************************
     const handleHold = () => {
         const changeOrderToHold = async () => {
-            clearInterval(intervalRef.current);
+            
             try {
                 const response = await axiosSecure.put(`/orderStatusHold/${orderId}`, {
                     completeTime: totalSeconds,
@@ -121,6 +151,7 @@ const ViewLocalOrder = () => {
                 });
 
                 if (response.data.modifiedCount > 0) {
+                    setIsRunning(false);
                     dispatch(setRefetch(!refetch));
                     Swal.fire({
                         title: "Order Hold!",
@@ -163,7 +194,7 @@ const ViewLocalOrder = () => {
                                         localOrder?.imageResize &&
                                         <p>Image resize to: {localOrder?.imageResize}</p>
                                     }
-                                    
+
                                 </div>
                                 <h2 className='mt-2'>Return file format: <span>{localOrder?.returnFormat}</span></h2>
                             </section>
@@ -221,29 +252,54 @@ const ViewLocalOrder = () => {
                                 <h2>Completion time: <span className='font-semibold border px-1 rounded-md'>{formatTime(totalSeconds)}</span></h2>
                             </section>
                             {/* ------------------------------------------------------------------------ */}
-                            <section className='shadow-md rounded-md p-4 mt-5 flex items-center gap-2'>
-                                <button
-                                    className={`text-white py-1 px-3 rounded-md ${localOrder?.orderStatus !== "Pending" && localOrder?.orderStatus !== "Hold"
-                                        ? "bg-gray-400 cursor-not-allowed"
-                                        : "bg-[#6E3FF3] cursor-pointer"
-                                        }`}
-                                    onClick={handleStart}
-                                    disabled={localOrder?.orderStatus !== "Pending" && localOrder?.orderStatus !== "Hold"}
-                                >
-                                    Start the order
-                                </button>
-                                <button
-                                    className={`text-white py-1 px-3 rounded-md ${localOrder?.orderStatus == "Hold" || localOrder?.orderStatus == "Pending"
-                                        ? "bg-gray-400 cursor-not-allowed"
-                                        : "bg-[#6E3FF3] cursor-pointer"
-                                        }`}
-                                    onClick={handleHold}
-                                    disabled={localOrder?.orderStatus == "Hold" || localOrder?.orderStatus == "Pending"}
-                                >
-                                    Hold
-                                </button>
+                            {localOrder && (
+                                <Countdown
+                                    date={moment(localOrder.orderDeadLine).valueOf()} // Convert to timestamp
+                                    renderer={({ days, hours, minutes, seconds }) => (
+                                        // Countdown time of deadline-------------------------------
+                                        <section className={`shadow-md rounded-md p-4 mt-5 border ${days == '00' && hours == '00' && minutes == '00' && seconds == '00' ? 'hidden' : ''}`}>
+                                            <div className='flex items-center gap-2'>
+                                                <button
+                                                    className={`text-white py-1 px-3 rounded-md ${localOrder?.orderStatus !== "Pending" && localOrder?.orderStatus !== "Hold"
+                                                        ? "bg-gray-400 cursor-not-allowed"
+                                                        : "bg-[#6E3FF3] cursor-pointer"
+                                                        }`}
+                                                    onClick={handleStart}
+                                                    disabled={localOrder?.orderStatus !== "Pending" && localOrder?.orderStatus !== "Hold"}
+                                                >
+                                                    Start the order
+                                                </button>
+                                                <button
+                                                    className={`text-white py-1 px-3 rounded-md ${localOrder?.orderStatus == "Hold" || localOrder?.orderStatus == "Pending"
+                                                        ? "bg-gray-400 cursor-not-allowed"
+                                                        : "bg-[#6E3FF3] cursor-pointer"
+                                                        }`}
+                                                    onClick={handleHold}
+                                                    disabled={localOrder?.orderStatus == "Hold" || localOrder?.orderStatus == "Pending"}
+                                                >
+                                                    Hold
+                                                </button>
+                                            </div>
 
-                            </section>
+                                            <div className='mt-3'>
+                                                <button id='readyToQC' onClick={handleReadyToQC}
+                                                    className={`text-white py-1 px-3 rounded-md ${localOrder?.orderStatus !== "In-progress"
+                                                        ? "bg-gray-400 cursor-not-allowed"
+                                                        : "bg-[#6E3FF3] cursor-pointer"
+                                                        }`}>Ready to QC
+                                                </button>
+                                                <button id='readyToUpload' onClick={handleReadyToUpload}
+                                                    className={`hidden text-white py-1 px-3 rounded-md ${localOrder?.orderStatus !== "In-progress"
+                                                        ? "bg-gray-400 cursor-not-allowed"
+                                                        : "bg-[#6E3FF3] cursor-pointer"
+                                                        }`}>Ready to upload
+                                                </button>
+                                            </div>
+
+                                        </section>
+                                    )}
+                                />
+                            )}
                         </div>
                     </div>
                     :

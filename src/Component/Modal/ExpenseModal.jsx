@@ -156,14 +156,14 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
                             <div className="flex items-center">
                                 <label htmlFor="expenseName" className="font-medium">Expense Name:</label>
                             </div>
-                            <div>
+                            <div className='border rounded-md border-gray-300'>
                                 <input
                                     type="text"
                                     id="expenseName"
                                     name="expenseName"
                                     value={formData.expenseName}
                                     onChange={handleChange}
-                                    className="w-full p-2 border border-gray-300 rounded-md outline-none"
+                                    className="w-full p-2 rounded-md outline-none"
                                     placeholder="Enter expense name"
                                     required
                                 />
@@ -173,7 +173,7 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
                             <div className="flex items-center">
                                 <label htmlFor="expenseCategory" className="font-medium">Expense Category:</label>
                             </div>
-                            <div>
+                            <div className='border rounded-md border-gray-300'>
                                 <select
                                     id="expenseCategory"
                                     name="expenseCategory"
@@ -206,7 +206,7 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
                             <div className="flex items-center">
                                 <label htmlFor="expenseAmount" className="font-medium">Expense Amount:</label>
                             </div>
-                            <div>
+                            <div className='border rounded-md border-gray-300'>
                                 <input
                                     type="number"
                                     id="expenseAmount"
@@ -224,7 +224,7 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
                             <div className="flex items-center">
                                 <label htmlFor="expenseStatus" className="font-medium">Expense Status:</label>
                             </div>
-                            <div>
+                            <div className='border rounded-md border-gray-300'>
                                 <select
                                     id="expenseStatus"
                                     name="expenseStatus"
@@ -244,7 +244,7 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
                             <div className="flex items-center">
                                 <label htmlFor="expenseNote" className="font-medium">Expense Note:</label>
                             </div>
-                            <div>
+                            <div className='border rounded-md border-gray-300'>
                                 <textarea
                                     id="expenseNote"
                                     name="expenseNote"

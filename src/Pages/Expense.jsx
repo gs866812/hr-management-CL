@@ -22,6 +22,9 @@ const Expense = () => {
     const [expenseItem, setExpenseItem] = useState([]); // State to store categories
     const [editId, setEditId] = useState(''); // State to store categories
 
+    const [expenseCount, setExpenseCount] = useState(0); // State to store
+    const [itemsPerPage, setItemsPerPage] = useState(20);
+
 
 
     const [formData, setFormData] = useState({
@@ -80,22 +83,22 @@ const Expense = () => {
         e.preventDefault();
         const newAmount = parseFloat(formData.expenseAmount);
         // 1. Prepare the data:
-        const dataToUpdate = { ...formData, userName:userName, expenseAmount: newAmount }; // Create a copy  
-        console.log(dataToUpdate);   
+        const dataToUpdate = { ...formData, userName: userName, expenseAmount: newAmount }; // Create a copy  
+        console.log(dataToUpdate);
         try {
-            
+
             const response = await axiosSecure.put(`/editExpense/${editId}`, dataToUpdate); // Or your API endpoint
 
-            if (response.data.message == 'Expense updated successfully') { 
+            if (response.data.message == 'Expense updated successfully') {
                 dispatch(setRefetch(!refetch));
                 const modal = document.querySelector(`#edit-expense-modal`);
                 modal.close();
-                toast.success(response.data.message);                
-            }else if(response.data.message == 'No changes found'){
-                toast.warn(response.data.message); 
-            }else
+                toast.success(response.data.message);
+            } else if (response.data.message == 'No changes found') {
                 toast.warn(response.data.message);
-             
+            } else
+                toast.warn(response.data.message);
+
         } catch (error) {
             toast.error("Error updating expense", error.message);
         }
@@ -107,13 +110,78 @@ const Expense = () => {
             setFormData({ ...expenseItem, expenseDate: expenseDate });
         }
     };
+    // *************************pagination****************************************************************************
+    const totalItem = expenseCount;
+    const numberOfPages = Math.ceil(totalItem / itemsPerPage);
+
+    // ----------------------------------------------------------------
+
+    const renderPageNumbers = () => {
+        const pageNumbers = [];
+        const maxPagesToShow = 5;
+        const halfMaxPagesToShow = Math.floor(maxPagesToShow / 2);
+        const totalPages = numberOfPages;
+
+        if (totalPages <= maxPagesToShow) {
+            for (let i = 1; i <= totalPages; i++) {
+                pageNumbers.push(i);
+            }
+        } else {
+            if (currentPage <= halfMaxPagesToShow) {
+                for (let i = 1; i <= maxPagesToShow; i++) {
+                    pageNumbers.push(i);
+                }
+                pageNumbers.push("...", totalPages);
+            } else if (currentPage > totalPages - halfMaxPagesToShow) {
+                pageNumbers.push(1, "...");
+                for (let i = totalPages - maxPagesToShow + 1; i <= totalPages; i++) {
+                    pageNumbers.push(i);
+                }
+            } else {
+                pageNumbers.push(1, "...");
+                for (
+                    let i = currentPage - halfMaxPagesToShow;
+                    i <= currentPage + halfMaxPagesToShow;
+                    i++
+                ) {
+                    pageNumbers.push(i);
+                }
+                pageNumbers.push("...", totalPages);
+            }
+        }
+
+        return pageNumbers;
+    };
+    // ----------------------------------------------------------------
+    const handleItemsPerPage = (e) => {
+        const val = parseInt(e.target.value);
+        setItemsPerPage(val);
+        setCurrentPage(1);
+    };
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
+
+    const handleNextPage = () => {
+        if (currentPage < numberOfPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    };
+
+    const handlePageClick = (page) => {
+        setCurrentPage(page);
+    };
+    // ----------------------------------------------------------------
     // ***************************************************************************************************************
 
 
     return (
         <div>
             {/******************************************************************************************************/}
-            <div>
+            <div className='mt-3'>
                 <div className='flex items-center justify-between'>
                     <h2 className='text-2xl'>Recent expense list:</h2>
                     <div className="flex gap-2">
@@ -157,7 +225,7 @@ const Expense = () => {
                                         <tr key={index}>
                                             <td>{moment(expenseList.expenseDate).format("DD.MM.YYYY")}</td>
                                             <td>{expenseList.expenseName}</td>
-                                            <td>{parseFloat(expenseList.expenseAmount).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                                            <td>{parseFloat(expenseList.expenseAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                             <td>{expenseList.expenseCategory}</td>
                                             <td>{expenseList.expenseStatus}</td>
                                             <td>{expenseList.expenseNote}</td>
@@ -189,36 +257,36 @@ const Expense = () => {
                             <button className="btn btn-sm btn-circle btn-ghost absolute right-0 top-0">✕</button>
                         </form>
                         <h3 className="font-bold text-lg">Edit Expense</h3>
-                        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto mt-5">
+                        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto mt-5 custom-border rounded p-5">
                             <div className="grid grid-cols-2 gap-1">
                                 {/* Expense Name */}
                                 <div className="flex items-center">
                                     <label htmlFor="expenseName" className="font-medium">Date:</label>
                                 </div>
-                                <div>
+                                <div className='border border-[#e2e8f0] rounded-md'>
                                     <label>
                                         <DatePicker
-                                        dateFormat="dd.MM.yyyy"
+                                            dateFormat="dd.MM.yyyy"
                                             selected={formData.expenseDate} // Pass the Date object
                                             onChange={handleDateChange}        // Handle Date object
                                             placeholderText="Select date"
                                             maxDate={new Date}
                                             required
-                                            className="py-1 px-2 rounded-md outline-none border"
+                                            className="py-1 px-2 rounded-md !border-none"
                                         />
                                     </label>
                                 </div>
                                 <div className="flex items-center">
                                     <label htmlFor="expenseName" className="font-medium">Expense Name:</label>
                                 </div>
-                                <div>
+                                <div className=''>
                                     <input
                                         type="text"
                                         id="expenseName"
                                         name="expenseName"
                                         defaultValue={formData?.expenseName}
                                         onChange={handleChange}
-                                        className="w-full p-2 border border-gray-300 rounded-md outline-none"
+                                        className="w-full p-1 outline-1 rounded-md custom-border"
                                         required
                                     />
                                 </div>
@@ -233,7 +301,7 @@ const Expense = () => {
                                         name="expenseCategory"
                                         value={formData.expenseCategory}
                                         onChange={handleChange}
-                                        className="w-full p-2 border border-gray-300 rounded-md"
+                                        className="w-full p-1 border border-gray-300 rounded-md custom-border"
                                         required
                                     >
                                         <option value="">Select category</option>
@@ -257,7 +325,7 @@ const Expense = () => {
                                         name="expenseAmount"
                                         value={formData.expenseAmount}
                                         onChange={handleChange}
-                                        className="w-full p-2 border border-gray-300 rounded-md"
+                                        className="w-full p-1 border border-gray-300 rounded-md custom-border"
                                         required
                                     />
                                 </div>
@@ -272,7 +340,7 @@ const Expense = () => {
                                         name="expenseStatus"
                                         value={formData.expenseStatus}
                                         onChange={handleChange}
-                                        className="w-full p-2 border border-gray-300 rounded-md"
+                                        className="w-full p-1 border border-gray-300 rounded-md custom-border"
                                         required
                                     >
                                         <option value="">Select status</option>
@@ -292,7 +360,7 @@ const Expense = () => {
                                         name="expenseNote"
                                         value={formData.expenseNote}
                                         onChange={handleChange}
-                                        className="w-full p-2 border border-gray-300 rounded-md"
+                                        className="w-full p-1 rounded-md custom-border"
                                         placeholder="Add a note (optional)"
                                         rows="2"
                                     />
@@ -319,8 +387,50 @@ const Expense = () => {
                     </div>
                 </dialog>
             </div>
+            {/*********************************pagination***********************************************************/}
+            {expenseCount > 10 && (
+                <div className="my-8 flex justify-center gap-1">
+                    <button
+                        onClick={handlePrevPage}
+                        className="py-2 px-3 bg-green-500 text-white rounded-md hover:bg-gray-600"
+                        disabled={currentPage === 1}
+                    >
+                        Prev
+                    </button>
+                    {renderPageNumbers().map((page, index) => (
+                        <button
+                            key={index}
+                            onClick={() => typeof page === "number" && handlePageClick(page)}
+                            className={`py-2 px-5 bg-green-500 text-white rounded-md hover:bg-gray-600 ${currentPage === page ? "!bg-gray-600" : ""
+                                }`}
+                            disabled={typeof page !== "number"}
+                        >
+                            {page}
+                        </button>
+                    ))}
+                    <button
+                        onClick={handleNextPage}
+                        className="py-2 px-3 bg-green-500 text-white rounded-md hover:bg-gray-600"
+                        disabled={currentPage === numberOfPages}
+                    >
+                        Next
+                    </button>
+
+                    <select
+                        value={itemsPerPage}
+                        onChange={handleItemsPerPage}
+                        name=""
+                        id=""
+                        className="py-2 px-1 rounded-md bg-green-500 text-white outline-none"
+                    >
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+            )}
             {/******************************************************************************************************/}
-            
+
         </div>
     );
 };

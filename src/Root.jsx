@@ -9,14 +9,14 @@ const Root = () => {
     return (
         <div className="h-screen flex flex-col">
             {/* Fixed Header */}
-            <header className="sticky top-0 z-50 w-full bg-white shadow">
+            <header className="sticky top-0 z-50 w-full bg-white shadow-sm">
                 <Header />
             </header>
 
             {/* Main Content */}
             <div className="flex flex-grow">
                 {/* Scrollable Sidebar */}
-                <div className="w-[20%] h-[calc(100vh-64px)] overflow-y-auto bg-amber-500 px-4 custom-scrollbar">
+                <div className="w-[20%] h-[calc(100vh-64px)] overflow-y-auto px-4 custom-scrollbar shadow-right shadow-2xl"> 
                     <Navbar />
                 </div>
 

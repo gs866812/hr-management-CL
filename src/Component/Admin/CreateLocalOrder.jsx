@@ -21,8 +21,9 @@ const CreateLocalOrder = () => {
     const [orderQuantity, setOrderQuantity] = useState(0);
     const [imagePrice, setImagePrice] = useState(0);
 
+
     const [services, setServices] = useState([]);
-    const [dateTime, setDateTime] = useState(null);
+    const [dateTime, setDateTime] = useState(moment().format('DD-MMM-YYYY HH:mm:ss'));
     const [returnFile, setReturnFile] = useState('Original Format and BG');
     const [colorChangeInstruction, setColorChangeInstruction] = useState('');
     const [imageResizeInstruction, setImageResizeInstruction] = useState('');
@@ -173,13 +174,7 @@ const CreateLocalOrder = () => {
         const newDeadline = gmt6Deadline._i;
         setDateTime(moment().format('DD-MMM-YYYY HH:mm:ss'));
 
-
         const updateOrder = { ...formData, date:dateTime, needServices: services, colorCode: colorChangeInstruction, imageResize: imageResizeInstruction, returnFormat: returnFile, orderQTY: orderQuantity, orderPrice: totalPrice, userName: userName, orderDeadLine: newDeadline, orderStatus: "Pending" };
-
-        
-
-
-
 
         const postLocalOrder = async () => {
             try {
@@ -217,7 +212,7 @@ const CreateLocalOrder = () => {
                                 <div>
                                     <label className="font-medium">Client ID:</label>
                                 </div>
-                                <div>
+                                <div className="border border-gray-300 rounded-md">
                                     <select
                                         id="clientID"
                                         name="clientID"
@@ -242,7 +237,7 @@ const CreateLocalOrder = () => {
                                     <label className="font-medium">Services you need:</label>
                                 </div>
                                 <div>
-                                    <select className="w-full p-1 border border-gray-300 rounded-md outline-none" onChange={handleServiceChange}>
+                                    <select className="w-full p-1 !border !border-gray-300 rounded-md outline-none" onChange={handleServiceChange}>
                                         <option value="Select services">Select services</option>
                                         <option value="Clipping path">Clipping path</option>
                                         <option value="Multi clipping path">Multi clipping path</option>
@@ -269,7 +264,7 @@ const CreateLocalOrder = () => {
                                         <option value="Lighting adjustment">Lighting adjustment</option>
                                         <option value="White balance">White balance</option>
                                     </select>
-                                    <section className="mt-2 space-y-1 flex flex-wrap">
+                                    <section className="mt-2 space-y-1 flex flex-wrap ">
                                         {
                                             services.length > 0 ?
                                                 services.map((service, index) => (
@@ -288,7 +283,7 @@ const CreateLocalOrder = () => {
                                 <div>
                                     <label className="font-medium">Order/Folder Name:</label>
                                 </div>
-                                <div>
+                                <div className="!border !border-gray-300 rounded-md">
 
                                     <input
                                         type="text"
@@ -296,7 +291,7 @@ const CreateLocalOrder = () => {
                                         name="orderName"
                                         // value={formData?.orderName}
                                         onChange={handleChange}
-                                        className="w-full p-1 border border-gray-300 rounded-md outline-none"
+                                        className="w-full p-1 border border-gray-300 rounded-md outline-none "
                                         placeholder="Enter order name"
                                         required
                                     />
@@ -307,7 +302,7 @@ const CreateLocalOrder = () => {
                                 <div>
                                     <label className="font-medium">Instructions:</label>
                                 </div>
-                                <div>
+                                <div className="!border !border-gray-300 rounded-md">
                                     <textarea
                                         id="orderInstructions"
                                         name="orderInstructions"
@@ -328,7 +323,7 @@ const CreateLocalOrder = () => {
                                 <div>
                                     <label className="font-medium">Order QTY:</label>
                                 </div>
-                                <div>
+                                <div className="!border !border-gray-300 rounded-md">
                                     <input
                                         type="text"
                                         id="orderQTY"
@@ -345,7 +340,7 @@ const CreateLocalOrder = () => {
                                 <div>
                                     <label className="font-medium">Price/image ($):</label>
                                 </div>
-                                <div>
+                                <div className="!border !border-gray-300 rounded-md">
                                     <input
                                         type="text"
                                         id="orderPrice"
@@ -362,7 +357,7 @@ const CreateLocalOrder = () => {
                                 <div>
                                     <label className="font-medium">Total price ($):</label>
                                 </div>
-                                <div>
+                                <div className="!border !border-gray-300 rounded-md">
                                     <input
                                         type="text"
                                         id="totalPrice"
@@ -380,7 +375,7 @@ const CreateLocalOrder = () => {
                                     <label className="font-medium">Returned file format:</label>
                                 </div>
                                 <div>
-                                    <select className="w-full p-1 border border-gray-300 rounded-md outline-none" value={returnFile} onChange={(e) => setReturnFile(e.target.value)}>
+                                    <select className="w-full p-1 !border !border-gray-300 rounded-md outline-none" value={returnFile} onChange={(e) => setReturnFile(e.target.value)}>
                                         <option value="Select return file format">Select return file format</option>
                                         <option value="Original Format and BG">Original Format and BG</option>
                                         <option value="JPG - White BG">JPG - White BG</option>

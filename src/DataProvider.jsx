@@ -18,8 +18,8 @@ const DataProvider = ({ children }) => {
                 case import.meta.env.VITE_SARWAR:
                     setUserName('g_sarwar');
                     break;
-                case import.meta.env.VITE_ASAD:
-                    setUserName('ASAD4BOSS');
+                case import.meta.env.VITE_MUKUL:
+                    setUserName('HR_ADMIN');
                     break;
                 case import.meta.env.VITE_DULU:
                     setUserName('MASUM.KAMAL');
@@ -38,7 +38,7 @@ const DataProvider = ({ children }) => {
         if (token) {
             try {
                 const response = await axios.post(
-                    'https://webbriks.backendsafe.com/validate-token',
+                    'http://localhost:5000/validate-token',
                     null,
                     {
                         headers: { Authorization: `Bearer ${token}` },

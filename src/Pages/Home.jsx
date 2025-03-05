@@ -5,6 +5,7 @@ import ClientDashboard from '../Component/Client/ClientDashboard';
 import useAxiosProtect from '../utils/useAxiosProtect';
 import { toast } from 'react-toastify';
 import { useDispatch, useSelector } from 'react-redux';
+import HrDashboard from '../Component/HrAdmin/HrDashboard';
 
 
 
@@ -47,7 +48,9 @@ const Home = () => {
             {
                 user && currentUser?.role === 'admin' ?
                     <AdminDashboard /> :
-                    user && currentUser?.role === 'accountant' ?
+                    user && currentUser?.role === 'hr_admin' ?
+                        <HrDashboard/> :
+                    user && currentUser?.role === 'client' ?
                         <ClientDashboard /> :
                         <div className="flex justify-center items-center lg:p-20 mt-5 lg:mt-0">
                             <span className="loading loading-ring loading-lg flex justify-center items-center"></span>
