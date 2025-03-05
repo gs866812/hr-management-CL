@@ -86,52 +86,7 @@ const Navbar = () => {
                 <RiCurrencyLine />
                 <span>My Expense</span>
             </Link>
-            {/* ********************************************************* order section*/}
-
-            <section
-                className={`${isOpenOrder ? 'bg-gray-100' : ''
-                    } rounded-md mb-[1px]`}
-            >
-                <div
-                    className={`flex items-center justify-between cursor-pointer p-2 w-full gap-2 hover:bg-gray-100 mb-[1px] rounded-md ${isOpenOrder ? 'hover:bg-gray-100' : ''
-                        }`}
-                    onClick={toggleDropdownOrder}
-                >
-                    <div className="flex items-center gap-2">
-                        {/* <FcElectricity className="text-xl" /> */}
-                        <span>Order</span>
-                    </div>
-                    <span>{isOpenOrder ? <FaAngleUp /> : <FaAngleDown />}</span>
-                </div>
-
-                {isOpenOrder && (
-                    <div className="rounded-md p-2 bg-gray-100">
-                        {/* ************************************************* */}
-                        <Link
-                            to="/recentOrders"
-                            className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/recentOrders'
-                                    ? 'bg-[#6E3FF3] text-white'
-                                    : 'hover:bg-[#6E3FF3] hover:text-white'
-                                }`}
-                        >
-                            <CiInboxIn />
-                            <span>Recent Orders</span>
-                        </Link>
-                        {/* ************************************************* */}
-                        <Link
-                            to="/ordersDeadline"
-                            className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/ordersDeadline'
-                                    ? 'bg-[#6E3FF3] text-white'
-                                    : 'hover:bg-[#6E3FF3] hover:text-white'
-                                }`}
-                        >
-                            <FaClockRotateLeft />
-                            <span>Orders Deadline</span>
-                        </Link>
-                    </div>
-                )}
-            </section>
-            {/*************************************************************/}
+            
 
             {/* ********************************************************* order management section*/}
 

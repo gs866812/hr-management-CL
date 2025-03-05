@@ -3,6 +3,7 @@ import { CalendarDays } from 'lucide-react';
 import { useState } from 'react';
 import OrderStats from '../Component/orderManagement/OrderStats';
 import OrderTable from '../Component/orderManagement/OrderTable';
+import { Link } from 'react-router-dom';
 
 export default function OrderManagement() {
     const [selectedDate, setSelectedDate] = useState(Date.now);
@@ -16,18 +17,9 @@ export default function OrderManagement() {
                             Check Your all Order activity!
                         </h3>
 
-                        <div className="flex items-center gap-3 px-4 py-2 bg-white border-2 border-[#6E3FF3] rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                            <CalendarDays className="text-[#6E3FF3] text-lg" />
-                            <DatePicker
-                                selected={selectedDate}
-                                onChange={(date) => setSelectedDate(date)}
-                                dateFormat="dd MMMM, yyyy"
-                                placeholderText="Select date"
-                                maxDate={new Date()}
-                                required
-                                className="outline-none border-none text-[#6E3FF3] text-base font-medium bg-transparent cursor-pointer focus:ring-0 focus:outline-none"
-                            />
-                        </div>
+                        <Link to="/createLocalOrder" className="flex items-center gap-3 px-4 py-2 border-2 border-[#6E3FF3] rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 bg-[#6E3FF3] text-white">
+                            Assign an order
+                        </Link>
                     </div>
                 </div>
 

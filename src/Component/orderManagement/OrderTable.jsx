@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
     Search,
     ChevronDown,
@@ -7,38 +7,33 @@ import {
     Edit2,
     SlidersHorizontal,
 } from 'lucide-react';
-import moment from 'moment';
 
-const orderData = [
-    {
-        id: 1,
-        date: '2024-02-10',
-        expense: 'Office Supplies',
-        amount: 299.99,
-        category: 'Office',
-        status: 'Approved',
-        note: 'Quarterly supplies purchase',
-        user: 'John Doe',
-    },
-    {
-        id: 2,
-        date: '2024-02-09',
-        expense: 'Client Lunch',
-        amount: 125.5,
-        category: 'Meals',
-        status: 'Pending',
-        note: 'Business lunch with ABC Corp',
-        user: 'Jane Smith',
-    },
-];
+import moment from 'moment';
+import useAxiosProtect from '../../utils/useAxiosProtect';
+import { ContextData } from '../../DataProvider';
+import { useSelector } from 'react-redux';
+import { IoEyeOutline } from 'react-icons/io5';
+import Countdown from 'react-countdown';
+
+
 
 const OrderTable = () => {
+    const axiosProtect = useAxiosProtect();
+
+    const { user, userName } = useContext(ContextData);
+    const refetch = useSelector((state) => state.refetch.refetch);
+
+
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('date');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
     const [isOpen, setIsOpen] = useState(false);
+
+
     const [sortValue, setSortValue] = useState('Date');
+    const [localOrder, setLocalOrder] = useState([]);
+
 
     const sortValues = [
         'Date',
@@ -56,6 +51,32 @@ const OrderTable = () => {
         Pending: 'bg-yellow-100 text-yellow-700',
         Rejected: 'bg-red-100 text-red-700',
     };
+
+
+    // ****************************************************************************************
+    useEffect(() => {
+        const fetchLocalOrder = async () => {
+            try {
+                const response = await axiosProtect.get('/getLocalOrder', {
+                    params: {
+                        userEmail: user?.email,
+                    },
+                });
+                setLocalOrder(response.data);
+            } catch (error) {
+                toast.error('Error fetching data:', error.message);
+            }
+        };
+        fetchLocalOrder();
+    }, [refetch]);
+
+
+    // ****************************************************************************************
+    const handleViewOrder = (id) => {
+        // navigate(`${id}`);
+        window.open(`/recentOrders/${id}`, "_blank");
+    };
+    // ****************************************************************************************
 
     return (
         <div className="w-full bg-white rounded-xl shadow-lg border border-gray-100 p-6">
@@ -110,79 +131,64 @@ const OrderTable = () => {
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
-                <table className="w-full">
+            <div className="overflow-x-auto mt-5">
+                <table className="table table-zebra">
+                    {/* head */}
                     <thead>
-                        <tr className="bg-gray-50">
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                                Date
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                                Expense
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                                Amount
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                                Category
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                                Status
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                                Note
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                                User
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                                Action
-                            </th>
+                        <tr>
+                            <th>Client ID</th>
+                            <th>Order Name</th>
+                            <th>Order QTY</th>
+                            <th>Order Price</th>
+                            <th>Deadline</th>
+                            <th>Status</th>
+                            <th>User</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {orderData.map((expense) => (
-                            <tr key={expense.id} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 text-sm text-gray-600">
-                                    {moment(expense.expenseDate).format(
-                                        'DD MMMM, YYYY'
-                                    )}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900 font-medium">
-                                    {expense.expense}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900">
-                                    ${expense.amount.toFixed(2)}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
-                                        {expense.category}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-3">
-                                    <span
-                                        className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                            statusStyles[expense.status]
-                                        }`}
-                                    >
-                                        {expense.status}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600">
-                                    {expense.note}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600">
-                                    {expense.user}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <div className="flex items-center justify-center">
-                                        <button className="p-1 hover:bg-gray-100 rounded">
-                                            <Edit2 className="size-4 text-gray-600" />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
+                    <tbody>
+                        {
+                            localOrder.length > 0 ? (
+                                localOrder.map((order, index) => {
+                                    return (
+                                        <tr key={index}>
+                                            <td>{order.clientID}</td>
+                                            <td>{order.orderName}</td>
+                                            <td>{order.orderQTY}</td>
+                                            <td>{order.orderPrice}</td>
+                                            <td>
+                                                {order?.orderDeadLine && (
+                                                    <Countdown
+                                                        date={moment(order.orderDeadLine).valueOf()} // Convert to timestamp
+                                                        renderer={({ days, hours, minutes, seconds }) => (
+                                                            <span>
+                                                                {String(days).padStart(2, "0")} days{" "}
+                                                                {String(hours).padStart(2, "0")} h{" "}
+                                                                {String(minutes).padStart(2, "0")} min{" "}
+                                                                {String(seconds).padStart(2, "0")} sec
+                                                            </span>
+                                                        )}
+                                                    />
+                                                )}
+                                            </td>
+
+
+                                            <td>{order.orderStatus}</td>
+                                            <td>{order.userName}</td>
+                                            <td className='w-[5%]'>
+                                                <div className='flex justify-center'>
+                                                    <IoEyeOutline className='text-xl cursor-pointer' onClick={() => handleViewOrder(order?._id)} />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            ) : (
+                                <tr>
+                                    <td colSpan="8" className="text-center">No order found</td>
+                                </tr>
+                            )
+                        }
                     </tbody>
                 </table>
             </div>
@@ -198,11 +204,10 @@ const OrderTable = () => {
                     {[1, 2, 3, 4, 5].map((page) => (
                         <button
                             key={page}
-                            className={`px-3 py-1 rounded-lg ${
-                                currentPage === page
-                                    ? 'bg-[#6E3FF3] text-white'
-                                    : 'text-gray-600 hover:bg-gray-50'
-                            }`}
+                            className={`px-3 py-1 rounded-lg ${currentPage === page
+                                ? 'bg-[#6E3FF3] text-white'
+                                : 'text-gray-600 hover:bg-gray-50'
+                                }`}
                             onClick={() => setCurrentPage(page)}
                         >
                             {page}
