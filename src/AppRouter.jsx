@@ -6,7 +6,6 @@ import Home from './Pages/Home';
 import Login from './Component/Login/Login';
 import RecentOrders from './Component/Admin/RecentOrders';
 import OrdersDeadline from './Component/Admin/OrdersDeadline';
-import Expense from './Pages/Expense';
 import Settings from './Pages/Settings';
 import CreateLocalOrder from './Component/Admin/CreateLocalOrder';
 import MyExpense from './Pages/MyExpense';
@@ -30,8 +29,7 @@ export const router = createBrowserRouter([
         errorElement: <NotFound />,
         children: [
             { path: '/', element: <Home /> },
-            { path: '/expense', element: <Expense /> },
-            { path: '/my-expense', element: <MyExpense /> },
+            { path: '/expense', element: <MyExpense /> },
             { path: '/recentOrders', element: <RecentOrders /> },
             { path: '/recentOrders/:orderId', element: <ViewLocalOrder /> },
             { path: '/createLocalOrder', element: <CreateLocalOrder /> },

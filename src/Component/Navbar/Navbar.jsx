@@ -76,16 +76,7 @@ const Navbar = () => {
                 <RiCurrencyLine />
                 <span>Expense</span>
             </Link>
-            <Link
-                to="/my-expense"
-                className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/my-expense'
-                        ? 'bg-[#6E3FF3] text-white'
-                        : 'hover:bg-[#6E3FF3] hover:text-white'
-                    }`}
-            >
-                <RiCurrencyLine />
-                <span>My Expense</span>
-            </Link>
+
             
 
             {/* ********************************************************* order management section*/}
@@ -101,7 +92,7 @@ const Navbar = () => {
                 >
                     <div className="flex items-center gap-2">
                         {/* <FcElectricity className="text-xl" /> */}
-                        <span>Order Management</span>
+                        <span>Orders</span>
                     </div>
                     <span>
                         {isOpenOrderManagement ? (
@@ -126,50 +117,7 @@ const Navbar = () => {
                             <span>Order Management</span>
                         </Link>
                         {/* ************************************************* */}
-                        <Link
-                            to="/order-management/completed-orders"
-                            className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname ===
-                                    '/order-management/completed-orders'
-                                    ? 'bg-[#6E3FF3] text-white'
-                                    : 'hover:bg-[#6E3FF3] hover:text-white'
-                                }`}
-                        >
-                            <FaClockRotateLeft />
-                            <span>Completed Order</span>
-                        </Link>
-                        <Link
-                            to="/order-management/active-orders"
-                            className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname ===
-                                    '/order-management/active-orders'
-                                    ? 'bg-[#6E3FF3] text-white'
-                                    : 'hover:bg-[#6E3FF3] hover:text-white'
-                                }`}
-                        >
-                            <FaClockRotateLeft />
-                            <span>Active Order</span>
-                        </Link>
-                        <Link
-                            to="/order-management/canceled-orders"
-                            className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname ===
-                                    '/order-management/canceled-orders'
-                                    ? 'bg-[#6E3FF3] text-white'
-                                    : 'hover:bg-[#6E3FF3] hover:text-white'
-                                }`}
-                        >
-                            <FaClockRotateLeft />
-                            <span>Cancel Order</span>
-                        </Link>
-                        <Link
-                            to="/order-management/pending-orders"
-                            className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname ===
-                                    '/order-management/pending-orders'
-                                    ? 'bg-[#6E3FF3] text-white'
-                                    : 'hover:bg-[#6E3FF3] hover:text-white'
-                                }`}
-                        >
-                            <FaClockRotateLeft />
-                            <span>Pending Order</span>
-                        </Link>
+                                               
                     </div>
                 )}
             </section>

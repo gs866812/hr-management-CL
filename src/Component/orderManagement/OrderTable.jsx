@@ -134,7 +134,7 @@ const OrderTable = () => {
             <div className="overflow-x-auto mt-5">
                 <table className="table table-zebra">
                     {/* head */}
-                    <thead>
+                    <thead className='bg-[#6E3FF3] text-white'>
                         <tr>
                             <th>Client ID</th>
                             <th>Order Name</th>
@@ -177,7 +177,7 @@ const OrderTable = () => {
                                             <td>{order.userName}</td>
                                             <td className='w-[5%]'>
                                                 <div className='flex justify-center'>
-                                                    <IoEyeOutline className='text-xl cursor-pointer' onClick={() => handleViewOrder(order?._id)} />
+                                                    <IoEyeOutline className='text-xl cursor-pointer hover:text-[#6E3FF3]' onClick={() => handleViewOrder(order?._id)} />
                                                 </div>
                                             </td>
                                         </tr>

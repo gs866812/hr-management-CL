@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
     Search,
     ChevronDown,
@@ -8,41 +8,191 @@ import {
     SlidersHorizontal,
 } from 'lucide-react';
 import moment from 'moment';
+import ExpenseModal from '../Modal/ExpenseModal';
+import { FaRegEdit } from 'react-icons/fa';
+import DatePicker from 'react-datepicker';
+import { ContextData } from '../../DataProvider';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectPresentUser } from '../../redux/userSlice';
+import { selectUserName } from '../../redux/userNameSlice';
+import { toast } from 'react-toastify';
+import useAxiosSecure from '../../utils/useAxiosSecure';
+import { setRefetch } from '../../redux/refetchSlice';
 
-const expenseData = [
-    {
-        id: 1,
-        date: '2024-02-10',
-        expense: 'Office Supplies',
-        amount: 299.99,
-        category: 'Office',
-        status: 'Approved',
-        note: 'Quarterly supplies purchase',
-        user: 'John Doe',
-    },
-    {
-        id: 2,
-        date: '2024-02-09',
-        expense: 'Client Lunch',
-        amount: 125.5,
-        category: 'Meals',
-        status: 'Pending',
-        note: 'Business lunch with ABC Corp',
-        user: 'Jane Smith',
-    },
-];
+
 
 const ExpenseTable = () => {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [sortBy, setSortBy] = useState('date');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(10);
 
-    const statusStyles = {
-        Approved: 'bg-green-100 text-green-700',
-        Pending: 'bg-yellow-100 text-yellow-700',
-        Rejected: 'bg-red-100 text-red-700',
+    const { categories, userName, currentPage, setCurrentPage, expenseItemsPerPage, setExpenseItemsPerPage } = useContext(ContextData);
+    const axiosSecure = useAxiosSecure();
+
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchExpense, setSearchExpense] = useState('');
+    const [sortBy, setSortBy] = useState('date');
+
+
+
+
+    const [expenseList, setExpenseList] = useState([]); // State to store categories
+    const [expenseItem, setExpenseItem] = useState([]); // State to store categories
+    const [editId, setEditId] = useState(''); // State to store categories
+
+    const [expenseCount, setExpenseCount] = useState(0); // State to store
+
+
+
+    const [formData, setFormData] = useState({
+        userName: "",
+        expenseDate: new Date(),
+        expenseName: '',
+        expenseCategory: '',
+        expenseAmount: '',
+        expenseStatus: '',
+        expenseNote: '',
+    });
+
+    const dispatch = useDispatch();
+    const refetch = useSelector((state) => state.refetch.refetch);
+
+    const presentUser = useSelector(selectPresentUser);
+    const currentUserName = useSelector(selectUserName);
+
+    // ********************************************************************************************************************
+    useEffect(() => {
+        if (expenseList && editId) {
+            const foundExpense = expenseList.find(ex => ex._id === editId);
+            setExpenseItem(foundExpense);
+
+            if (foundExpense) {
+                // Convert date string to Date object if needed
+                const expenseDate = foundExpense.expenseDate ? new Date(foundExpense.expenseDate) : new Date();
+                setFormData({ ...foundExpense, expenseDate: expenseDate });
+            } else {
+                console.warn("Expense not found for ID:", editId); // Corrected ID variable
+            }
+        }
+    }, [editId, expenseList]);
+    // ********************************************************************************************************************
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
+
+
+    const handleDateChange = (date) => {
+        setFormData({ ...formData, expenseDate: date }); // Update with Date object
+    };
+    // ********************************************************************************************************************
+    const handleEditExpense = (id) => {
+        document.getElementById('edit-expense-modal').showModal();
+        setEditId(id);
+        formData.userName = presentUser?.userName;
+
+    };
+    // ********************************************************************************************************************
+    const getExpenseData = (expenses) => {
+        setExpenseList(expenses?.expense);
+        setExpenseCount(expenses?.count);
+    };
+    // ********************************************************************************************************************
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const newAmount = parseFloat(formData.expenseAmount);
+        // 1. Prepare the data:
+        const dataToUpdate = { ...formData, userName: userName, expenseAmount: newAmount }; // Create a copy  
+        console.log(dataToUpdate);
+        try {
+
+            const response = await axiosSecure.put(`/editExpense/${editId}`, dataToUpdate); // Or your API endpoint
+
+            if (response.data.message == 'Expense updated successfully') {
+                dispatch(setRefetch(!refetch));
+                const modal = document.querySelector(`#edit-expense-modal`);
+                modal.close();
+                toast.success(response.data.message);
+            } else if (response.data.message == 'No changes found') {
+                toast.warn(response.data.message);
+            } else
+                toast.warn(response.data.message);
+
+        } catch (error) {
+            toast.error("Error updating expense", error.message);
+        }
+    };
+    // ***************************************************************************************************************
+    const handleReset = () => {
+        if (expenseItem) {
+            const expenseDate = expenseItem.expenseDate ? new Date(expenseItem.expenseDate) : new Date();
+            setFormData({ ...expenseItem, expenseDate: expenseDate });
+        }
+    };
+    // ********************************************************************************************************************
+    // *************************pagination****************************************************************************
+    const totalItem = expenseCount;
+    const numberOfPages = Math.ceil(totalItem / expenseItemsPerPage);
+
+    // ----------------------------------------------------------------
+
+    const renderPageNumbers = () => {
+        const pageNumbers = [];
+        const maxPagesToShow = 5;
+        const halfMaxPagesToShow = Math.floor(maxPagesToShow / 2);
+        const totalPages = numberOfPages;
+
+        if (totalPages <= maxPagesToShow) {
+            for (let i = 1; i <= totalPages; i++) {
+                pageNumbers.push(i);
+            }
+        } else {
+            if (currentPage <= halfMaxPagesToShow) {
+                for (let i = 1; i <= maxPagesToShow; i++) {
+                    pageNumbers.push(i);
+                }
+                pageNumbers.push("...", totalPages);
+            } else if (currentPage > totalPages - halfMaxPagesToShow) {
+                pageNumbers.push(1, "...");
+                for (let i = totalPages - maxPagesToShow + 1; i <= totalPages; i++) {
+                    pageNumbers.push(i);
+                }
+            } else {
+                pageNumbers.push(1, "...");
+                for (
+                    let i = currentPage - halfMaxPagesToShow;
+                    i <= currentPage + halfMaxPagesToShow;
+                    i++
+                ) {
+                    pageNumbers.push(i);
+                }
+                pageNumbers.push("...", totalPages);
+            }
+        }
+
+        return pageNumbers;
+    };
+    // ----------------------------------------------------------------
+    const handleExpenseItemsPerPage = (e) => {
+        const val = parseInt(e.target.value);
+        setExpenseItemsPerPage(val);
+        setCurrentPage(1);
+    };
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
+
+    const handleNextPage = () => {
+        if (currentPage < numberOfPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    };
+
+    const handlePageClick = (page) => {
+        setCurrentPage(page);
+    };
+    // ----------------------------------------------------------------
+    // ***************************************************************************************************************
+
 
     return (
         <div className="w-full bg-white rounded-xl shadow-lg border border-gray-100 p-6">
@@ -51,8 +201,9 @@ const ExpenseTable = () => {
                     <h2 className="text-xl font-semibold text-gray-800">
                         Expense List
                     </h2>
-                    <button className="px-4 py-2 bg-[#6E3FF3] text-white rounded-lg hover:bg-[#5c35cc] transition-colors">
-                        Add Expense
+
+                    <button className="bg-[#6E3FF3] text-white px-4 rounded-md py-2 cursor-pointer" onClick={() => document.getElementById('add-new-expense-modal').showModal()}>
+                        Add new expense
                     </button>
                 </div>
 
@@ -62,9 +213,9 @@ const ExpenseTable = () => {
                         <input
                             type="text"
                             placeholder="Search expenses..."
-                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6E3FF3] focus:border-transparent"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 !border !border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6E3FF3] focus:border-transparent"
+                            value={searchExpense}
+                            onChange={(e) => setSearchExpense(e.target.value)}
                         />
                     </div>
 
@@ -79,109 +230,243 @@ const ExpenseTable = () => {
                     </div>
                 </div>
             </div>
-
-            <div className="overflow-x-auto">
-                <table className="w-full">
-                    <thead>
-                        <tr className="bg-gray-50">
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                                Date
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                                Expense
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                                Amount
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                                Category
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                                Status
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                                Note
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                                User
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                                Action 
-                            </th>
+            {/* *************************************************************************************** */}
+            <div className="overflow-x-auto mt-5">
+                <table className="table table-zebra">
+                    {/* head */}
+                    <thead className='bg-[#6E3FF3] text-white'>
+                        <tr>
+                            <th>Date</th>
+                            <th>Expense</th>
+                            <th>Amount</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Note</th>
+                            <th>User</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {expenseData.map((expense) => (
-                            <tr key={expense.id} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 text-sm text-gray-600">
-                                    {moment(expense.expenseDate).format(
-                                        'DD MMMM, YYYY'
-                                    )}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900 font-medium">
-                                    {expense.expense}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900">
-                                    ${expense.amount.toFixed(2)}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
-                                        {expense.category}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-3">
-                                    <span
-                                        className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                            statusStyles[expense.status]
-                                        }`}
-                                    >
-                                        {expense.status}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600">
-                                    {expense.note}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600">
-                                    {expense.user}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <div className="flex items-center justify-center">
-                                        <button className="p-1 hover:bg-gray-100 rounded">
-                                            <Edit2 className="size-4 text-gray-600" />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
+                    <tbody>
+                        {
+                            expenseList.length > 0 ? (
+                                expenseList.map((expenseList, index) => {
+                                    return (
+                                        <tr key={index}>
+                                            <td>{moment(expenseList.expenseDate).format("DD.MM.YYYY")}</td>
+                                            <td>{expenseList.expenseName}</td>
+                                            <td>{parseFloat(expenseList.expenseAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                            <td>{expenseList.expenseCategory}</td>
+                                            <td>{expenseList.expenseStatus}</td>
+                                            <td>{expenseList.expenseNote}</td>
+                                            <td>{expenseList.userName}</td>
+                                            <td className='w-[5%]'>
+                                                <div className='flex justify-center'>
+                                                    <FaRegEdit className='cursor-pointer' onClick={() => handleEditExpense(expenseList._id)} />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            ) : (
+                                <tr>
+                                    <td colSpan="8" className="text-center">No record found</td>
+                                </tr>
+                            )
+                        }
                     </tbody>
                 </table>
             </div>
 
-            <div className="flex items-center justify-between mt-6 py-4">
-                <div className="text-sm text-gray-600">
-                    Showing 1-10 of 50 entries
-                </div>
-                <div className="flex items-center gap-2">
-                    <button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50">
-                        <ChevronLeft className="size-4 text-gray-600" />
-                    </button>
-                    {[1, 2, 3, 4, 5].map((page) => (
+            {/******************************************************************************************************/}
+            <ExpenseModal onExpenseData={getExpenseData} searchOption={searchExpense} />
+            {/****************************************Edit modal********************************************************/}
+            <div>
+                <dialog id="edit-expense-modal" className="modal overflow-y-scroll">
+                    <div className="modal-box">
+                        <form method="dialog">
+                            <button className="btn btn-sm btn-circle btn-ghost absolute right-0 top-0">✕</button>
+                        </form>
+                        <h3 className="font-bold text-lg">Edit Expense</h3>
+                        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto mt-5 custom-border rounded p-5">
+                            <div className="grid grid-cols-2 gap-1">
+                                {/* Expense Name */}
+                                <div className="flex items-center">
+                                    <label htmlFor="expenseName" className="font-medium">Date:</label>
+                                </div>
+                                <div className='border border-[#e2e8f0] rounded-md'>
+                                    <label>
+                                        <DatePicker
+                                            dateFormat="dd.MM.yyyy"
+                                            selected={formData.expenseDate} // Pass the Date object
+                                            onChange={handleDateChange}        // Handle Date object
+                                            placeholderText="Select date"
+                                            maxDate={new Date}
+                                            required
+                                            className="py-1 px-2 rounded-md !border-none"
+                                        />
+                                    </label>
+                                </div>
+                                <div className="flex items-center">
+                                    <label htmlFor="expenseName" className="font-medium">Expense Name:</label>
+                                </div>
+                                <div className=''>
+                                    <input
+                                        type="text"
+                                        id="expenseName"
+                                        name="expenseName"
+                                        defaultValue={formData?.expenseName}
+                                        onChange={handleChange}
+                                        className="w-full p-1 outline-1 rounded-md custom-border"
+                                        required
+                                    />
+                                </div>
+
+                                {/* Expense Category */}
+                                <div className="flex items-center">
+                                    <label htmlFor="expenseCategory" className="font-medium">Expense Category:</label>
+                                </div>
+                                <div>
+                                    <select
+                                        id="expenseCategory"
+                                        name="expenseCategory"
+                                        value={formData.expenseCategory}
+                                        onChange={handleChange}
+                                        className="w-full p-1 border border-gray-300 rounded-md custom-border"
+                                        required
+                                    >
+                                        <option value="">Select category</option>
+                                        {categories.map((category) => (
+                                            <option key={category.expenseCategory} value={category.expenseCategory}>
+                                                {category.expenseCategory}
+                                            </option>
+                                        ))}
+                                    </select>
+
+                                </div>
+
+                                {/* Expense Amount */}
+                                <div className="flex items-center">
+                                    <label htmlFor="expenseAmount" className="font-medium">Expense Amount:</label>
+                                </div>
+                                <div>
+                                    <input
+                                        type="number"
+                                        id="expenseAmount"
+                                        name="expenseAmount"
+                                        value={formData.expenseAmount}
+                                        onChange={handleChange}
+                                        className="w-full p-1 border border-gray-300 rounded-md custom-border"
+                                        required
+                                    />
+                                </div>
+
+                                {/* Expense Status */}
+                                <div className="flex items-center">
+                                    <label htmlFor="expenseStatus" className="font-medium">Expense Status:</label>
+                                </div>
+                                <div>
+                                    <select
+                                        id="expenseStatus"
+                                        name="expenseStatus"
+                                        value={formData.expenseStatus}
+                                        onChange={handleChange}
+                                        className="w-full p-1 border border-gray-300 rounded-md custom-border"
+                                        required
+                                    >
+                                        <option value="">Select status</option>
+                                        <option value="Pending">Pending</option>
+                                        <option value="Paid">Paid</option>
+                                        <option value="Partial payment">Partial payment</option>
+                                    </select>
+                                </div>
+
+                                {/* Expense Note */}
+                                <div className="flex items-center">
+                                    <label htmlFor="expenseNote" className="font-medium">Expense Note:</label>
+                                </div>
+                                <div>
+                                    <textarea
+                                        id="expenseNote"
+                                        name="expenseNote"
+                                        value={formData.expenseNote}
+                                        onChange={handleChange}
+                                        className="w-full p-1 rounded-md custom-border"
+                                        placeholder="Add a note (optional)"
+                                        rows="2"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Submit Button */}
+                            <div className="mt-6 flex gap-2">
+
+                                <button onClick={handleReset}
+                                    type="reset"
+                                    className="w-full bg-yellow-500 text-white p-2 rounded-md transition-colors cursor-pointer"
+                                >
+                                    Reset
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="w-full bg-[#6E3FF3] text-white p-2 rounded-md hover:bg-[#6E3FF3] transition-colors cursor-pointer"
+                                >
+                                    Update
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </dialog>
+            </div>
+            {/****************************************Edit modal********************************************************/}
+
+
+
+            <div className="text-center">
+                {/*********************************pagination***********************************************************/}
+                {expenseCount > 10 && (
+                    <div className="mt-5 mb-2 flex justify-center gap-1">
                         <button
-                            key={page}
-                            className={`px-3 py-1 rounded-lg ${
-                                currentPage === page
-                                    ? 'bg-[#6E3FF3] text-white'
-                                    : 'text-gray-600 hover:bg-gray-50'
-                            }`}
-                            onClick={() => setCurrentPage(page)}
+                            onClick={handlePrevPage}
+                            className="py-2 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600"
+                            disabled={currentPage === 1}
                         >
-                            {page}
+                            Prev
                         </button>
-                    ))}
-                    <button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50">
-                        <ChevronRight className="size-4 text-gray-600" />
-                    </button>
-                </div>
+                        {renderPageNumbers().map((page, index) => (
+                            <button
+                                key={index}
+                                onClick={() => typeof page === "number" && handlePageClick(page)}
+                                className={`py-2 px-5 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600 ${currentPage === page ? "!bg-yellow-600" : ""
+                                    }`}
+                                disabled={typeof page !== "number"}
+                            >
+                                {page}
+                            </button>
+                        ))}
+                        <button
+                            onClick={handleNextPage}
+                            className="py-2 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600"
+                            disabled={currentPage === numberOfPages}
+                        >
+                            Next
+                        </button>
+
+                        <select
+                            value={expenseItemsPerPage}
+                            onChange={handleExpenseItemsPerPage}
+                            name=""
+                            id=""
+                            className="py-2 px-1 rounded-md bg-[#6E3FF3] text-white outline-none hover:bg-yellow-600"
+                        >
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                )}
+                <p> Showing {(currentPage * expenseItemsPerPage) - expenseItemsPerPage + 1} -
+                    {currentPage * expenseItemsPerPage > expenseCount ? expenseCount : currentPage * expenseItemsPerPage} of {expenseCount} entries</p>
             </div>
         </div>
     );

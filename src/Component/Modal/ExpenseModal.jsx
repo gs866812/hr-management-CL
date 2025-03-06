@@ -8,9 +8,9 @@ import useAxiosProtect from '../../utils/useAxiosProtect';
 import DatePicker from 'react-datepicker';
 
 const ExpenseModal = ({ onExpenseData, searchOption }) => {
-    console.log(searchOption);
+
     // *************************************************************************************************
-    const { user, userName, categories, setCategories, currentPage, itemsPerPage } = useContext(ContextData);
+    const { user, userName, categories, setCategories, currentPage, expenseItemsPerPage } = useContext(ContextData);
 
     const axiosSecure = useAxiosSecure();
     const axiosProtect = useAxiosProtect();
@@ -39,7 +39,7 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
 
 
     // *************************************************************************************************
-    console.log(currentPage, itemsPerPage, searchOption);
+    console.log(currentPage, expenseItemsPerPage, searchOption);
     useEffect(() => {
         const fetchExpenseData = async () => {
             try {
@@ -47,7 +47,7 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
                     params: {
                         userEmail: user?.email,
                         page: currentPage,
-                        size: itemsPerPage,
+                        size: expenseItemsPerPage,
                         search: searchOption,
                     },
                 });
@@ -60,7 +60,7 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
             }
         };
         fetchExpenseData();
-    }, [refetch, currentPage, itemsPerPage, searchOption, axiosProtect]);
+    }, [refetch, currentPage, expenseItemsPerPage, searchOption, axiosProtect]);
     // *************************************************************************************************
     const handleChange = (e) => {
         const { name, value } = e.target;

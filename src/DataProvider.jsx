@@ -11,7 +11,7 @@ const DataProvider = ({ children }) => {
     const [categories, setCategories] = useState([]); // State to store categories
     const [userName, setUserName] = useState(null);
 
-    const [itemsPerPage, setItemsPerPage] = useState(20);
+    const [expenseItemsPerPage, setExpenseItemsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
 
     // ****************************************************************
@@ -123,8 +123,8 @@ const DataProvider = ({ children }) => {
         categories,
         setCategories,
         logOut,
-        itemsPerPage, 
-        setItemsPerPage,
+        expenseItemsPerPage, 
+        setExpenseItemsPerPage,
         currentPage, 
         setCurrentPage
     };

@@ -190,7 +190,7 @@ const CreateLocalOrder = () => {
         };
         postLocalOrder();
         resetOrder();
-        navigate('/recentOrders');
+        navigate('/order-management');
 
     };
 
