@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import moment from 'moment';
 import ExpenseModal from '../Modal/ExpenseModal';
-import { FaRegEdit } from 'react-icons/fa';
+import { FaCalendarAlt, FaPlus, FaRegEdit } from 'react-icons/fa';
 import DatePicker from 'react-datepicker';
 import { ContextData } from '../../DataProvider';
 import { useDispatch, useSelector } from 'react-redux';
@@ -18,12 +18,14 @@ import { selectUserName } from '../../redux/userNameSlice';
 import { toast } from 'react-toastify';
 import useAxiosSecure from '../../utils/useAxiosSecure';
 import { setRefetch } from '../../redux/refetchSlice';
+import { RiResetRightFill } from 'react-icons/ri';
+import { GrDocumentUpdate } from "react-icons/gr";
 
 
 
 const ExpenseTable = () => {
 
-    const { categories, userName, currentPage, setCurrentPage, expenseItemsPerPage, setExpenseItemsPerPage } = useContext(ContextData);
+    const { categories, userName, currentPage, setCurrentPage, expenseItemsPerPage, setExpenseItemsPerPage, hrBalance } = useContext(ContextData);
     const axiosSecure = useAxiosSecure();
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -97,9 +99,13 @@ const ExpenseTable = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const newAmount = parseFloat(formData.expenseAmount);
-        // 1. Prepare the data:
+        if (hrBalance < newAmount) {
+            toast.error("Not enough funds");
+            return;
+        }
+
         const dataToUpdate = { ...formData, userName: userName, expenseAmount: newAmount }; // Create a copy  
-        console.log(dataToUpdate);
+
         try {
 
             const response = await axiosSecure.put(`/editExpense/${editId}`, dataToUpdate); // Or your API endpoint
@@ -125,7 +131,10 @@ const ExpenseTable = () => {
             setFormData({ ...expenseItem, expenseDate: expenseDate });
         }
     };
-    // ********************************************************************************************************************
+    // ***************************************************************************************************************
+    const searchingByDate = (date) => {
+        setSearchExpense(moment(date).format("YYYY-MM-DD")); // Update state
+    };
     // *************************pagination****************************************************************************
     const totalItem = expenseCount;
     const numberOfPages = Math.ceil(totalItem / expenseItemsPerPage);
@@ -203,20 +212,34 @@ const ExpenseTable = () => {
                     </h2>
 
                     <button className="bg-[#6E3FF3] text-white px-4 rounded-md py-2 cursor-pointer" onClick={() => document.getElementById('add-new-expense-modal').showModal()}>
-                        Add new expense
+                        <span className='flex items-center gap-2'>
+                            <FaPlus />
+                            Add new expense
+                        </span>
                     </button>
                 </div>
 
                 <div className="flex justify-between items-center gap-4">
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4" />
-                        <input
-                            type="text"
-                            placeholder="Search expenses..."
-                            className="w-full pl-10 pr-4 py-2 !border !border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6E3FF3] focus:border-transparent"
-                            value={searchExpense}
-                            onChange={(e) => setSearchExpense(e.target.value)}
+
+                    <div className='flex items-center gap-1'>
+                        <DatePicker
+                            onChange={searchingByDate}
+                            className="px-1 rounded-sm ml-1"
+                            customInput={
+                                <FaCalendarAlt className='text-4xl cursor-pointer'/>
+                            }
                         />
+                        <div className="relative flex max-w-md">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4" />
+                            <input
+                                type="text"
+                                placeholder="Search expenses..."
+                                className="w-full pl-10 pr-4 py-2 !border !border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6E3FF3] focus:border-transparent"
+                                // value={searchExpense}
+                                onChange={(e) => setSearchExpense(e.target.value)}
+                            />
+
+                        </div>
                     </div>
 
                     <div className="relative">
@@ -293,7 +316,7 @@ const ExpenseTable = () => {
                                 <div className="flex items-center">
                                     <label htmlFor="expenseName" className="font-medium">Date:</label>
                                 </div>
-                                <div className='border border-[#e2e8f0] rounded-md'>
+                                <div className='!border !border-gray-300 rounded-md'>
                                     <label>
                                         <DatePicker
                                             dateFormat="dd.MM.yyyy"
@@ -302,7 +325,7 @@ const ExpenseTable = () => {
                                             placeholderText="Select date"
                                             maxDate={new Date}
                                             required
-                                            className="py-1 px-2 rounded-md !border-none"
+                                            className="py-1 px-2 rounded-md"
                                         />
                                     </label>
                                 </div>
@@ -316,7 +339,7 @@ const ExpenseTable = () => {
                                         name="expenseName"
                                         defaultValue={formData?.expenseName}
                                         onChange={handleChange}
-                                        className="w-full p-1 outline-1 rounded-md custom-border"
+                                        className="w-full p-1 outline-1 rounded-md !border !border-gray-300"
                                         required
                                     />
                                 </div>
@@ -331,7 +354,7 @@ const ExpenseTable = () => {
                                         name="expenseCategory"
                                         value={formData.expenseCategory}
                                         onChange={handleChange}
-                                        className="w-full p-1 border border-gray-300 rounded-md custom-border"
+                                        className="w-full p-1 rounded-md !border !border-gray-300"
                                         required
                                     >
                                         <option value="">Select category</option>
@@ -355,7 +378,7 @@ const ExpenseTable = () => {
                                         name="expenseAmount"
                                         value={formData.expenseAmount}
                                         onChange={handleChange}
-                                        className="w-full p-1 border border-gray-300 rounded-md custom-border"
+                                        className="w-full p-1 !border !border-gray-300 rounded-md "
                                         required
                                     />
                                 </div>
@@ -370,7 +393,7 @@ const ExpenseTable = () => {
                                         name="expenseStatus"
                                         value={formData.expenseStatus}
                                         onChange={handleChange}
-                                        className="w-full p-1 border border-gray-300 rounded-md custom-border"
+                                        className="w-full p-1 !border !border-gray-300 rounded-md "
                                         required
                                     >
                                         <option value="">Select status</option>
@@ -390,7 +413,7 @@ const ExpenseTable = () => {
                                         name="expenseNote"
                                         value={formData.expenseNote}
                                         onChange={handleChange}
-                                        className="w-full p-1 rounded-md custom-border"
+                                        className="w-full p-1 rounded-md !border !border-gray-300"
                                         placeholder="Add a note (optional)"
                                         rows="2"
                                     />
@@ -404,13 +427,19 @@ const ExpenseTable = () => {
                                     type="reset"
                                     className="w-full bg-yellow-500 text-white p-2 rounded-md transition-colors cursor-pointer"
                                 >
-                                    Reset
+                                    <span className='flex items-center justify-center gap-1'>
+                                        <RiResetRightFill />
+                                        Reset
+                                    </span>
                                 </button>
                                 <button
                                     type="submit"
                                     className="w-full bg-[#6E3FF3] text-white p-2 rounded-md hover:bg-[#6E3FF3] transition-colors cursor-pointer"
                                 >
-                                    Update
+                                    <span className='flex items-center justify-center gap-2'>
+                                        <GrDocumentUpdate />
+                                        Update
+                                    </span>
                                 </button>
                             </div>
                         </form>

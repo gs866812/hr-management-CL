@@ -2,6 +2,9 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import React, { createContext, useEffect, useState } from 'react';
 import auth from './firebase.config';
 import axios from 'axios';
+import { toast } from 'react-toastify';
+import { useDispatch, useSelector } from 'react-redux';
+import useAxiosProtect from './utils/useAxiosProtect';
 export const ContextData = createContext(null);
 
 const DataProvider = ({ children }) => {
@@ -10,10 +13,40 @@ const DataProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [categories, setCategories] = useState([]); // State to store categories
     const [userName, setUserName] = useState(null);
+    const [hrBalance, setHrBalance] = useState(0);
+
+
 
     const [expenseItemsPerPage, setExpenseItemsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
 
+
+    const dispatch = useDispatch();
+    const refetch = useSelector((state) => state.refetch.refetch);
+
+    const axiosProtect = useAxiosProtect();
+
+    // ****************************************************************
+    useEffect(() => {
+        if (user) {
+            const fetchHrBalance = async () => {
+                try {
+                    const response = await axiosProtect.get('/getHrBalance', {
+                        params: {
+                            userEmail: user?.email,
+                        },
+                    });
+
+                    setHrBalance(response.data.balance);
+                } catch (error) {
+                    toast.error('Error fetching data:', error.message);
+                }
+            };
+            fetchHrBalance();
+        }
+
+
+    }, [refetch, user]);
     // ****************************************************************
     useEffect(() => {
         if (user) {
@@ -41,7 +74,7 @@ const DataProvider = ({ children }) => {
         if (token) {
             try {
                 const response = await axios.post(
-                    'https://webbriks.backendsafe.com/validate-token',
+                    'http://localhost:5000/validate-token',
                     null,
                     {
                         headers: { Authorization: `Bearer ${token}` },
@@ -64,6 +97,8 @@ const DataProvider = ({ children }) => {
         }
         setLoading(false); // Stop loading after token validation
     };
+
+
 
     // ****************************************************************
     const logOut = async () => {
@@ -109,6 +144,7 @@ const DataProvider = ({ children }) => {
     }, []);
 
     // ****************************************************************
+
     // Validate token on app load
     useEffect(() => {
         validateToken();
@@ -123,10 +159,11 @@ const DataProvider = ({ children }) => {
         categories,
         setCategories,
         logOut,
-        expenseItemsPerPage, 
+        expenseItemsPerPage,
         setExpenseItemsPerPage,
-        currentPage, 
-        setCurrentPage
+        currentPage,
+        setCurrentPage,
+        hrBalance
     };
 
     return <ContextData.Provider value={info}>{children}</ContextData.Provider>;

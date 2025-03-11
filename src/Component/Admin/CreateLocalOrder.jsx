@@ -190,7 +190,7 @@ const CreateLocalOrder = () => {
         };
         postLocalOrder();
         resetOrder();
-        navigate('/order-management');
+        navigate('/orders');
 
     };
 
@@ -444,7 +444,7 @@ const CreateLocalOrder = () => {
                         <textarea
                             id="colorChange"
                             name="colorChange"
-                            className="w-full p-2 border border-gray-300 rounded-md"
+                            className="w-full p-2 !border !border-gray-300 rounded-md"
                             placeholder="Input the color code you want to change to or write instruction for color change."
                             rows="2"
                         />

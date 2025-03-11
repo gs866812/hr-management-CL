@@ -43,7 +43,7 @@ const Navbar = () => {
             </Link>
             {/* **********************************************************/}
             <Link
-                to="/noticeBoard"
+                to="/notice-Board"
                 className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/noticeBoard'
                         ? 'bg-[#6E3FF3] text-white'
                         : 'hover:bg-[#6E3FF3] hover:text-white'
@@ -107,7 +107,7 @@ const Navbar = () => {
                     <div className="rounded-md p-2 bg-gray-100">
                         {/* ************************************************* */}
                         <Link
-                            to="/order-management"
+                            to="/orders"
                             className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/order-management'
                                     ? 'bg-[#6E3FF3] text-white'
                                     : 'hover:bg-[#6E3FF3] hover:text-white'

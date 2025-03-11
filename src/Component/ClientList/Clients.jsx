@@ -3,7 +3,7 @@ import React from 'react';
 const Clients = () => {
     return (
         <div>
-            This is client
+            This is your clients list
         </div>
     );
 };

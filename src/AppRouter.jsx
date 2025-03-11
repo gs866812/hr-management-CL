@@ -10,12 +10,11 @@ import Settings from './Pages/Settings';
 import CreateLocalOrder from './Component/Admin/CreateLocalOrder';
 import MyExpense from './Pages/MyExpense';
 import OrderManagement from './Pages/OrderManagement';
-import ActiveOrders from './Component/orderManagement/sub-menu/ActiveOrders';
-import CompletedOrders from './Component/orderManagement/sub-menu/CompletedOrders';
-import CanceledOrders from './Component/orderManagement/sub-menu/CanceledOrders';
-import PendingOrders from './Component/orderManagement/sub-menu/PendingOrders';
-import Clients from './Component/Clients/Clients';
 import ViewLocalOrder from './Component/Admin/ViewLocalOrder';
+import NoticeBoard from './Component/NoticeBoard/NoticeBoard';
+import Employee from './Component/EmployeeList/Employee';
+import Clients from './Component/ClientList/Clients';
+import Leave from './Component/Leave/Leave';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
@@ -29,31 +28,18 @@ export const router = createBrowserRouter([
         errorElement: <NotFound />,
         children: [
             { path: '/', element: <Home /> },
+            { path: '/notice-board', element: <NoticeBoard /> },
             { path: '/expense', element: <MyExpense /> },
             { path: '/recentOrders', element: <RecentOrders /> },
             { path: '/recentOrders/:orderId', element: <ViewLocalOrder /> },
             { path: '/createLocalOrder', element: <CreateLocalOrder /> },
             { path: '/ordersDeadline', element: <OrdersDeadline /> },
             { path: '/settings', element: <Settings /> },
+            { path: '/orders', element: <OrderManagement /> },
+            { path: '/employee', element: <Employee /> },
             { path: '/clients', element: <Clients /> },
-            // my component
-            { path: '/order-management', element: <OrderManagement /> },
-            {
-                path: '/order-management/active-orders',
-                element: <ActiveOrders />,
-            },
-            {
-                path: '/order-management/completed-orders',
-                element: <CompletedOrders />,
-            },
-            {
-                path: '/order-management/canceled-orders',
-                element: <CanceledOrders />,
-            },
-            {
-                path: '/order-management/pending-orders',
-                element: <PendingOrders />,
-            },
+            { path: '/leave', element: <Leave /> },
+            
         ],
     },
 ]);

@@ -257,7 +257,7 @@ const Expense = () => {
                         <form method="dialog">
                             <button className="btn btn-sm btn-circle btn-ghost absolute right-0 top-0">✕</button>
                         </form>
-                        <h3 className="font-bold text-lg">Edit Expense</h3>
+                        <h3 className="font-bold text-lg">Edit Expense 99</h3>
                         <form onSubmit={handleSubmit} className="max-w-2xl mx-auto mt-5 custom-border rounded p-5">
                             <div className="grid grid-cols-2 gap-1">
                                 {/* Expense Name */}

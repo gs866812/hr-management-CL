@@ -27,25 +27,7 @@ const AddHrBalanceModal = () => {
 
 
     // ************************************************************************************************
-    useEffect(() => {
-        const fetchHrBalance = async () => {
-            try {
-                const response = await axiosProtect.get('/getHrBalance', {
-                    params: {
-                        userEmail: user?.email,
-                    },
-                });
 
-                setBalance(response.data.balance);
-
-            } catch (error) {
-                toast.error('Error fetching data:', error.message);
-            }
-        };
-
-        fetchHrBalance();
-    }, []);
-    // ************************************************************************************************
     const handleChange = (e) => {
         let newValue = parseFloat(e.target.value);
 

@@ -10,7 +10,7 @@ import DatePicker from 'react-datepicker';
 const ExpenseModal = ({ onExpenseData, searchOption }) => {
 
     // *************************************************************************************************
-    const { user, userName, categories, setCategories, currentPage, expenseItemsPerPage } = useContext(ContextData);
+    const { user, userName, categories, setCategories, currentPage, expenseItemsPerPage, hrBalance } = useContext(ContextData);
 
     const axiosSecure = useAxiosSecure();
     const axiosProtect = useAxiosProtect();
@@ -39,7 +39,6 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
 
 
     // *************************************************************************************************
-    console.log(currentPage, expenseItemsPerPage, searchOption);
     useEffect(() => {
         const fetchExpenseData = async () => {
             try {
@@ -52,7 +51,6 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
                     },
                 });
                 onExpenseData(response.data);
-                console.log(response.data);
                 setCategories(response.data.category);
 
             } catch (error) {
@@ -88,6 +86,11 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
 
         // Handle form submission here
         const newAmount = parseFloat(formData.expenseAmount);
+        if(hrBalance < newAmount){
+            toast.error("Not enough funds");
+            return;
+        }
+        
 
         const updatedFormData = {
             ...formData,
@@ -106,6 +109,8 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
                 if (response.data.insertedId) {
                     dispatch(setRefetch(!refetch));
                     toast.success('Expense added successfully');
+                }else{
+                    toast.error(response.data);
                 }
             } catch (error) {
                 console.error('Error fetching data:', error.message);

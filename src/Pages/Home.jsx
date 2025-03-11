@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { ContextData } from '../DataProvider';
 import AdminDashboard from '../Component/Admin/AdminDashboard';
-import ClientDashboard from '../Component/Client/ClientDashboard';
+import ClientDashboard from '../Component/ClientDashboard/ClientDashboard';
 import useAxiosProtect from '../utils/useAxiosProtect';
 import { toast } from 'react-toastify';
 import { useDispatch, useSelector } from 'react-redux';
