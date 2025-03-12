@@ -17,7 +17,7 @@ const HrDashboard = () => {
     // ************************************************************************************************
 
     const handleAddBalance = () => {
-        document.getElementById('addBalance').showModal();
+        document.getElementById('addHrBalance').showModal();
     };
     return (
         <>

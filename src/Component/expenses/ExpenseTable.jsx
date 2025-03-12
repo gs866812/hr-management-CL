@@ -2,9 +2,6 @@ import React, { useContext, useEffect, useState } from 'react';
 import {
     Search,
     ChevronDown,
-    ChevronLeft,
-    ChevronRight,
-    Edit2,
     SlidersHorizontal,
 } from 'lucide-react';
 import moment from 'moment';
@@ -28,7 +25,7 @@ const ExpenseTable = () => {
     const { categories, userName, currentPage, setCurrentPage, expenseItemsPerPage, setExpenseItemsPerPage, hrBalance } = useContext(ContextData);
     const axiosSecure = useAxiosSecure();
 
-    const [searchTerm, setSearchTerm] = useState('');
+
     const [searchExpense, setSearchExpense] = useState('');
     const [sortBy, setSortBy] = useState('date');
 
@@ -226,7 +223,9 @@ const ExpenseTable = () => {
                             onChange={searchingByDate}
                             className="px-1 rounded-sm ml-1"
                             customInput={
-                                <FaCalendarAlt className='text-4xl cursor-pointer'/>
+                                <button className="text-4xl cursor-pointer">
+                                    <FaCalendarAlt />
+                                </button>
                             }
                         />
                         <div className="relative flex max-w-md">

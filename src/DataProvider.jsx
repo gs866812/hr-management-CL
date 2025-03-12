@@ -10,6 +10,7 @@ export const ContextData = createContext(null);
 const DataProvider = ({ children }) => {
     // ****************************************************************
     const [user, setUser] = useState(null);
+    const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [categories, setCategories] = useState([]); // State to store categories
     const [userName, setUserName] = useState(null);
@@ -163,7 +164,9 @@ const DataProvider = ({ children }) => {
         setExpenseItemsPerPage,
         currentPage,
         setCurrentPage,
-        hrBalance
+        hrBalance,
+        currentUser, 
+        setCurrentUser
     };
 
     return <ContextData.Provider value={info}>{children}</ContextData.Provider>;

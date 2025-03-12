@@ -12,9 +12,7 @@ import HrDashboard from '../Component/HrAdmin/HrDashboard';
 
 const Home = () => {
 
-    const { user } = useContext(ContextData);
-
-    const [currentUser, setCurrentUser] = useState(null);
+    const { user, currentUser, setCurrentUser } = useContext(ContextData);
 
 
     const axiosProtect = useAxiosProtect();

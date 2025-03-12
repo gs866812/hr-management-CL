@@ -43,7 +43,7 @@ const AddHrBalanceModal = () => {
         }
     };
     // ************************************************************************************************
-    const handleAddBalance = (e) => {
+    const handleAddHrBalance = (e) => {
         e.preventDefault();
         if (value === confirmValue) {
             const balanceInfo = {value, note, date: new Date()};
@@ -64,7 +64,7 @@ const AddHrBalanceModal = () => {
             setValue("");
             setConfirmValue("");
             setNote("");
-            document.getElementById('addBalance').close();
+            document.getElementById('addHrBalance').close();
         } else {
             toast.error("Amount not matched");
         }
@@ -78,14 +78,14 @@ const AddHrBalanceModal = () => {
     // ************************************************************************************************
     return (
         <div>
-            <dialog id="addBalance" className="modal">
+            <dialog id="addHrBalance" className="modal">
                 <div className="modal-box">
                     <form method="dialog">
                         <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
                     </form>
 
                     <h3 className="font-bold text-lg">Add Balance (HR)</h3>
-                    <form className='mt-3 space-y-2 border-gray-200 border p-3 rounded-md' onSubmit={handleAddBalance}>
+                    <form className='mt-3 space-y-2 border-gray-200 border p-3 rounded-md' onSubmit={handleAddHrBalance}>
 
                         <section className='grid grid-cols-2'>
                             <h2>Enter amount: </h2>

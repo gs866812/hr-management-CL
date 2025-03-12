@@ -10,7 +10,8 @@ import DatePicker from 'react-datepicker';
 const ExpenseModal = ({ onExpenseData, searchOption }) => {
 
     // *************************************************************************************************
-    const { user, userName, categories, setCategories, currentPage, expenseItemsPerPage, hrBalance } = useContext(ContextData);
+    const { user, userName, categories, setCategories, currentPage, expenseItemsPerPage, hrBalance, currentUser } = useContext(ContextData);
+
 
     const axiosSecure = useAxiosSecure();
     const axiosProtect = useAxiosProtect();
@@ -86,11 +87,14 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
 
         // Handle form submission here
         const newAmount = parseFloat(formData.expenseAmount);
-        if(hrBalance < newAmount){
-            toast.error("Not enough funds");
-            return;
+
+        if (currentUser?.role == "hr_admin") {
+            if (hrBalance < newAmount) {
+                toast.error("Not enough funds");
+                return;
+            }
         }
-        
+
 
         const updatedFormData = {
             ...formData,
@@ -98,18 +102,18 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
             expenseCategory: selectedCategory, // Use the correct category
             expenseDate: selectedDate,
             userName,
+            userMail: user?.email,
         };
 
-        console.log(updatedFormData);
+        // console.log(updatedFormData);
 
         const postExpenseData = async () => {
             try {
-                // Simulate an API call
                 const response = await axiosSecure.post('/addExpense', updatedFormData);
                 if (response.data.insertedId) {
                     dispatch(setRefetch(!refetch));
                     toast.success('Expense added successfully');
-                }else{
+                } else {
                     toast.error(response.data);
                 }
             } catch (error) {
