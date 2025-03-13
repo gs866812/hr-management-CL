@@ -1,5 +1,6 @@
 import React from 'react';
 import { IoMdAdd } from 'react-icons/io';
+import AddMainBalanceModal from './AddMainBalanceModal';
 
 const AdminDashboard = () => {
 
@@ -19,6 +20,10 @@ const AdminDashboard = () => {
                     </span>
                 </button>
             </section>
+
+            {/* ******************************************** */}
+            <AddMainBalanceModal />
+            {/* ******************************************** */}
         </div>
     );
 };

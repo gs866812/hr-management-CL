@@ -16,10 +16,7 @@ const AddHrBalanceModal = () => {
 
     const [value, setValue] = useState("");
     const [confirmValue, setConfirmValue] = useState("");
-    const [balance, setBalance] = useState(0);
     const [note, setNote] = useState("");
-
-    console.log(note);
 
 
     const dispatch = useDispatch();
@@ -29,14 +26,15 @@ const AddHrBalanceModal = () => {
     // ************************************************************************************************
 
     const handleChange = (e) => {
-        let newValue = parseFloat(e.target.value);
+        let newValue = e.target.value;
 
         if (/^\d*\.?\d*$/.test(newValue)) {
             setValue(newValue);
         }
+        console.log(newValue);
     };
     const handleConfirmChange = (e) => {
-        let newValue = parseFloat(e.target.value);
+        let newValue = e.target.value;
 
         if (/^\d*\.?\d*$/.test(newValue)) {
             setConfirmValue(newValue);
@@ -45,8 +43,10 @@ const AddHrBalanceModal = () => {
     // ************************************************************************************************
     const handleAddHrBalance = (e) => {
         e.preventDefault();
+        
         if (value === confirmValue) {
-            const balanceInfo = {value, note, date: new Date()};
+            const parseValue = parseFloat(value);
+            const balanceInfo = {parseValue, note, date: new Date()};
             const addHrBalance = async () => {
                 try {
                     const response = await axiosSecure.post('/addHrBalance', balanceInfo);
