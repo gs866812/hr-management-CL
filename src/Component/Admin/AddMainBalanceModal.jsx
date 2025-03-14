@@ -35,6 +35,12 @@ const AddMainBalanceModal = () => {
         }
     };
     // ************************************************************************************************
+    const reset = () => {
+        setValue("");
+        setConfirmValue("");
+        setNote("");
+    };
+    // ************************************************************************************************
     const handleAddMainBalance = (e) => {
         e.preventDefault();
 
@@ -47,7 +53,9 @@ const AddMainBalanceModal = () => {
                     const response = await axiosSecure.post('/addMainBalance', balanceInfo);
 
                     if (response.data.message) {
+
                         dispatch(setRefetch(!refetch));
+
                         toast.success(response.data.message);
                     }
                 } catch (error) {
@@ -55,22 +63,15 @@ const AddMainBalanceModal = () => {
                 }
             };
             addMainBalance();
+            reset();
 
-            setValue("");
-            setConfirmValue("");
-            setNote("");
             document.getElementById('addMainBalance').close();
         } else {
             toast.error("Amount not matched");
         }
     };
     // ************************************************************************************************
-    const reset = () => {
-        setValue("");
-        setConfirmValue("");
-        setNote("");
-    };
-    // ************************************************************************************************
+
 
     return (
         <div>
@@ -80,7 +81,7 @@ const AddMainBalanceModal = () => {
                         <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
                     </form>
 
-                    <h3 className="font-bold text-lg">Add Balance (HR)</h3>
+                    <h3 className="font-bold text-lg">Add Balance</h3>
                     <form className='mt-3 space-y-2 border-gray-200 border p-3 rounded-md' onSubmit={handleAddMainBalance}>
 
                         <section className='grid grid-cols-2'>

@@ -67,7 +67,7 @@ const ExpenseTable = () => {
                 const expenseDate = foundExpense.expenseDate ? new Date(foundExpense.expenseDate) : new Date();
                 setFormData({ ...foundExpense, expenseDate: expenseDate });
             } else {
-                console.warn("Expense not found for ID:", editId); // Corrected ID variable
+                toast.warn("Expense not found for ID:", editId); // Corrected ID variable
             }
         }
     }, [editId, expenseList]);
@@ -491,11 +491,19 @@ const ExpenseTable = () => {
                             <option value="50">50</option>
                             <option value="100">100</option>
                         </select>
+
                     </div>
+
                 )}
-                <p> Showing {(currentPage * expenseItemsPerPage) - expenseItemsPerPage + 1} -
-                    {currentPage * expenseItemsPerPage > expenseCount ? expenseCount : currentPage * expenseItemsPerPage} of {expenseCount} entries</p>
+                {
+                    expenseCount > 10 && (
+                        <p> Showing {(currentPage * expenseItemsPerPage) - expenseItemsPerPage + 1} -
+                            {currentPage * expenseItemsPerPage > expenseCount ? expenseCount : currentPage * expenseItemsPerPage} of {expenseCount} entries
+                        </p>
+                    )}
+
             </div>
+
         </div>
     );
 };

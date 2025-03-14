@@ -7,7 +7,7 @@ import {
     Edit2,
     SlidersHorizontal,
 } from 'lucide-react';
-
+import { toast } from 'react-toastify';
 import moment from 'moment';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import { ContextData } from '../../DataProvider';
@@ -26,8 +26,12 @@ const OrderTable = () => {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('date');
+
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(10);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [orderCount, setOrderCount] = useState(0);
+    const [searchOption, setSearchOption] = useState('');
+
     const [isOpen, setIsOpen] = useState(false);
 
 
@@ -46,11 +50,6 @@ const OrderTable = () => {
         'Action',
     ];
 
-    const statusStyles = {
-        Approved: 'bg-green-100 text-green-700',
-        Pending: 'bg-yellow-100 text-yellow-700',
-        Rejected: 'bg-red-100 text-red-700',
-    };
 
 
     // ****************************************************************************************
@@ -60,15 +59,19 @@ const OrderTable = () => {
                 const response = await axiosProtect.get('/getLocalOrder', {
                     params: {
                         userEmail: user?.email,
+                        page: currentPage,
+                        size: itemsPerPage,
+                        search: searchOption,
                     },
                 });
-                setLocalOrder(response.data);
+                setLocalOrder(response.data.orders);
+                setOrderCount(response.data.count);
             } catch (error) {
                 toast.error('Error fetching data:', error.message);
             }
         };
         fetchLocalOrder();
-    }, [refetch]);
+    }, [refetch, currentPage, itemsPerPage, searchOption, axiosProtect]);
 
 
     // ****************************************************************************************
@@ -77,6 +80,70 @@ const OrderTable = () => {
         window.open(`/recentOrders/${id}`, "_blank");
     };
     // ****************************************************************************************
+    // *************************pagination****************************************************************************
+    const totalItem = orderCount;
+    const numberOfPages = Math.ceil(totalItem / itemsPerPage);
+
+    // ----------------------------------------------------------------
+
+    const renderPageNumbers = () => {
+        const pageNumbers = [];
+        const maxPagesToShow = 5;
+        const halfMaxPagesToShow = Math.floor(maxPagesToShow / 2);
+        const totalPages = numberOfPages;
+
+        if (totalPages <= maxPagesToShow) {
+            for (let i = 1; i <= totalPages; i++) {
+                pageNumbers.push(i);
+            }
+        } else {
+            if (currentPage <= halfMaxPagesToShow) {
+                for (let i = 1; i <= maxPagesToShow; i++) {
+                    pageNumbers.push(i);
+                }
+                pageNumbers.push("...", totalPages);
+            } else if (currentPage > totalPages - halfMaxPagesToShow) {
+                pageNumbers.push(1, "...");
+                for (let i = totalPages - maxPagesToShow + 1; i <= totalPages; i++) {
+                    pageNumbers.push(i);
+                }
+            } else {
+                pageNumbers.push(1, "...");
+                for (
+                    let i = currentPage - halfMaxPagesToShow;
+                    i <= currentPage + halfMaxPagesToShow;
+                    i++
+                ) {
+                    pageNumbers.push(i);
+                }
+                pageNumbers.push("...", totalPages);
+            }
+        }
+
+        return pageNumbers;
+    };
+    // ----------------------------------------------------------------
+    const handleItemsPerPage = (e) => {
+        const val = parseInt(e.target.value);
+        setItemsPerPage(val);
+        setCurrentPage(1);
+    };
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
+
+    const handleNextPage = () => {
+        if (currentPage < numberOfPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    };
+
+    const handlePageClick = (page) => {
+        setCurrentPage(page);
+    };
 
     return (
         <div className="w-full bg-white rounded-xl shadow-lg border border-gray-100 p-6">
@@ -94,8 +161,8 @@ const OrderTable = () => {
                             type="text"
                             placeholder="Search order..."
                             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6E3FF3] focus:border-transparent"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            value={searchOption}
+                            onChange={(e) => setSearchOption(e.target.value)}
                         />
                     </div>
 
@@ -193,7 +260,7 @@ const OrderTable = () => {
                 </table>
             </div>
 
-            <div className="flex items-center justify-between mt-6 py-4">
+            {/* <div className="flex items-center justify-between mt-6 py-4 border">
                 <div className="text-sm text-gray-600">
                     Showing 1-10 of 50 entries
                 </div>
@@ -217,6 +284,60 @@ const OrderTable = () => {
                         <ChevronRight className="size-4 text-gray-600" />
                     </button>
                 </div>
+            </div> */}
+            <div className="text-center">
+                {/*********************************pagination***********************************************************/}
+                {orderCount > 10 && (
+                    <div className="mt-5 mb-2 flex justify-center gap-1">
+                        <button
+                            onClick={handlePrevPage}
+                            className="py-2 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600"
+                            disabled={currentPage === 1}
+                        >
+                            Prev
+                        </button>
+                        {renderPageNumbers().map((page, index) => (
+                            <button
+                                key={index}
+                                onClick={() => typeof page === "number" && handlePageClick(page)}
+                                className={`py-2 px-5 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600 ${currentPage === page ? "!bg-yellow-600" : ""
+                                    }`}
+                                disabled={typeof page !== "number"}
+                            >
+                                {page}
+                            </button>
+                        ))}
+                        <button
+                            onClick={handleNextPage}
+                            className="py-2 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600"
+                            disabled={currentPage === numberOfPages}
+                        >
+                            Next
+                        </button>
+
+                        <select
+                            value={itemsPerPage}
+                            onChange={handleItemsPerPage}
+                            name=""
+                            id=""
+                            className="py-2 px-1 rounded-md bg-[#6E3FF3] text-white outline-none hover:bg-yellow-600"
+                        >
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+
+                    </div>
+
+                )}
+                {
+                    orderCount > 10 && (
+                        <p> Showing {(currentPage * itemsPerPage) - itemsPerPage + 1} -
+                            {currentPage * itemsPerPage > orderCount ? orderCount : currentPage * itemsPerPage} of {orderCount} entries
+                        </p>
+                    )}
+
             </div>
         </div>
     );

@@ -3,6 +3,7 @@ import AddHrBalanceModal from './AddHrBalanceModal';
 import { ContextData } from '../../DataProvider';
 import { useDispatch, useSelector } from 'react-redux';
 import { IoMdAdd } from 'react-icons/io';
+import { IoReturnDownBackOutline } from "react-icons/io5";
 
 const HrDashboard = () => {
     const { user, userName, hrBalance } = useContext(ContextData);
@@ -16,17 +17,29 @@ const HrDashboard = () => {
 
     // ************************************************************************************************
 
-    const handleAddBalance = () => {
+    const handleAddHrBalance = () => {
         document.getElementById('addHrBalance').showModal();
+    };
+    // ************************************************************************************************
+
+    const handleReturnHrBalance = () => {
+        document.getElementById('returnHrBalance').showModal();
     };
     return (
         <>
-            <section className='flex justify-end space-x-4'>
-                <button onClick={handleAddBalance}
+            <section className='flex justify-end gap-1'>
+                <button onClick={handleAddHrBalance}
                     className='border-l border-r border-b rounded-b-xl px-2 cursor-pointer bg-[#6E3FF3] text-white py-1'>
                     <span className='flex items-center gap-1'>
                         <IoMdAdd />
                         Add balance
+                    </span>
+                </button>
+                <button onClick={handleReturnHrBalance}
+                    className='border-l border-r border-b rounded-b-xl px-2 cursor-pointer bg-red-500 text-white py-1'>
+                    <span className='flex items-center gap-1'>
+                    <IoReturnDownBackOutline />
+                        Return balance
                     </span>
                 </button>
             </section>

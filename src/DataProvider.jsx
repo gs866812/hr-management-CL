@@ -15,6 +15,7 @@ const DataProvider = ({ children }) => {
     const [categories, setCategories] = useState([]); // State to store categories
     const [userName, setUserName] = useState(null);
     const [hrBalance, setHrBalance] = useState(0);
+    const [mainBalance, setMainBalance] = useState(0);
 
 
 
@@ -44,6 +45,27 @@ const DataProvider = ({ children }) => {
                 }
             };
             fetchHrBalance();
+        }
+
+
+    }, [refetch, user]);
+    // ****************************************************************
+    useEffect(() => {
+        if (user) {
+            const fetchMainBalance = async () => {
+                try {
+                    const response = await axiosProtect.get('/getMainBalance', {
+                        params: {
+                            userEmail: user?.email,
+                        },
+                    });
+
+                    setMainBalance(response.data.mainBalance);
+                } catch (error) {
+                    toast.error('Error fetching data:', error.message);
+                }
+            };
+            fetchMainBalance();
         }
 
 
@@ -166,7 +188,8 @@ const DataProvider = ({ children }) => {
         setCurrentPage,
         hrBalance,
         currentUser, 
-        setCurrentUser
+        setCurrentUser,
+        mainBalance
     };
 
     return <ContextData.Provider value={info}>{children}</ContextData.Provider>;

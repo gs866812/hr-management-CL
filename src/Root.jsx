@@ -16,7 +16,7 @@ const Root = () => {
             {/* Main Content */}
             <div className="flex flex-grow">
                 {/* Scrollable Sidebar */}
-                <div className="w-[20%] h-[calc(100vh-64px)] overflow-y-auto px-4 custom-scrollbar shadow-right shadow-2xl"> 
+                <div className="w-[20%] h-[calc(100vh-64px)] overflow-y-auto px-4 custom-scrollbar shadow-right shadow-xl"> 
                     <Navbar />
                 </div>
 
