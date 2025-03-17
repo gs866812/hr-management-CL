@@ -12,11 +12,14 @@ const DataProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [categories, setCategories] = useState([]); // State to store categories
+    const [categories, setCategories] = useState([]); 
     const [userName, setUserName] = useState(null);
     const [hrBalance, setHrBalance] = useState(0);
-    const [mainBalance, setMainBalance] = useState(0);
+    const [hrTransactions, setHrTransactions] = useState(0);
 
+    const [hrExpense, setHrExpense] = useState([]);
+
+    const [mainBalance, setMainBalance] = useState(0);
 
 
     const [expenseItemsPerPage, setExpenseItemsPerPage] = useState(10);
@@ -38,8 +41,9 @@ const DataProvider = ({ children }) => {
                             userEmail: user?.email,
                         },
                     });
-
                     setHrBalance(response.data.balance);
+                    setHrExpense(response.data.expense);
+                    setHrTransactions(response.data.hrTransaction);
                 } catch (error) {
                     toast.error('Error fetching data:', error.message);
                 }
@@ -187,6 +191,9 @@ const DataProvider = ({ children }) => {
         currentPage,
         setCurrentPage,
         hrBalance,
+        hrTransactions,
+        hrExpense, 
+        setHrExpense,
         currentUser, 
         setCurrentUser,
         mainBalance
