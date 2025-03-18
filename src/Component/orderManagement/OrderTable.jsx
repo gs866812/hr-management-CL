@@ -14,6 +14,7 @@ import { ContextData } from '../../DataProvider';
 import { useSelector } from 'react-redux';
 import { IoEyeOutline } from 'react-icons/io5';
 import Countdown from 'react-countdown';
+import { BsChevronDoubleLeft, BsChevronDoubleRight } from 'react-icons/bs';
 
 
 
@@ -288,55 +289,58 @@ const OrderTable = () => {
             <div className="text-center">
                 {/*********************************pagination***********************************************************/}
                 {orderCount > 10 && (
-                    <div className="mt-5 mb-2 flex justify-center gap-1">
-                        <button
-                            onClick={handlePrevPage}
-                            className="py-2 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600"
-                            disabled={currentPage === 1}
-                        >
-                            Prev
-                        </button>
-                        {renderPageNumbers().map((page, index) => (
-                            <button
-                                key={index}
-                                onClick={() => typeof page === "number" && handlePageClick(page)}
-                                className={`py-2 px-5 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600 ${currentPage === page ? "!bg-yellow-600" : ""
-                                    }`}
-                                disabled={typeof page !== "number"}
-                            >
-                                {page}
-                            </button>
-                        ))}
-                        <button
-                            onClick={handleNextPage}
-                            className="py-2 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600"
-                            disabled={currentPage === numberOfPages}
-                        >
-                            Next
-                        </button>
+                    <div className="mt-5 flex justify-between items-center">
+                        <div>
+                            <p> Showing {(currentPage * itemsPerPage) - itemsPerPage + 1} -
+                                {currentPage * itemsPerPage > orderCount ? orderCount : currentPage * itemsPerPage} of {orderCount} entries
+                            </p>
+                        </div>
 
-                        <select
-                            value={itemsPerPage}
-                            onChange={handleItemsPerPage}
-                            name=""
-                            id=""
-                            className="py-2 px-1 rounded-md bg-[#6E3FF3] text-white outline-none hover:bg-yellow-600"
-                        >
-                            <option value="10">10</option>
-                            <option value="20">20</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
+                        <div className='flex items-center justify-items-center gap-1'>
+                            <button
+                                onClick={handlePrevPage}
+                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md  ${currentPage !== 1 ? 'hover:bg-yellow-600 cursor-pointer' : ''}`}
+                                disabled={currentPage === 1}
+                            >
+                                <BsChevronDoubleLeft /> {/* prev button */}
+                            </button>
+                            {renderPageNumbers().map((page, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => typeof page === "number" && handlePageClick(page)}
+                                    className={`py-1 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600 cursor-pointer ${currentPage === page ? "!bg-yellow-600" : ""
+                                        }`}
+                                    disabled={typeof page !== "number"}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+                            <button
+                                onClick={handleNextPage}
+                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md  ${currentPage !== numberOfPages ? 'hover:bg-yellow-600 cursor-pointer' : ''}`}
+                                disabled={currentPage === numberOfPages}
+                            >
+                                <BsChevronDoubleRight />  {/* next button */}
+                            </button>
+
+                            <select
+                                value={itemsPerPage}
+                                onChange={handleItemsPerPage}
+                                name=""
+                                id=""
+                                className="select select-sm py-1 px-1 rounded-md bg-[#6E3FF3] text-white outline-none hover:bg-yellow-600"
+                            >
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
 
                     </div>
 
                 )}
-                {
-                    orderCount > 10 && (
-                        <p> Showing {(currentPage * itemsPerPage) - itemsPerPage + 1} -
-                            {currentPage * itemsPerPage > orderCount ? orderCount : currentPage * itemsPerPage} of {orderCount} entries
-                        </p>
-                    )}
+
 
             </div>
         </div>

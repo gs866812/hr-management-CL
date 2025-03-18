@@ -7,6 +7,7 @@ import {
 import moment from 'moment';
 import ExpenseModal from '../Modal/ExpenseModal';
 import { FaCalendarAlt, FaPlus, FaRegEdit } from 'react-icons/fa';
+import { BsChevronDoubleLeft, BsChevronDoubleRight } from "react-icons/bs";
 import DatePicker from 'react-datepicker';
 import { ContextData } from '../../DataProvider';
 import { useDispatch, useSelector } from 'react-redux';
@@ -452,55 +453,62 @@ const ExpenseTable = () => {
             <div className="text-center">
                 {/*********************************pagination***********************************************************/}
                 {expenseCount > 10 && (
-                    <div className="mt-5 mb-2 flex justify-center gap-1">
-                        <button
-                            onClick={handlePrevPage}
-                            className="py-2 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600"
-                            disabled={currentPage === 1}
-                        >
-                            Prev
-                        </button>
-                        {renderPageNumbers().map((page, index) => (
-                            <button
-                                key={index}
-                                onClick={() => typeof page === "number" && handlePageClick(page)}
-                                className={`py-2 px-5 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600 ${currentPage === page ? "!bg-yellow-600" : ""
-                                    }`}
-                                disabled={typeof page !== "number"}
-                            >
-                                {page}
-                            </button>
-                        ))}
-                        <button
-                            onClick={handleNextPage}
-                            className="py-2 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600"
-                            disabled={currentPage === numberOfPages}
-                        >
-                            Next
-                        </button>
+                    <div className="mt-5 flex justify-between items-center">
 
-                        <select
-                            value={expenseItemsPerPage}
-                            onChange={handleExpenseItemsPerPage}
-                            name=""
-                            id=""
-                            className="py-2 px-1 rounded-md bg-[#6E3FF3] text-white outline-none hover:bg-yellow-600"
-                        >
-                            <option value="10">10</option>
-                            <option value="20">20</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
+
+                        <div>
+                            <p> Showing {(currentPage * expenseItemsPerPage) - expenseItemsPerPage + 1} -
+                                {currentPage * expenseItemsPerPage > expenseCount ? expenseCount : currentPage * expenseItemsPerPage} of {expenseCount} entries
+                            </p>
+                        </div>
+
+
+                        <div className='flex items-center justify-items-center gap-1'>
+                            <button
+                                onClick={handlePrevPage}
+                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md ${currentPage !== 1? 'cursor-pointer hover:bg-yellow-600': ''}`}
+                                disabled={currentPage === 1}
+                            >
+                                <BsChevronDoubleLeft/> {/* prev button */}
+                            </button>
+                            {renderPageNumbers().map((page, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => typeof page === "number" && handlePageClick(page)}
+                                    className={`py-1 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600 cursor-pointer ${currentPage === page ? "!bg-yellow-600" : ""
+                                        }`}
+                                    disabled={typeof page !== "number"}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+                            <button
+                                onClick={handleNextPage}
+                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md ${currentPage !== numberOfPages? 'cursor-pointer hover:bg-yellow-600':''}`}
+                                disabled={currentPage === numberOfPages}
+                            >
+                                <BsChevronDoubleRight />  {/* next button */}
+                                
+                            </button>
+
+                            <select
+                                value={expenseItemsPerPage}
+                                onChange={handleExpenseItemsPerPage}
+                                name=""
+                                id=""
+                                className="select select-sm py-1 px-1 rounded-md bg-[#6E3FF3] text-white outline-none hover:bg-yellow-600"
+                            >
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
 
                     </div>
 
                 )}
-                {
-                    expenseCount > 10 && (
-                        <p> Showing {(currentPage * expenseItemsPerPage) - expenseItemsPerPage + 1} -
-                            {currentPage * expenseItemsPerPage > expenseCount ? expenseCount : currentPage * expenseItemsPerPage} of {expenseCount} entries
-                        </p>
-                    )}
+
 
             </div>
 

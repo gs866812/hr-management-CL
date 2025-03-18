@@ -54,7 +54,9 @@ const Header = () => {
                                     user?.email === import.meta.env.VITE_MUKUL?
                                     'https://iili.io/33qPNZx.jpg' :
                                     user?.email === import.meta.env.VITE_DULU?
-                                    'https://iili.io/3JkVvmN.webp' : null
+                                    'https://iili.io/3JkVvmN.webp' :
+                                    user?.email === import.meta.env.VITE_ASAD?
+                                    'https://iili.io/2zUIGaf.jpg' : null
                                 } />
                         </div>
                         <div>

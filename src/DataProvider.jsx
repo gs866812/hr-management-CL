@@ -87,6 +87,9 @@ const DataProvider = ({ children }) => {
                 case import.meta.env.VITE_DULU:
                     setUserName('MASUM.KAMAL');
                     break;
+                case import.meta.env.VITE_ASAD:
+                    setUserName('Asad4boss');
+                    break;
                 default:
                     setUserName('Client');
             }
