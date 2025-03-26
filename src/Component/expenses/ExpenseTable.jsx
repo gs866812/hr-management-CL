@@ -21,6 +21,10 @@ import { GrDocumentUpdate } from "react-icons/gr";
 
 
 
+
+
+
+
 const ExpenseTable = () => {
 
     const { categories, userName, currentPage, setCurrentPage, expenseItemsPerPage, setExpenseItemsPerPage, hrBalance } = useContext(ContextData);
@@ -466,10 +470,10 @@ const ExpenseTable = () => {
                         <div className='flex items-center justify-items-center gap-1'>
                             <button
                                 onClick={handlePrevPage}
-                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md ${currentPage !== 1? 'cursor-pointer hover:bg-yellow-600': ''}`}
+                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md ${currentPage !== 1 ? 'cursor-pointer hover:bg-yellow-600' : ''}`}
                                 disabled={currentPage === 1}
                             >
-                                <BsChevronDoubleLeft/> {/* prev button */}
+                                <BsChevronDoubleLeft /> {/* prev button */}
                             </button>
                             {renderPageNumbers().map((page, index) => (
                                 <button
@@ -484,11 +488,11 @@ const ExpenseTable = () => {
                             ))}
                             <button
                                 onClick={handleNextPage}
-                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md ${currentPage !== numberOfPages? 'cursor-pointer hover:bg-yellow-600':''}`}
+                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md ${currentPage !== numberOfPages ? 'cursor-pointer hover:bg-yellow-600' : ''}`}
                                 disabled={currentPage === numberOfPages}
                             >
                                 <BsChevronDoubleRight />  {/* next button */}
-                                
+
                             </button>
 
                             <select
