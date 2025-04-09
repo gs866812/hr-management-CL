@@ -28,6 +28,7 @@ const ViewLocalOrder = () => {
 
     const { orderId } = useParams();
 
+
     // ************************************************************************************************
     const axiosProtect = useAxiosProtect();
 
@@ -88,19 +89,51 @@ const ViewLocalOrder = () => {
         const hours = Math.floor((seconds % (3600 * 24)) / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
         const remainingSeconds = seconds % 60;
-    
+
         return `${days}d ${hours}h ${minutes}m ${remainingSeconds}s`;
-      };
+    };
     // ************************************************************************************************
     const handleReadyToQC = () => {
-        const readyToQC = document.getElementById('readyToQC');
-        const readyToUploadElement = document.getElementById('readyToUpload');
-        readyToUploadElement.classList.remove('hidden');
-        readyToQC.classList.add('hidden');
+        const changeOrderToQC = async () => {
+            try {
+                const response = await axiosSecure.put(`/orderStatusQC/${orderId}`);
+
+                if (response.data.modifiedCount > 0) {
+                    setIsRunning(false);
+                    dispatch(setRefetch(!refetch));
+                    Swal.fire({
+                        title:"Order Ready to QC!",
+                        showConfirmButton: false,
+                        icon: "success",
+                        timer: 1000
+                    });
+                }
+            } catch (error) {
+                toast.error(`Error fetching data: ${error.message}`);
+            }
+        }
+        changeOrderToQC();
     };
     const handleReadyToUpload = () => {
-        // const readyToQC = document.getElementById('readyToUpload');
-        // readyToUploadElement.classList.remove('hidden');
+        const changeOrderDelivered = async () => {
+            try {
+                const response = await axiosSecure.put(`/orderStatusDelivered/${orderId}`);
+
+                if (response.data.modifiedCount > 0) {
+                    setIsRunning(false);
+                    dispatch(setRefetch(!refetch));
+                    Swal.fire({
+                        title:"Order has been delivered",
+                        showConfirmButton: false,
+                        icon: "success",
+                        timer: 1000
+                    });
+                }
+            } catch (error) {
+                toast.error(`Error fetching data: ${error.message}`);
+            }
+        }
+        changeOrderDelivered();
     };
     // ************************************************************************************************
 
@@ -143,7 +176,7 @@ const ViewLocalOrder = () => {
     // ************************************************************************************************
     const handleHold = () => {
         const changeOrderToHold = async () => {
-            
+
             try {
                 const response = await axiosSecure.put(`/orderStatusHold/${orderId}`, {
                     completeTime: totalSeconds,
@@ -282,18 +315,25 @@ const ViewLocalOrder = () => {
                                             </div>
 
                                             <div className='mt-3'>
-                                                <button id='readyToQC' onClick={handleReadyToQC}
-                                                    className={`text-white py-1 px-3 rounded-md ${localOrder?.orderStatus !== "In-progress"
-                                                        ? "bg-gray-400 cursor-not-allowed"
-                                                        : "bg-[#6E3FF3] cursor-pointer"
-                                                        }`}>Ready to QC
-                                                </button>
-                                                <button id='readyToUpload' onClick={handleReadyToUpload}
-                                                    className={`hidden text-white py-1 px-3 rounded-md ${localOrder?.orderStatus !== "In-progress"
-                                                        ? "bg-gray-400 cursor-not-allowed"
-                                                        : "bg-[#6E3FF3] cursor-pointer"
-                                                        }`}>Ready to upload
-                                                </button>
+                                                {
+                                                    localOrder && localOrder?.orderStatus !== "Ready to QC" ?
+                                                        <button id='readyToQC' onClick={handleReadyToQC}
+                                                            className={`text-white py-1 px-3 rounded-md ${localOrder?.orderStatus !== "In-progress"
+                                                                ? "bg-gray-400 cursor-not-allowed"
+                                                                : "bg-[#6E3FF3] cursor-pointer"
+                                                                }`}>Ready to QC
+                                                        </button>
+                                                        :
+                                                        <button id='readyToUpload' onClick={handleReadyToUpload}
+                                                            className={`text-white py-1 px-3 rounded-md ${localOrder?.orderStatus !== "Ready to QC"
+                                                                ? "bg-gray-400 cursor-not-allowed"
+                                                                : "bg-[#6E3FF3] cursor-pointer"
+                                                                }`}>Ready to upload
+                                                        </button>
+
+                                                }
+
+
                                             </div>
 
                                         </section>
