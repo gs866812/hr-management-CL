@@ -102,7 +102,7 @@ const ViewLocalOrder = () => {
                     setIsRunning(false);
                     dispatch(setRefetch(!refetch));
                     Swal.fire({
-                        title:"Order Ready to QC!",
+                        title: "Order Ready to QC!",
                         showConfirmButton: false,
                         icon: "success",
                         timer: 1000
@@ -114,6 +114,7 @@ const ViewLocalOrder = () => {
         }
         changeOrderToQC();
     };
+    // ************************************************************************************************
     const handleReadyToUpload = () => {
         const changeOrderDelivered = async () => {
             try {
@@ -123,7 +124,7 @@ const ViewLocalOrder = () => {
                     setIsRunning(false);
                     dispatch(setRefetch(!refetch));
                     Swal.fire({
-                        title:"Order has been delivered",
+                        title: "Order has been delivered",
                         showConfirmButton: false,
                         icon: "success",
                         timer: 1000
@@ -134,6 +135,28 @@ const ViewLocalOrder = () => {
             }
         }
         changeOrderDelivered();
+    };
+    // ************************************************************************************************
+    const modifyOrder = () => {
+        const changeOrderModify = async () => {
+            try {
+                const response = await axiosSecure.put(`/modifyOrderToInitial/${orderId}`);
+
+                if (response.data.modifiedCount > 0) {
+                    setIsRunning(false);
+                    dispatch(setRefetch(!refetch));
+                    Swal.fire({
+                        title: "Order has been modified",
+                        showConfirmButton: false,
+                        icon: "success",
+                        timer: 1000
+                    });
+                }
+            } catch (error) {
+                toast.error(`Error fetching data: ${error.message}`);
+            }
+        }
+        changeOrderModify();
     };
     // ************************************************************************************************
 
@@ -291,7 +314,7 @@ const ViewLocalOrder = () => {
                                     renderer={({ days, hours, minutes, seconds }) => (
                                         // Countdown time of deadline-------------------------------
                                         <section className={`shadow-md rounded-md p-4 mt-5 border ${days == '00' && hours == '00' && minutes == '00' && seconds == '00' ? 'hidden' : ''}`}>
-                                            <div className='flex items-center gap-2'>
+                                            <div className={`flex items-center gap-2 ${localOrder?.orderStatus === "Delivered" ? "hidden" : ""}`}>
                                                 <button
                                                     className={`text-white py-1 px-3 rounded-md ${localOrder?.orderStatus !== "Pending" && localOrder?.orderStatus !== "Hold"
                                                         ? "bg-gray-400 cursor-not-allowed"
@@ -303,7 +326,7 @@ const ViewLocalOrder = () => {
                                                     Start the order
                                                 </button>
                                                 <button
-                                                    className={`text-white py-1 px-3 rounded-md ${localOrder?.orderStatus == "Hold" || localOrder?.orderStatus == "Pending"
+                                                    className={`text-white py-1 px-3 rounded-md ${localOrder?.orderStatus == "Hold" || localOrder?.orderStatus == "Pending" || localOrder?.orderStatus == "Delivered" || localOrder?.orderStatus == "Reviewing"
                                                         ? "bg-gray-400 cursor-not-allowed"
                                                         : "bg-[#6E3FF3] cursor-pointer"
                                                         }`}
@@ -314,7 +337,7 @@ const ViewLocalOrder = () => {
                                                 </button>
                                             </div>
 
-                                            <div className='mt-3'>
+                                            <div className={`mt-3 ${localOrder?.orderStatus === "Delivered" ? "hidden" : ""}`}>
                                                 {
                                                     localOrder && localOrder?.orderStatus !== "Ready to QC" ?
                                                         <button id='readyToQC' onClick={handleReadyToQC}
@@ -335,6 +358,21 @@ const ViewLocalOrder = () => {
 
 
                                             </div>
+                                            {localOrder && localOrder?.orderStatus === "Delivered" ?
+                                                <div className=''>
+                                                    <button id='modify' onClick={modifyOrder}
+                                                        className={`text-white py-1 px-3 rounded-md ${localOrder?.orderStatus === "Delivered"
+                                                            ? "bg-[#6E3FF3] cursor-pointer"
+                                                            :
+                                                            "bg-gray-400 cursor-not-allowed"
+                                                            }`}>Request to modify
+                                                    </button>
+                                                </div>
+                                                :
+                                                null
+
+                                            }
+
 
                                         </section>
                                     )}
