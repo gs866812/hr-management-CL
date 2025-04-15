@@ -3,61 +3,62 @@ import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5';
 import { MdOutlineMail } from 'react-icons/md';
 import { RiLockPasswordLine } from 'react-icons/ri';
 import { Link, useNavigate } from 'react-router-dom';
-import auth from '../../firebase.config';
-import axios from 'axios';
 import { ContextData } from '../../DataProvider';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { toast } from 'react-toastify';
+import axios from 'axios';
 import Swal from 'sweetalert2';
+import auth from '../../firebase.config';
 
-const Login = () => {
+const EmployeeLogin = () => {
     // ****************************************************************
-    const { setUser, setLoading } = useContext(ContextData);
     const [showPassword, setShowPassword] = useState(false);
-    // const [user, setUser] = useState([]);
+    const { setUser, setLoading } = useContext(ContextData);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     // ****************************************************************
+    console.log(email, password);
+    
 
-    const navigate = useNavigate();
+     const navigate = useNavigate();
+     const handleEmployeeEmailLogin = async (e) => {
+             e.preventDefault();
+             console.log(email, password);
+             try {
+                 const userCredential = await signInWithEmailAndPassword(
+                     auth,
+                     email,
+                     password
+                 );
+                 const user = userCredential.user;
+                 const emailData = { email: user.email };
+     
+                 // Call backend to generate JWT
+                 const res = await axios.post(
+                     'http://localhost:5000/jwt',
+                     emailData
+                 );
+                 if (res.data.token) {
+                     localStorage.setItem('jwtToken', res.data.token); // Store token in localStorage
+                     setUser(user); // Set the user context
+                     navigate('/'); // Redirect after login
+                 }
+                 navigate('/');
+             } catch (error) {
+                 Swal.fire({
+                     title: 'Invalid credentials',
+                 });
+             }
+         };
 
-    const handleAdminEmailLogin = async (e) => {
-        e.preventDefault();
-        try {
-            const userCredential = await signInWithEmailAndPassword(
-                auth,
-                email,
-                password
-            );
-            const user = userCredential.user;
-            const emailData = { email: user.email };
-
-            // Call backend to generate JWT
-            const res = await axios.post(
-                'http://localhost:5000/jwt',
-                emailData
-            );
-            if (res.data.token) {
-                localStorage.setItem('jwtToken', res.data.token); // Store token in localStorage
-                setUser(user); // Set the user context
-                navigate('/'); // Redirect after login
-            }
-            navigate('/');
-        } catch (error) {
-            Swal.fire({
-                title: 'Invalid credentials',
-            });
-        }
-    };
     // ****************************************************************
     return (
         <div className="max-w-screen-2xl mx-auto">
             <div className="text-center border p-10 rounded-md w-96 mx-auto mt-20">
-                <h2>Login</h2>
+                <h2>Login as employee</h2>
 
                 <form
                     className="flex flex-col gap-5 mt-5"
-                    onSubmit={handleAdminEmailLogin}
+                    onSubmit={handleEmployeeEmailLogin}
                 >
                     <label className="input input-bordered flex items-center gap-2">
                         <MdOutlineMail />
@@ -101,7 +102,7 @@ const Login = () => {
                     <div className="text-sm flex justify-between">
                         <Link to="/">Forgot password</Link>
                         {/* <Link to="/client-login">Login as Admin</Link> */}
-                        <Link to="/employee-login">Employee login</Link>
+                        <Link to="/employee-sign-up">Register</Link>
                     </div>
                 </form>
             </div>
@@ -109,4 +110,4 @@ const Login = () => {
     );
 };
 
-export default Login;
+export default EmployeeLogin;

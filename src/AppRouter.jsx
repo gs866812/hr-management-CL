@@ -15,9 +15,13 @@ import NoticeBoard from './Component/NoticeBoard/NoticeBoard';
 import Employee from './Component/EmployeeList/Employee';
 import Clients from './Component/ClientList/Clients';
 import Leave from './Component/Leave/Leave';
+import EmployeeLogin from './Component/Login/EmployeeLogin';
+import EmployeeSignUp from './Component/EmployeeList/EmployeeSignUp';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
+    { path: '/employee-login', element: <EmployeeLogin/> },
+    { path: '/employee-sign-up', element: <EmployeeSignUp/> },
     {
         path: '/',
         element: (
@@ -39,6 +43,7 @@ export const router = createBrowserRouter([
             { path: '/employee', element: <Employee /> },
             { path: '/clients', element: <Clients /> },
             { path: '/leave', element: <Leave /> },
+            
             
         ],
     },

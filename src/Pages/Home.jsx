@@ -6,6 +6,7 @@ import useAxiosProtect from '../utils/useAxiosProtect';
 import { toast } from 'react-toastify';
 import { useDispatch, useSelector } from 'react-redux';
 import HrDashboard from '../Component/HrAdmin/HrDashboard';
+import Employee from '../Component/EmployeeList/Employee';
 
 
 
@@ -50,9 +51,11 @@ const Home = () => {
                         <HrDashboard/> :
                     user && currentUser?.role === 'client' ?
                         <ClientDashboard /> :
-                        <div className="flex justify-center items-center lg:p-20 mt-5 lg:mt-0">
-                            <span className="loading loading-ring loading-lg flex justify-center items-center"></span>
-                        </div>
+                        <Employee/>
+
+                        // <div className="flex justify-center items-center lg:p-20 mt-5 lg:mt-0">
+                        //     <span className="loading loading-ring loading-lg flex justify-center items-center"></span>
+                        // </div>
             }
         </>
     );
