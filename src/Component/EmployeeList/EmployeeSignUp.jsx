@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5';
 import { MdOutlineMail } from 'react-icons/md';
 import { RiLockPasswordLine } from 'react-icons/ri';
 import auth from '../../firebase.config';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { useDispatch, useSelector } from 'react-redux';
+import { setRefetch } from '../../redux/refetchSlice';
+import Swal from 'sweetalert2';
 
 const EmployeeSignUp = () => {
     const [employeeData, setEmployeeData] = useState({
@@ -29,8 +32,12 @@ const EmployeeSignUp = () => {
 
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+
     const navigate = useNavigate();
 
+    const dispatch = useDispatch();
+    const refetch = useSelector((state) => state.refetch.refetch);
+    // *******************************************************************
     const handleChange = (e) => {
         const { name, value } = e.target;
         setEmployeeData(prev => ({
@@ -39,8 +46,10 @@ const EmployeeSignUp = () => {
         }));
     };
 
+    // *******************************************************************
     const handleSubmit = async (e) => {
         e.preventDefault();
+        // console.log(employeeData);
         setLoading(true);
 
         try {
@@ -64,13 +73,15 @@ const EmployeeSignUp = () => {
             };
 
             // 3. Save employee data to MongoDB
-            const response = await axios.post('http://localhost:5000/api/employees', employeeRecord);
+            const response = await axios.post('http://localhost:5000/registerEmployees', employeeRecord);
 
-            if (response.data.success) {
-                toast.success('Employee registered successfully!');
-                navigate('/employee-login');
-            } else {
-                throw new Error(response.data.message || 'Failed to save employee data');
+            if (response.data.insertedId) {
+                console.log(response.data);
+                Swal.fire({
+                    title: 'Registration successfully',
+                });
+                dispatch(setRefetch(!refetch));
+                toast.success('Registration successfully');
             }
         } catch (error) {
             console.error('Registration error:', error);
@@ -79,20 +90,19 @@ const EmployeeSignUp = () => {
             setLoading(false);
         }
     };
+    // *******************************************************************
 
     return (
         <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-md">
             <h2 className="text-2xl font-bold text-center mb-6">Employee Registration</h2>
 
             <form onSubmit={handleSubmit} className="border p-5 rounded-md">
-                <div className='flex '>
-                    
-                </div>
+
 
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Email */}
-                    <div className="col-span-2">
+                    <div className="">
                         <label className="input input-bordered flex items-center gap-2">
                             <MdOutlineMail />
                             <input
@@ -108,7 +118,7 @@ const EmployeeSignUp = () => {
                     </div>
 
                     {/* Password */}
-                    <div className="col-span-2">
+                    <div className="">
                         <label className="input input-bordered flex items-center gap-2 relative">
                             <RiLockPasswordLine />
                             <input
@@ -143,7 +153,7 @@ const EmployeeSignUp = () => {
                                 value={employeeData.fullName}
                                 onChange={handleChange}
                                 required
-                                className="input input-bordered w-full"
+                                className="input input-bordered w-full !border !border-gray-300"
                             />
                         </label>
                     </div>
@@ -161,7 +171,7 @@ const EmployeeSignUp = () => {
                                 value={employeeData.designation}
                                 onChange={handleChange}
                                 required
-                                className="input input-bordered w-full"
+                                className="input input-bordered w-full !border !border-gray-300"
                             />
                         </label>
                     </div>
@@ -178,7 +188,7 @@ const EmployeeSignUp = () => {
                                 placeholder="Father's Name"
                                 value={employeeData.fathersName}
                                 onChange={handleChange}
-                                className="input input-bordered w-full"
+                                className="input input-bordered w-full !border !border-gray-300"
                             />
                         </label>
                     </div>
@@ -195,7 +205,7 @@ const EmployeeSignUp = () => {
                                 placeholder="Mother's Name"
                                 value={employeeData.mothersName}
                                 onChange={handleChange}
-                                className="input input-bordered w-full"
+                                className="input input-bordered w-full !border !border-gray-300"
                             />
                         </label>
                     </div>
@@ -212,7 +222,7 @@ const EmployeeSignUp = () => {
                                 placeholder="Spouse Name"
                                 value={employeeData.spouseName}
                                 onChange={handleChange}
-                                className="input input-bordered w-full"
+                                className="input input-bordered w-full !border !border-gray-300"
                             />
                         </label>
                     </div>
@@ -230,7 +240,7 @@ const EmployeeSignUp = () => {
                                 value={employeeData.phoneNumber}
                                 onChange={handleChange}
                                 required
-                                className="input input-bordered w-full"
+                                className="input input-bordered w-full !border !border-gray-300"
                             />
                         </label>
                     </div>
@@ -248,7 +258,7 @@ const EmployeeSignUp = () => {
                                 value={employeeData.NID}
                                 onChange={handleChange}
                                 required
-                                className="input input-bordered w-full"
+                                className="input input-bordered w-full !border !border-gray-300"
                             />
                         </label>
                     </div>
@@ -265,7 +275,7 @@ const EmployeeSignUp = () => {
                                 value={employeeData.DOB}
                                 onChange={handleChange}
                                 required
-                                className="input input-bordered w-full"
+                                className="input input-bordered w-full !border !border-gray-300"
                             />
                         </label>
                     </div>
@@ -308,7 +318,7 @@ const EmployeeSignUp = () => {
                                 value={employeeData.emergencyContact}
                                 onChange={handleChange}
                                 required
-                                className="input input-bordered w-full"
+                                className="input input-bordered w-full !border !border-gray-300"
                             />
                         </label>
                     </div>
@@ -326,7 +336,7 @@ const EmployeeSignUp = () => {
                                 value={employeeData.emergencyContactPerson}
                                 onChange={handleChange}
                                 required
-                                className="input input-bordered w-full"
+                                className="input input-bordered w-full !border !border-gray-300"
                             />
                         </label>
                     </div>
@@ -344,7 +354,7 @@ const EmployeeSignUp = () => {
                                 value={employeeData.emergencyContactPersonRelation}
                                 onChange={handleChange}
                                 required
-                                className="input input-bordered w-full"
+                                className="input input-bordered w-full !border !border-gray-300"
                             />
                         </label>
                     </div>
@@ -361,7 +371,7 @@ const EmployeeSignUp = () => {
                                 value={employeeData.address}
                                 onChange={handleChange}
                                 required
-                                className="textarea textarea-bordered w-full"
+                                className="textarea textarea-bordered w-full !border !border-gray-300"
                                 rows="3"
                             ></textarea>
                         </label>
