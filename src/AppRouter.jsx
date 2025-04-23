@@ -17,6 +17,7 @@ import Clients from './Component/ClientList/Clients';
 import Leave from './Component/Leave/Leave';
 import EmployeeLogin from './Component/Login/EmployeeLogin';
 import EmployeeSignUp from './Component/EmployeeList/EmployeeSignUp';
+import Earnings from './Component/Earnings/Earnings';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
@@ -43,6 +44,7 @@ export const router = createBrowserRouter([
             { path: '/employee', element: <Employee /> },
             { path: '/clients', element: <Clients /> },
             { path: '/leave', element: <Leave /> },
+            { path: '/earnings', element: <Earnings /> },
             
             
         ],

@@ -73,7 +73,7 @@ const EmployeeSignUp = () => {
             };
 
             // 3. Save employee data to MongoDB
-            const response = await axios.post('https://webbriks.backendsafe.com/registerEmployees', employeeRecord);
+            const response = await axios.post('http://localhost:5000/registerEmployees', employeeRecord);
 
             if (response.data.insertedId) {
                 console.log(response.data);

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BsCurrencyDollar } from 'react-icons/bs';
 import { CiInboxIn } from 'react-icons/ci';
 import { FaAngleDown, FaAngleUp } from 'react-icons/fa';
 import { FaClockRotateLeft } from 'react-icons/fa6';
@@ -122,6 +123,18 @@ const Navbar = () => {
                 )}
             </section>
             {/*************************************************************/}
+            <Link
+                to="/earnings"
+                className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/earnings'
+                        ? 'bg-[#6E3FF3] text-white'
+                        : 'hover:bg-[#6E3FF3] hover:text-white'
+                    }`}
+            >
+                <BsCurrencyDollar />
+                <span>Earnings</span>
+            </Link>
+            {/*************************************************************/}
+
             <Link
                 to="/clients"
                 className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/clients'
