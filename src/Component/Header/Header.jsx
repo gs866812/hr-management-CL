@@ -10,7 +10,7 @@ import logo from '/main_logo.png';
 
 
 const Header = () => {
-    const { logOut, user} = useContext(ContextData);
+    const { logOut, user, currentUser} = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
     // ************************************************************
     const navigate = useNavigate(); // Next.js router for navigation
@@ -48,37 +48,14 @@ const Header = () => {
                             <img
                                 className='rounded-full w-full h-full object-cover'
                                 alt="Tailwind CSS Navbar component"
-                                src={
-                                    user?.email === import.meta.env.VITE_SARWAR?
-                                    'https://iili.io/2BqJhuf.png' :
-                                    user?.email === import.meta.env.VITE_MUKUL?
-                                    'https://iili.io/33qPNZx.jpg' :
-                                    user?.email === import.meta.env.VITE_DULU?
-                                    'https://iili.io/3JkVvmN.webp' :
-                                    user?.email === import.meta.env.VITE_ASAD?
-                                    'https://iili.io/2zUIGaf.jpg' : null
-                                } />
+                                src={currentUser?.profilePic} />
                         </div>
                         <div>
                             <h2 className='fon-semi-bold'>
-                                {
-                                    user?.email === import.meta.env.VITE_SARWAR?
-                                    'G Sarwar' :
-                                    user?.email === import.meta.env.VITE_MUKUL?
-                                    'HR Admin' :
-                                    user?.email === import.meta.env.VITE_DULU?
-                                    'Kamal' : null
-                                }
+                                {currentUser?.userName}
                             </h2>
                             <p className='text-gray-500 text-sm'>
-                                {
-                                    user?.email === import.meta.env.VITE_SARWAR?
-                                    'Developer' :
-                                    user?.email === import.meta.env.VITE_ASAD?
-                                    'Admin' :
-                                    user?.email === import.meta.env.VITE_DULU?
-                                    'Admin' : null
-                                }
+                                {currentUser?.role}
                             </p>
                         </div>
 

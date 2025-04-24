@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { toast } from 'react-toastify';
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5';
 import { MdOutlineMail } from 'react-icons/md';
 import { RiLockPasswordLine } from 'react-icons/ri';
@@ -10,6 +8,8 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useDispatch, useSelector } from 'react-redux';
 import { setRefetch } from '../../redux/refetchSlice';
 import Swal from 'sweetalert2';
+import useAxiosSecure from '../../utils/useAxiosSecure';
+import { toast } from 'react-toastify';
 
 const EmployeeSignUp = () => {
     const [employeeData, setEmployeeData] = useState({
@@ -34,9 +34,30 @@ const EmployeeSignUp = () => {
     const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
+    const axiosSecure = useAxiosSecure();
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
+    // *******************************************************************
+    const handleReset = () => {
+        setEmployeeData({
+            email: '',
+            password: '',
+            fullName: '',
+            fathersName: '',
+            mothersName: '',
+            spouseName: '',
+            designation: '',
+            phoneNumber: '',
+            NID: '',
+            DOB: '',
+            bloodGroup: '',
+            emergencyContact: '',
+            emergencyContactPerson: '',
+            emergencyContactPersonRelation: '',
+            address: '',
+        });
+    };
     // *******************************************************************
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -47,9 +68,54 @@ const EmployeeSignUp = () => {
     };
 
     // *******************************************************************
+    // const handleSubmit = async (e) => {
+    //     e.preventDefault();
+    //     // console.log(employeeData);
+    //     setLoading(true);
+
+    //     try {
+    //         // 1. Create user in Firebase Authentication
+    //         const userCredential = await createUserWithEmailAndPassword(
+    //             auth,
+    //             employeeData.email,
+    //             employeeData.password
+    //         );
+
+    //         const user = userCredential.user;
+
+    //         // 2. Prepare data for MongoDB (excluding password)
+    //         const { password, ...employeeDataWithoutPassword } = employeeData;
+
+    //         const employeeRecord = {
+    //             ...employeeDataWithoutPassword,
+    //             firebaseUID: user.uid,
+    //             status: 'active',
+    //             createdAt: new Date().toISOString()
+    //         };
+
+    //         // 3. Save employee data to MongoDB
+    //         const response = await axiosSecure.post('/registerEmployees', employeeRecord);
+
+    //         if (response.data.insertedId) {
+    //             Swal.fire({
+    //                 title: 'Registration successfully',
+    //             });
+    //             console.log(response.data);
+    //             handleReset();
+    //             dispatch(setRefetch(!refetch));
+
+
+    //         }
+    //     } catch (error) {
+    //         console.error('Registration error:', error);
+    //         toast.error(error.message || 'Registration failed. Please try again.');
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+    // *******************************************************************
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // console.log(employeeData);
         setLoading(true);
 
         try {
@@ -73,19 +139,26 @@ const EmployeeSignUp = () => {
             };
 
             // 3. Save employee data to MongoDB
-            const response = await axios.post('http://localhost:5000/registerEmployees', employeeRecord);
+            const response = await axiosSecure.post('/registerEmployees', employeeRecord);
 
             if (response.data.insertedId) {
-                console.log(response.data);
-                Swal.fire({
-                    title: 'Registration successfully',
-                });
+                Swal.fire({ title: 'Registration successfully' });
+                handleReset();
                 dispatch(setRefetch(!refetch));
-                toast.success('Registration successfully');
             }
         } catch (error) {
-            console.error('Registration error:', error);
-            toast.error(error.message || 'Registration failed. Please try again.');
+            if (error?.code === 'auth/email-already-in-use') {
+                Swal.fire({
+                    title: "Error",
+                    text: "This email is already in use. Please use a different one.",
+                    icon: "error"
+                });
+
+            }
+            else {
+                toast.error(error.message || 'Registration failed. Please try again.');
+                Swal.fire({ title: error.message || 'Registration failed. Please try again.'});
+            }
         } finally {
             setLoading(false);
         }

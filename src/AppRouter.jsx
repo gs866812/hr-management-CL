@@ -18,6 +18,7 @@ import Leave from './Component/Leave/Leave';
 import EmployeeLogin from './Component/Login/EmployeeLogin';
 import EmployeeSignUp from './Component/EmployeeList/EmployeeSignUp';
 import Earnings from './Component/Earnings/Earnings';
+import ProtectedRole from './Component/Protected/ProtectedRole';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
@@ -34,7 +35,7 @@ export const router = createBrowserRouter([
         children: [
             { path: '/', element: <Home /> },
             { path: '/notice-board', element: <NoticeBoard /> },
-            { path: '/expense', element: <MyExpense /> },
+            { path: '/expense', element: <ProtectedRole><MyExpense /></ProtectedRole> },
             { path: '/recentOrders', element: <RecentOrders /> },
             { path: '/recentOrders/:orderId', element: <ViewLocalOrder /> },
             { path: '/createLocalOrder', element: <CreateLocalOrder /> },
