@@ -17,14 +17,7 @@ const ProtectedRole = ({ children }) => {
     };
 
 
-    const accessMails = [
-        "gooogle.sarwar@gmail.com",
-        "agraphicsaction@gmail.com",
-        "wbllc.order@gmail.com",
-        "asad4nur@gmail.com"
-    ];
-
-    if (user && accessMails.includes(user.email)) {
+    if (user && currentUser?.role.includes("Developer", "HR-ADMIN", "Admin")) {
         return children;
     };
 

@@ -47,15 +47,15 @@ const Header = () => {
                         <div className='w-8 h-8 relative'>
                             <img
                                 className='rounded-full w-full h-full object-cover'
-                                alt="Tailwind CSS Navbar component"
-                                src={currentUser?.profilePic} />
+                                alt={currentUser?.role}
+                                src={currentUser?.profilrPic} />
                         </div>
                         <div>
                             <h2 className='fon-semi-bold'>
-                                {currentUser?.userName}
+                                {currentUser?.role}
                             </h2>
                             <p className='text-gray-500 text-sm'>
-                                {currentUser?.role}
+                                {currentUser?.userName}
                             </p>
                         </div>
 
