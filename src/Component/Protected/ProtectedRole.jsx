@@ -7,6 +7,7 @@ const ProtectedRole = ({ children }) => {
     const { user, loading, currentUser } = useContext(ContextData);
 
     const location = useLocation();
+    const allowedRoles = ["Developer", "HR-ADMIN", "Admin"];
 
 
 
@@ -17,9 +18,9 @@ const ProtectedRole = ({ children }) => {
     };
 
 
-    if (user && currentUser?.role.includes("Developer", "HR-ADMIN", "Admin")) {
+    if (user && allowedRoles.includes(currentUser?.role)) {
         return children;
-    };
+    }
 
     // return <Navigate state={location.pathname} to='/login'></Navigate>
     return <Navigate state={{ from: location }} to='/' />;
