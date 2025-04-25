@@ -75,7 +75,7 @@ const Navbar = () => {
                 className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/expense'
                         ? 'bg-[#6E3FF3] text-white'
                         : 'hover:bg-[#6E3FF3] hover:text-white'
-                    } ${currentUser?.role === 'employee'? 'hidden': ''}` }
+                    } ${currentUser?.role === 'employee'? 'hidden': 'block'}` }
             >
                 <RiCurrencyLine />
                 <span>Expense</span>
