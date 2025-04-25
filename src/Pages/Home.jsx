@@ -22,34 +22,41 @@ const Home = () => {
     const refetch = useSelector((state) => state.refetch.refetch);
 
     // ************************************************************************************************
-    if (user) {
-        useEffect(() => {
-            const fetchPresentUser = async () => {
-                try {
-                    const response = await axiosProtect.get('/getCurrentUser', {
-                        params: {
-                            userEmail: user?.email,
-                        },
-                    });
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const token = localStorage.getItem('jwtToken');
+            if (user && token) {
+                clearInterval(interval);
+                fetchPresentUser();
+            }
+        }, 200);
 
-                    setCurrentUser(response.data);
+        const fetchPresentUser = async () => {
+            try {
+                const response = await axiosProtect.get('/getCurrentUser', {
+                    params: {
+                        userEmail: user.email,
+                    },
+                });
 
-                } catch (error) {
-                    toast.error('Error fetching user data');
-                }
-            };
-            fetchPresentUser();
-        }, [refetch]);
-    }
+                setCurrentUser(response.data);
+            } catch (error) {
+                toast.error('Error fetching user data');
+            }
+        };
+
+        return () => clearInterval(interval);
+    }, [refetch, user]);
+
     // ************************************************************************************************
 
 
     return (
         <>
             {
-                user && currentUser?.role === 'admin' ?
+                user && currentUser?.role === 'Admin' || currentUser?.role === 'Developer' ?
                     <AdminDashboard /> :
-                    user && currentUser?.role === 'hr_admin' ?
+                    user && currentUser?.role === 'HR-ADMIN' ?
                         <HrDashboard /> :
                         user && currentUser?.role === 'client' ?
                             <ClientDashboard /> :

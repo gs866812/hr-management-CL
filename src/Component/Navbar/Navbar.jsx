@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { BsCurrencyDollar } from 'react-icons/bs';
 import { CiInboxIn } from 'react-icons/ci';
 import { FaAngleDown, FaAngleUp } from 'react-icons/fa';
@@ -10,8 +10,11 @@ import { MdOutlineDashboard } from 'react-icons/md';
 import { PiClipboardText } from 'react-icons/pi';
 import { RiCurrencyLine, RiUser2Fill } from 'react-icons/ri';
 import { Link, useLocation } from 'react-router-dom';
+import { ContextData } from '../../DataProvider';
 
 const Navbar = () => {
+    const { currentUser } = useContext(ContextData);
+
     const [isOpenGeneral, setIsOpenGeneral] = useState(false);
     const [isOpenOrder, setIsOpenOrder] = useState(false);
     const [isOpenOrderManagement, setIsOpenOrderManagement] = useState(false);
@@ -72,7 +75,7 @@ const Navbar = () => {
                 className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/expense'
                         ? 'bg-[#6E3FF3] text-white'
                         : 'hover:bg-[#6E3FF3] hover:text-white'
-                    }`}
+                    } ${currentUser?.role === 'employee'? 'hidden': ''}` }
             >
                 <RiCurrencyLine />
                 <span>Expense</span>

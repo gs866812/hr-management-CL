@@ -12,7 +12,7 @@ const DataProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [categories, setCategories] = useState([]); 
+    const [categories, setCategories] = useState([]);
     const [userName, setUserName] = useState(null);
     const [hrBalance, setHrBalance] = useState(0);
     const [hrTransactions, setHrTransactions] = useState(0);
@@ -33,70 +33,55 @@ const DataProvider = ({ children }) => {
 
     // ****************************************************************
     useEffect(() => {
-        if (user) {
-            const fetchHrBalance = async () => {
-                try {
-                    const response = await axiosProtect.get('/getHrBalance', {
-                        params: {
-                            userEmail: user?.email,
-                        },
-                    });
-                    setHrBalance(response.data.balance);
-                    setHrExpense(response.data.expense);
-                    setHrTransactions(response.data.hrTransaction);
-                } catch (error) {
-                    toast.error('Error fetching data:', error.message);
-                }
-            };
-            fetchHrBalance();
-        }
-
-
-    }, [refetch, user]);
-    // ****************************************************************
-    useEffect(() => {
-        if (user) {
-            const fetchMainBalance = async () => {
-                try {
-                    const response = await axiosProtect.get('/getMainBalance', {
-                        params: {
-                            userEmail: user?.email,
-                        },
-                    });
-
-                    setMainBalance(response.data.mainBalance);
-                } catch (error) {
-                    toast.error('Error fetching data:', error.message);
-                }
-            };
-            fetchMainBalance();
-        }
-
-
-    }, [refetch, user]);
-    // ****************************************************************
-    useEffect(() => {
-        if (user) {
-            switch (user?.email) {
-                case import.meta.env.VITE_SARWAR:
-                    setUserName('g_sarwar');
-                    break;
-                case import.meta.env.VITE_MUKUL:
-                    setUserName('HR_ADMIN');
-                    break;
-                case import.meta.env.VITE_DULU:
-                    setUserName('MASUM.KAMAL');
-                    break;
-                case import.meta.env.VITE_ASAD:
-                    setUserName('Asad4boss');
-                    break;
-                default:
-                    setUserName('Client');
+        const interval = setInterval(() => {
+            const token = localStorage.getItem('jwtToken');
+            if (user && token) {
+                clearInterval(interval);
+                fetchHrBalance();
             }
-        } else {
-            setUserName(null); // Reset userName if there's no user or email
-        }
-    }, [user]);
+        }, 200);
+
+        const fetchHrBalance = async () => {
+            try {
+                const response = await axiosProtect.get('/getHrBalance', {
+                    params: {
+                        userEmail: user?.email,
+                    },
+                });
+                setHrBalance(response.data.balance);
+                setHrExpense(response.data.expense);
+                setHrTransactions(response.data.hrTransaction);
+            } catch (error) {
+                toast.error('Error fetching data:', error.message);
+            }
+        };
+        return () => clearInterval(interval);
+    }, [refetch, user]);
+    // ****************************************************************
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const token = localStorage.getItem('jwtToken');
+            if (user && token) {
+                clearInterval(interval);
+                fetchMainBalance();
+            }
+        }, 200);
+
+        const fetchMainBalance = async () => {
+            try {
+                const response = await axiosProtect.get('/getMainBalance', {
+                    params: { userEmail: user.email },
+                });
+                setMainBalance(response.data.mainBalance);
+            } catch (error) {
+                toast.error('Error fetching data');
+            }
+        };
+
+        return () => clearInterval(interval);
+    }, [refetch, user]);
+
+
     // ****************************************************************
     // Token validation logic
     const validateToken = async () => {
@@ -195,9 +180,9 @@ const DataProvider = ({ children }) => {
         setCurrentPage,
         hrBalance,
         hrTransactions,
-        hrExpense, 
+        hrExpense,
         setHrExpense,
-        currentUser, 
+        currentUser,
         setCurrentUser,
         mainBalance
     };

@@ -15,7 +15,7 @@ export const fetchPresentUser = createAsyncThunk(
       });
       return response.data;
     } catch (error) {
-      toast.error('Error fetching user data');
+      toast.error('Error fetching user data jjjjj');
       return rejectWithValue(error.response.data);
     }
   }
