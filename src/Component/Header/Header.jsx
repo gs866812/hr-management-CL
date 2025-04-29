@@ -48,7 +48,7 @@ const Header = () => {
                             <img
                                 className='rounded-full w-full h-full object-cover'
                                 alt={currentUser?.role}
-                                src={currentUser?.profilrPic} />
+                                src={currentUser?.profilePic} />
                         </div>
                         <div>
                             <h2 className='fon-semi-bold'>

@@ -2,11 +2,19 @@ import React, { useContext, useEffect, useState } from 'react';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import { ContextData } from '../../DataProvider';
 import { IoEyeOutline } from 'react-icons/io5';
+import { FaPlus } from 'react-icons/fa';
+import AddClientModal from './AddClientModal';
+import { useDispatch, useSelector } from 'react-redux';
 
 const Clients = () => {
 
     const { user, userName } = useContext(ContextData);
+
     const [clientList, setClientList] = useState([]);
+    const [searchClient, setSearchClient] = useState('');
+
+    // const dispatch = useDispatch();
+    const refetch = useSelector((state) => state.refetch.refetch);
 
 
     // *****************************************************************************************
@@ -26,11 +34,41 @@ const Clients = () => {
             }
         };
         fetchClient();
-    }, []);
+    }, [refetch]);
     // *****************************************************************************************
     return (
         <div>
-            <h2 className='text-xl font-semibold'>Client List</h2>
+            <section>
+                <section>
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-xl font-semibold text-gray-800">
+                            Client List
+                        </h2>
+
+                        <div className='flex items-center gap-2'>
+                            <section>
+                                <input
+                                    type="text"
+                                    placeholder="Search..."
+                                    className="!border !border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-1 focus:ring-gray-400"
+                                    value={searchClient}
+                                    onChange={(e) => setSearchClient(e.target.value)}
+                                />
+
+                            </section>
+                            <section>
+                                <button className="bg-[#6E3FF3] text-white px-4 rounded-md py-2 cursor-pointer" onClick={() => document.getElementById('add-new-client-modal').showModal()}>
+                                    <span className='flex items-center gap-2'>
+                                        <FaPlus />
+                                        Add new client
+                                    </span>
+                                </button>
+                            </section>
+                        </div>
+                    </div>
+                </section>
+                {/* *************************************************************** */}
+            </section>
             <section>
                 <div className="overflow-x-auto mt-5">
                     <table className="table table-zebra">
@@ -52,7 +90,7 @@ const Clients = () => {
                                                 <td>{client.country}</td>
                                                 <td className='w-[5%]'>
                                                     <div className='flex justify-center'>
-                                                        <IoEyeOutline className='text-xl cursor-pointer hover:text-[#6E3FF3]'  />
+                                                        <IoEyeOutline className='text-xl cursor-pointer hover:text-[#6E3FF3]' />
                                                     </div>
                                                 </td>
                                             </tr>
@@ -68,6 +106,7 @@ const Clients = () => {
                     </table>
                 </div>
             </section>
+            <AddClientModal />
         </div>
     );
 };
