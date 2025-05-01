@@ -89,7 +89,7 @@ const DataProvider = ({ children }) => {
         if (token) {
             try {
                 const response = await axios.post(
-                    'http://localhost:5000/validate-token',
+                    'https://webbriks.backendsafe.com/validate-token',
                     null,
                     {
                         headers: { Authorization: `Bearer ${token}` },

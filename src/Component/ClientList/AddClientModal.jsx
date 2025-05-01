@@ -38,7 +38,6 @@ const AddClientModal = () => {
                 toast.success('Client added successfully');
                 dispatch(setRefetch(!refetch));
                 const modal = document.querySelector(`#add-new-client-modal`);
-                console.log('Client added:', response.data);
                 modal.close();
             } else {
                 console.log(response.data.message);
