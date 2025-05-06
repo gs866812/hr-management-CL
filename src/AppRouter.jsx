@@ -19,11 +19,13 @@ import EmployeeLogin from './Component/Login/EmployeeLogin';
 import EmployeeSignUp from './Component/EmployeeList/EmployeeSignUp';
 import Earnings from './Component/Earnings/Earnings';
 import ProtectedRole from './Component/Protected/ProtectedRole';
+import ResetPassword from './Component/Login/ResetPassword';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
     { path: '/employee-login', element: <EmployeeLogin/> },
     { path: '/employee-sign-up', element: <EmployeeSignUp/> },
+    { path: '/resetPassword', element: <ResetPassword /> },
     {
         path: '/',
         element: (
@@ -38,14 +40,14 @@ export const router = createBrowserRouter([
             { path: '/expense', element: <ProtectedRole><MyExpense /></ProtectedRole> },
             { path: '/recentOrders', element: <RecentOrders /> },
             { path: '/recentOrders/:orderId', element: <ViewLocalOrder /> },
-            { path: '/createLocalOrder', element: <CreateLocalOrder /> },
-            { path: '/ordersDeadline', element: <OrdersDeadline /> },
+            { path: '/createLocalOrder', element: <ProtectedRole><CreateLocalOrder /></ProtectedRole> },
             { path: '/settings', element: <Settings /> },
             { path: '/orders', element: <OrderManagement /> },
-            { path: '/employee', element: <Employee /> },
-            { path: '/clients', element: <Clients /> },
+            { path: '/employee', element: <ProtectedRole><Employee /></ProtectedRole> },
+            { path: '/clients', element: <ProtectedRole><Clients /></ProtectedRole> },
             { path: '/leave', element: <Leave /> },
-            { path: '/earnings', element: <Earnings /> },
+            { path: '/earnings', element: <ProtectedRole><Earnings /></ProtectedRole> },
+            
             
             
         ],

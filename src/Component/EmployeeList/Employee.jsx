@@ -6,15 +6,21 @@ import { ContextData } from '../../DataProvider';
 import { toast } from 'react-toastify';
 import useAxiosSecure from '../../utils/useAxiosSecure';
 import { setRefetch } from '../../redux/refetchSlice';
+import { FaPhoneAlt, FaUserTie } from 'react-icons/fa';
+import { MdBloodtype, MdDriveFileRenameOutline, MdEmail } from 'react-icons/md';
+import { IoMdHelpBuoy } from 'react-icons/io';
+import { HiMiniCalendarDateRange } from "react-icons/hi2";
+import { CgNametag } from "react-icons/cg";
+import ProfileModal from '../Modal/ProfileModal';
 
 const Employee = () => {
-    const { user } = useContext(ContextData);
+    const { user, employee } = useContext(ContextData);
     const inputRef = useRef(null);
     const [inTime, setInTime] = useState(null);
     const [outTime, setOutTime] = useState(null);
     const [isInClicked, setIsInClicked] = useState(false);
     const [workingHours, setWorkingHours] = useState(null);
-    const [employee, setEmployee] = useState({});
+
     const [image, setImage] = useState(null);
     const [hovered, setHovered] = useState(false);
 
@@ -78,22 +84,7 @@ const Employee = () => {
         }, 2000);
     };
     // ********************************************************************************
-    useEffect(() => {
-        const fetchEmployee = async () => {
-            try {
-                const response = await axiosProtect.get(`/getEmployee`, {
-                    params: {
-                        userEmail: user?.email,
-                    },
-                });
-                setEmployee(response.data);
-                console.log(response.data);
-            } catch (error) {
-                toast.error('Error fetching data:', error.message);
-            }
-        };
-        fetchEmployee();
-    }, [refetch]);
+
 
 
 
@@ -171,20 +162,25 @@ const Employee = () => {
                     {workingHours && <p>Worked: {workingHours} hours</p>}
                 </div>
             </section> */}
+            <div className='flex gap-4 overflow-hidden h-[calc(100vh-64px)]'>
+                <div className='w-3/4 !border !border-gray-300 shadow rounded-md p-2 overflow-y-auto custom-scrollbar'>
+                    <section>
+                        <p>jsdfjsd sdjfhskd g ksdjhfkjsd skdjfhksdjhf jshfk</p>
 
-            <section className='!border ! border-gray-300 rounded-md'>
-                <div className='p-4 shadow flex justify-between gap-4'>
-                    <section className='flex items-start gap-4 w-1/2 !border-r !border-[#6E3FF3]'>
-                        {/* <img src={employee.photo} alt={employee.fullName} className='rounded-md' /> */}
+                    </section>
+                </div>
+                {/* ***************************************** */}
+                <div className=' !border !border-gray-300 w-1/4 shadow rounded-md py-2 px-4 h-[calc(100vh-64px)] sticky top-0'>
+                    <section className='flex justify-center'>
                         <div
-                            className="relative w-40 h-40 rounded-md overflow-hidden group"
+                            className="relative w-40 h-40 rounded-full !border !border-gray-300 overflow-hidden group"
                             onMouseEnter={() => setHovered(true)}
                             onMouseLeave={() => setHovered(false)}
                         >
                             <img
                                 src={employee.photo || 'https://i.ibb.co/7gY0J3C/placeholder.png'}
                                 alt={employee.fullName}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover !border !border-gray-300 rounded-md shadow"
                             />
 
                             {hovered && (
@@ -193,22 +189,55 @@ const Employee = () => {
                                 </div>
                             )}
                         </div>
-                        <div className='space-y-[2px]'>
-                            <h2 className='font-semibold'>Name: {employee.fullName}</h2>
-                            <p className='text-sm'>Designation: {employee.designation}</p>
-                            <p className='text-sm'>Phone: <a href={`tel: ${employee.phoneNumber}`} className='tooltip' data-tip={`Call to ${employee.fullName}`}>{employee.phoneNumber}</a></p>
-                            <p className='text-sm'>Email: <a href={`mailto:${employee.email}`}><span className='underline'>{employee.email}</span></a></p>
-                            <p className='text-sm'>Blood group: {employee.bloodGroup}</p>
-                            <p className='text-sm'>Joining date: To be filled-up by admin</p>
-                            <p className='text-sm'>Status: <span className='!border !border-green-300 rounded-md px-1'>{employee.status}</span></p>
+                    </section>
+                    {/* ************************* */}
+                    <section>
+                        <div className='mt-4 space-y-[2px]'>
+                            <h2 className='font-semibold flex items-center gap-2'>
+                                <MdDriveFileRenameOutline className='text-[#6E3FF3] text-xl' />{employee.fullName}
+                            </h2>
+                            <p className='text-sm flex items-center gap-2 tooltip' data-tip="Designation">
+                                <FaUserTie className='text-[#6E3FF3]' /> {employee.designation}
+                            </p>
+                            <p className='text-sm'>
+                                <a href={`tel: ${employee.phoneNumber}`} className='tooltip flex items-center gap-2' data-tip={`Call to ${employee.fullName}`}>
+                                    <FaPhoneAlt className='text-[#6E3FF3]' /> {employee.phoneNumber}
+                                </a>
+                            </p>
+                            <p className={`text-sm`}>
+                                <a href={`mailto:${employee.email}`}>
+                                    <span className='underline tooltip flex gap-2 items-center'
+                                        data-tip={`Send mail to ${employee.fullName}`}>
+                                        <MdEmail className='text-[#6E3FF3]' />{employee.email}
+                                    </span>
+                                </a>
+                            </p>
+                            <p className='text-sm flex items-center gap-2'>
+                                <MdBloodtype className='text-[#6E3FF3]' /> {employee.bloodGroup}
+                            </p>
+                            <p className='text-sm'>
+                                <a href={`tel: ${employee.emergencyContact}`} className='tooltip flex items-center gap-2'
+                                    data-tip={`Call to ${employee.emergencyContactPerson} (${employee.emergencyContactPersonRelation})`}>
+                                    <IoMdHelpBuoy className='text-[#6E3FF3]' /> {employee.emergencyContact}
+                                </a>
+                            </p>
+                            <p className='text-sm flex items-center gap-2 tooltip' data-tip="Joining date">
+                                <HiMiniCalendarDateRange className='text-[#6E3FF3]' /> Filled-up by admin
+                            </p>
+                            <p className='text-sm'>
+                                Status: <span className='!border !border-green-300 rounded-md px-1 capitalize'>{
+                                    employee.status}
+                                </span>
+                            </p>
+                            <p className='text-sm underline cursor-pointer hover:text-[#6E3FF3] transition-all duration-200 mt-2' onClick={() => document.getElementById('viewProfile').showModal()}>
+                                View full profile
+                            </p>
+
                         </div>
                     </section>
-                    <section className='w-1/2'>
-                        <p>In time: </p>
-                        <p>Out time: </p>
-                    </section>
                 </div>
-            </section>
+            </div>
+
             {/* *********************Dialog***************************** */}
             <dialog id="changeProfilePic" className="modal">
                 <div className="modal-box flex flex-col items-center">
@@ -224,6 +253,8 @@ const Employee = () => {
                     <button>close</button>
                 </form>
             </dialog>
+            {/* ******************************************************** */}
+            <ProfileModal />
             {/* ******************************************************** */}
         </div>
     );

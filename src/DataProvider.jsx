@@ -25,12 +25,64 @@ const DataProvider = ({ children }) => {
     const [expenseItemsPerPage, setExpenseItemsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
 
+    const [employee, setEmployee] = useState({});
+
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
 
     const axiosProtect = useAxiosProtect();
 
+    // ****************************************************************
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const token = localStorage.getItem('jwtToken');
+            if (user && token) {
+                clearInterval(interval);
+                fetchPresentUser();
+            }
+        }, 200);
+
+        const fetchPresentUser = async () => {
+            try {
+                const response = await axiosProtect.get('/getCurrentUser', {
+                    params: {
+                        userEmail: user.email,
+                    },
+                });
+
+                setCurrentUser(response.data);
+            } catch (error) {
+                toast.error('Error fetching user data');
+            }
+        };
+
+        return () => clearInterval(interval);
+    }, [refetch, user]);
+    // ****************************************************************
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const token = localStorage.getItem('jwtToken');
+            if (user && token) {
+                clearInterval(interval);
+                fetchEmployee();
+            }
+        }, 200);
+        const fetchEmployee = async () => {
+            try {
+                const response = await axiosProtect.get(`/getEmployee`, {
+                    params: {
+                        userEmail: user?.email,
+                    },
+                });
+                setEmployee(response.data);
+            } catch (error) {
+                toast.error('Error fetching data:', error.message);
+            }
+        };
+        return () => clearInterval(interval);
+
+    }, [refetch, user]);
     // ****************************************************************
     useEffect(() => {
         const interval = setInterval(() => {
@@ -89,7 +141,7 @@ const DataProvider = ({ children }) => {
         if (token) {
             try {
                 const response = await axios.post(
-                    'https://webbriks.backendsafe.com/validate-token',
+                    'http://localhost:5000/validate-token',
                     null,
                     {
                         headers: { Authorization: `Bearer ${token}` },
@@ -184,7 +236,8 @@ const DataProvider = ({ children }) => {
         setHrExpense,
         currentUser,
         setCurrentUser,
-        mainBalance
+        mainBalance,
+        employee,
     };
 
     return <ContextData.Provider value={info}>{children}</ContextData.Provider>;

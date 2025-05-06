@@ -22,33 +22,9 @@ const Home = () => {
     const refetch = useSelector((state) => state.refetch.refetch);
 
     // ************************************************************************************************
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const token = localStorage.getItem('jwtToken');
-            if (user && token) {
-                clearInterval(interval);
-                fetchPresentUser();
-            }
-        }, 200);
+   
 
-        const fetchPresentUser = async () => {
-            try {
-                const response = await axiosProtect.get('/getCurrentUser', {
-                    params: {
-                        userEmail: user.email,
-                    },
-                });
 
-                setCurrentUser(response.data);
-            } catch (error) {
-                toast.error('Error fetching user data');
-            }
-        };
-
-        return () => clearInterval(interval);
-    }, [refetch, user]);
-
-    // ************************************************************************************************
 
 
     return (

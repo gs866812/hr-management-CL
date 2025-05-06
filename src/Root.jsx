@@ -17,12 +17,12 @@ const Root = () => {
             {/* Main Content */}
             <div className="flex flex-grow">
                 {/* Scrollable Sidebar */}
-                <div className="w-[20%] h-[calc(100vh-64px)] overflow-y-auto px-4 custom-scrollbar shadow-right shadow-xl"> 
+                <div className="w-[20%] h-[calc(100vh-64px)] overflow-y-auto px-4 custom-scrollbar shadow-right shadow-xl my-2"> 
                     <Navbar />
                 </div>
 
                 {/* Main Content Area */}
-                <div className="w-[80%] h-[calc(100vh-64px)] overflow-y-auto px-2">
+                <div className="w-[80%] h-[calc(100vh-64px)] overflow-y-auto px-2 my-2">
                     <Outlet />
                 </div>
             </div>

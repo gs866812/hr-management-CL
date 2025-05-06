@@ -44,12 +44,12 @@ const Header = () => {
 
                     {/*/*****************************user start******************************/}
                     <div className='flex justify-center items-center gap-2 w-auto'>
-                        <div className='w-8 h-8 relative'>
+                        {/* <div className='w-8 h-8 relative'>
                             <img
                                 className='rounded-full w-full h-full object-cover'
                                 alt={currentUser?.role}
                                 src={currentUser?.profilePic} />
-                        </div>
+                        </div> */}
                         <div>
                             <h2 className='fon-semi-bold'>
                                 {currentUser?.role}

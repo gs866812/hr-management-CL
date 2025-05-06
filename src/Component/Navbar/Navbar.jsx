@@ -38,8 +38,8 @@ const Navbar = () => {
             <Link
                 to="/"
                 className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/'
-                        ? 'bg-[#6E3FF3] text-white'
-                        : 'hover:bg-[#6E3FF3] hover:text-white'
+                    ? 'bg-[#6E3FF3] text-white'
+                    : 'hover:bg-[#6E3FF3] hover:text-white'
                     }`}
             >
                 <MdOutlineDashboard />
@@ -49,39 +49,55 @@ const Navbar = () => {
             <Link
                 to="/notice-Board"
                 className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/noticeBoard'
-                        ? 'bg-[#6E3FF3] text-white'
-                        : 'hover:bg-[#6E3FF3] hover:text-white'
+                    ? 'bg-[#6E3FF3] text-white'
+                    : 'hover:bg-[#6E3FF3] hover:text-white'
                     }`}
             >
                 <PiClipboardText />
                 <span>Notice Board</span>
             </Link>
             {/* ************************************************* ********************/}
-            <Link
-                to="/employee"
-                className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/employee'
+            {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN') && (
+                <Link
+                    to="/employee"
+                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/employee'
                         ? 'bg-[#6E3FF3] text-white'
                         : 'hover:bg-[#6E3FF3] hover:text-white'
-                    }`}
-            >
-                <LuUsers />
-                <span>Employee</span>
-            </Link>
+                        }`
+                    }
+                >
+                    <LuUsers />
+                    <span>Employee</span>
+                </Link>
+            )}
+
 
             {/* ********************************************************* */}
 
-            <Link
+            {/* <Link
                 to="/expense"
                 className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/expense'
                         ? 'bg-[#6E3FF3] text-white'
                         : 'hover:bg-[#6E3FF3] hover:text-white'
-                    } ${currentUser?.role === 'employee'? 'hidden': 'block'}` }
+                    } ${currentUser?.role === 'Developer'? '': 'hidden'}` }
             >
                 <RiCurrencyLine />
                 <span>Expense</span>
-            </Link>
+            </Link> */}
+            {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN') && (
+                <Link
+                    to="/expense"
+                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/expense'
+                        ? 'bg-[#6E3FF3] text-white'
+                        : 'hover:bg-[#6E3FF3] hover:text-white'
+                        }`}
+                >
+                    <RiCurrencyLine />
+                    <span>Expense</span>
+                </Link>
+            )}
 
-            
+
 
             {/* ********************************************************* order management section*/}
 
@@ -113,47 +129,53 @@ const Navbar = () => {
                         <Link
                             to="/orders"
                             className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/order-management'
-                                    ? 'bg-[#6E3FF3] text-white'
-                                    : 'hover:bg-[#6E3FF3] hover:text-white'
+                                ? 'bg-[#6E3FF3] text-white'
+                                : 'hover:bg-[#6E3FF3] hover:text-white'
                                 }`}
                         >
                             <CiInboxIn />
                             <span>Order Management</span>
                         </Link>
                         {/* ************************************************* */}
-                                               
+
                     </div>
                 )}
             </section>
             {/*************************************************************/}
-            <Link
-                to="/earnings"
-                className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/earnings'
-                        ? 'bg-[#6E3FF3] text-white'
-                        : 'hover:bg-[#6E3FF3] hover:text-white'
-                    }`}
-            >
-                <BsCurrencyDollar />
-                <span>Earnings</span>
-            </Link>
-            {/*************************************************************/}
+            {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN') && (
+                <Link
+                    to="/earnings"
+                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start
+                    ${location.pathname === '/earnings'
+                            ? 'bg-[#6E3FF3] text-white'
+                            : 'hover:bg-[#6E3FF3] hover:text-white'
+                        } `}
+                >
+                    <BsCurrencyDollar />
+                    <span>Earnings</span>
+                </Link>
+            )}
 
-            <Link
+            {/*************************************************************/}
+            {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN') && (
+                <Link
                 to="/clients"
                 className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/clients'
-                        ? 'bg-[#6E3FF3] text-white'
-                        : 'hover:bg-[#6E3FF3] hover:text-white'
+                    ? 'bg-[#6E3FF3] text-white'
+                    : 'hover:bg-[#6E3FF3] hover:text-white'
                     }`}
             >
                 <RiUser2Fill />
                 <span>Clients</span>
             </Link>
+            )}
+            
             {/*************************************************************/}
             <Link
                 to="/settings"
                 className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/settings'
-                        ? 'bg-[#6E3FF3] text-white'
-                        : 'hover:bg-[#6E3FF3] hover:text-white'
+                    ? 'bg-[#6E3FF3] text-white'
+                    : 'hover:bg-[#6E3FF3] hover:text-white'
                     }`}
             >
                 <IoSettingsOutline />
@@ -163,8 +185,8 @@ const Navbar = () => {
             <Link
                 to="/leave"
                 className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/leave'
-                        ? 'bg-[#6E3FF3] text-white'
-                        : 'hover:bg-[#6E3FF3] hover:text-white'
+                    ? 'bg-[#6E3FF3] text-white'
+                    : 'hover:bg-[#6E3FF3] hover:text-white'
                     }`}
             >
                 <LuCalendarClock />
