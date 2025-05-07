@@ -26,12 +26,14 @@ const DataProvider = ({ children }) => {
     const [currentPage, setCurrentPage] = useState(1);
 
     const [employee, setEmployee] = useState({});
+    const [employeeList, setEmployeeList] = useState([]);
 
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
 
     const axiosProtect = useAxiosProtect();
+
 
     // ****************************************************************
     useEffect(() => {
@@ -76,6 +78,30 @@ const DataProvider = ({ children }) => {
                     },
                 });
                 setEmployee(response.data);
+            } catch (error) {
+                toast.error('Error fetching data:', error.message);
+            }
+        };
+        return () => clearInterval(interval);
+
+    }, [refetch, user]);
+    // ****************************************************************
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const token = localStorage.getItem('jwtToken');
+            if (user && token) {
+                clearInterval(interval);
+                fetchEmployeeList();
+            }
+        }, 200);
+        const fetchEmployeeList = async () => {
+            try {
+                const response = await axiosProtect.get(`/getEmployeeList`, {
+                    params: {
+                        userEmail: user?.email,
+                    },
+                });
+                setEmployeeList(response.data);
             } catch (error) {
                 toast.error('Error fetching data:', error.message);
             }
@@ -238,6 +264,9 @@ const DataProvider = ({ children }) => {
         setCurrentUser,
         mainBalance,
         employee,
+        dispatch,
+        refetch,
+        employeeList,
     };
 
     return <ContextData.Provider value={info}>{children}</ContextData.Provider>;

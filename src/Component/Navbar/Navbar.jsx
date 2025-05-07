@@ -59,7 +59,7 @@ const Navbar = () => {
             {/* ************************************************* ********************/}
             {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN') && (
                 <Link
-                    to="/employee"
+                    to="/employeeList"
                     className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/employee'
                         ? 'bg-[#6E3FF3] text-white'
                         : 'hover:bg-[#6E3FF3] hover:text-white'

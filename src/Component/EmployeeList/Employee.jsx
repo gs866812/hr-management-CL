@@ -124,7 +124,7 @@ const Employee = () => {
             }
 
         } catch (err) {
-            toast.error('Upload failed');
+            toast.error('Upload failed', err);
         } finally {
             setLoading(false); // Reset loading after attempt
         }

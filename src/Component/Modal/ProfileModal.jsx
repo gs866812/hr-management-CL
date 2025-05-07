@@ -1,18 +1,23 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { ContextData } from '../../DataProvider';
 import { MdEdit } from 'react-icons/md';
+import useAxiosSecure from '../../utils/useAxiosSecure';
+import { toast } from 'react-toastify';
+import { setRefetch } from '../../redux/refetchSlice';
 
 const ProfileModal = () => {
-    const { employee } = useContext(ContextData);
+    const { employee, dispatch, refetch } = useContext(ContextData);
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState(null);
+
+    const axiosSecure = useAxiosSecure();
 
     const handleEditToggle = () => setIsEditing(true);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
-
+    // ****************************************************************************************
     useEffect(() => {
         if (employee) {
             setFormData({
@@ -32,22 +37,32 @@ const ProfileModal = () => {
             });
         }
     }, [employee]);
-
+    // ***************************************************************************************
     const handleSubmit = async () => {
-        console.log(formData);
-        // Submit logic here
-        // await axiosSecure.patch(`/employees/${employee._id}`, formData);
-        // toast.success('Profile updated successfully');
-        // setRefetch(!refetch);
-        setIsEditing(false);
+        if (formData.bloodGroup === 'Select blood group') {
+            return toast.error('Please select a blood group');
+        }
+
+        try {
+            const response = await axiosSecure.patch(`/updateEmployee/${formData.email}`, formData);
+            toast.success(response.data.message);
+            dispatch(setRefetch(!refetch));
+        } catch (err) {
+            toast.error('Error updating employee', err.message);
+        } finally {
+            setIsEditing(false);
+        }
     };
 
+
+
+    // **************************************************************************************
     if (!formData) return null;
 
     return (
         <div>
             <dialog id="viewProfile" className="modal">
-                <div className="modal-box max-w-2xl">
+                <div className="modal-box scroll-y-auto max-h-[90vh]">
                     {/* Header */}
                     <div className="flex justify-between items-start mb-4">
                         <div className="flex gap-4 items-center">
@@ -64,7 +79,7 @@ const ProfileModal = () => {
 
                         {!isEditing && (
                             <button onClick={handleEditToggle} className="text-xl text-gray-500 hover:text-gray-700">
-                                <MdEdit />
+                                <MdEdit className='outline rounded-full'/>
                             </button>
                         )}
                     </div>
@@ -163,14 +178,25 @@ const ProfileModal = () => {
                         </label>
                         <label>
                             <span className="font-semibold">Blood Group:</span>
-                            <input
+                            <select
                                 name="bloodGroup"
                                 value={formData.bloodGroup}
                                 onChange={handleChange}
                                 disabled={!isEditing}
-                                className="input input-bordered input-sm w-full mt-1"
-                            />
+                                className="select select-bordered select-sm w-full mt-1"
+                            >
+                                <option value="Select blood group">Select blood group</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
                         </label>
+
                         <label>
                             <span className="font-semibold">Emergency Contact:</span>
                             <input
@@ -209,7 +235,7 @@ const ProfileModal = () => {
                             <button className="btn">Close</button>
                         </form>
                         {isEditing && (
-                            <button onClick={handleSubmit} className="btn btn-primary">
+                            <button onClick={handleSubmit} className="btn bg-[#6E3FF3] text-white">
                                 Save Changes
                             </button>
                         )}

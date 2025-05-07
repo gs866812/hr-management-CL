@@ -20,6 +20,7 @@ import EmployeeSignUp from './Component/EmployeeList/EmployeeSignUp';
 import Earnings from './Component/Earnings/Earnings';
 import ProtectedRole from './Component/Protected/ProtectedRole';
 import ResetPassword from './Component/Login/ResetPassword';
+import EmployeeList from './Component/EmployeeList/EmployeeList';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
@@ -43,7 +44,7 @@ export const router = createBrowserRouter([
             { path: '/createLocalOrder', element: <ProtectedRole><CreateLocalOrder /></ProtectedRole> },
             { path: '/settings', element: <Settings /> },
             { path: '/orders', element: <OrderManagement /> },
-            { path: '/employee', element: <ProtectedRole><Employee /></ProtectedRole> },
+            { path: '/employeeList', element: <ProtectedRole><EmployeeList/></ProtectedRole> },
             { path: '/clients', element: <ProtectedRole><Clients /></ProtectedRole> },
             { path: '/leave', element: <Leave /> },
             { path: '/earnings', element: <ProtectedRole><Earnings /></ProtectedRole> },
