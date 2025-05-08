@@ -10,7 +10,7 @@ import logo from '/main_logo.png';
 
 
 const Header = () => {
-    const { logOut, user, currentUser} = useContext(ContextData);
+    const { logOut, user, currentUser } = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
     // ************************************************************
     const navigate = useNavigate(); // Next.js router for navigation
@@ -26,7 +26,7 @@ const Header = () => {
             <div className='lg:px-8 flex justify-between items-center'>
                 <div>
                     {/**********main-logo*****************/}
-                    <Link to='/'><img src={logo} alt="Webbriks.com" className='w-[10%]'/></Link>
+                    <Link to='/'><img src={logo} alt="Webbriks.com" className='w-[10%]' /></Link>
                 </div>
 
                 <div className='flex justify-center items-center gap-3 py-2 w-[300px]'>
@@ -43,29 +43,14 @@ const Header = () => {
 
 
                     {/*/*****************************user start******************************/}
-                    <div className='flex justify-center items-center gap-2 w-auto'>
-                        {/* <div className='w-8 h-8 relative'>
-                            <img
-                                className='rounded-full w-full h-full object-cover'
-                                alt={currentUser?.role}
-                                src={currentUser?.profilePic} />
-                        </div> */}
-                        <div>
-                            <h2 className='fon-semi-bold'>
-                                {currentUser?.role}
-                            </h2>
-                            <p className='text-gray-500 text-sm'>
-                                {currentUser?.userName}
-                            </p>
-                        </div>
-
-                        <div className="dropdown dropdown-hover dropdown-end">
-                            <div tabIndex={0} className=" m-1"><FaAngleDown /></div>
-                            <ul tabIndex={0} className="dropdown-content menu z-[1] w-40 p-2 pt-5">
-                                <li className='bg-red-500 text-white rounded-md hover:bg-red-700'><a onClick={handleLogout}>Log out</a></li>
-                            </ul>
-                        </div>
+                    <div className='border-l border-gray-400 pl-2'>
+                        <button 
+                        className='hover:text-red-500 px-2 py-[2px] rounded-md cursor-pointer'
+                        onClick={handleLogout}>
+                            Log-out
+                        </button>
                     </div>
+
                     {/*/*****************************user end******************************/}
                 </div>
             </div>

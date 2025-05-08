@@ -27,7 +27,9 @@ const DataProvider = ({ children }) => {
 
     const [employee, setEmployee] = useState({});
     const [employeeList, setEmployeeList] = useState([]);
+    const [searchEmployee, setSearchEmployee] = useState('');
 
+console.log(searchEmployee);
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
@@ -99,6 +101,7 @@ const DataProvider = ({ children }) => {
                 const response = await axiosProtect.get(`/getEmployeeList`, {
                     params: {
                         userEmail: user?.email,
+                        search: searchEmployee,
                     },
                 });
                 setEmployeeList(response.data);
@@ -108,7 +111,7 @@ const DataProvider = ({ children }) => {
         };
         return () => clearInterval(interval);
 
-    }, [refetch, user]);
+    }, [refetch, user, searchEmployee, axiosProtect]);
     // ****************************************************************
     useEffect(() => {
         const interval = setInterval(() => {
@@ -167,7 +170,7 @@ const DataProvider = ({ children }) => {
         if (token) {
             try {
                 const response = await axios.post(
-                    'https://webbriks.backendsafe.com/validate-token',
+                    'http://localhost:5000/validate-token',
                     null,
                     {
                         headers: { Authorization: `Bearer ${token}` },
@@ -267,6 +270,7 @@ const DataProvider = ({ children }) => {
         dispatch,
         refetch,
         employeeList,
+        setSearchEmployee,
     };
 
     return <ContextData.Provider value={info}>{children}</ContextData.Provider>;

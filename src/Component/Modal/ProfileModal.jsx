@@ -62,7 +62,7 @@ const ProfileModal = () => {
     return (
         <div>
             <dialog id="viewProfile" className="modal">
-                <div className="modal-box scroll-y-auto max-h-[90vh]">
+                <div className="modal-box scroll-y-auto max-h-[90vh] custom-scrollbar">
                     {/* Header */}
                     <div className="flex justify-between items-start mb-4">
                         <div className="flex gap-4 items-center">
@@ -83,6 +83,7 @@ const ProfileModal = () => {
                             </button>
                         )}
                     </div>
+                   
 
                     {/* Form Fields */}
                     <div className="grid grid-cols-2 gap-4 text-sm">
