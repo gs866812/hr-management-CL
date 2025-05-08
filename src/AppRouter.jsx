@@ -21,6 +21,7 @@ import Earnings from './Component/Earnings/Earnings';
 import ProtectedRole from './Component/Protected/ProtectedRole';
 import ResetPassword from './Component/Login/ResetPassword';
 import EmployeeList from './Component/EmployeeList/EmployeeList';
+import MorningShift from './Component/Shifting/MorningShift';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
@@ -48,6 +49,7 @@ export const router = createBrowserRouter([
             { path: '/clients', element: <ProtectedRole><Clients /></ProtectedRole> },
             { path: '/leave', element: <Leave /> },
             { path: '/earnings', element: <ProtectedRole><Earnings /></ProtectedRole> },
+            { path: '/employeeList/morning-shift', element: <MorningShift /> },
             
             
             

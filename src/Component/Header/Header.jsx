@@ -13,7 +13,10 @@ const Header = () => {
     const { logOut, user, currentUser } = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
     // ************************************************************
-    const navigate = useNavigate(); // Next.js router for navigation
+    const navigate = useNavigate(); 
+    const navigateHome = () => {
+        navigate('/');
+    };
 
 
     // ************************************************************
@@ -24,12 +27,9 @@ const Header = () => {
     return (
         <div className='mx-auto'>
             <div className='lg:px-8 flex justify-between items-center'>
-                <div>
                     {/**********main-logo*****************/}
-                    <Link to='/'><img src={logo} alt="Webbriks.com" className='w-[10%]' /></Link>
-                </div>
-
-                <div className='flex justify-center items-center gap-3 py-2 w-[300px]'>
+                    <img src={logo} alt="WEBBRIKS" className='w-[10%] cursor-pointer' onClick={navigateHome}/>
+                <section className='flex justify-center items-center gap-3 py-2 w-[300px]'>
 
                     {/*************************message and notifications start*******************************/}
 
@@ -52,7 +52,7 @@ const Header = () => {
                     </div>
 
                     {/*/*****************************user end******************************/}
-                </div>
+                </section>
             </div>
         </div>
     );

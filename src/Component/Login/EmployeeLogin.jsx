@@ -35,7 +35,7 @@ const EmployeeLogin = () => {
 
             // Call backend to generate JWT
             const res = await axios.post(
-                'http://localhost:5000/jwt',
+                'https://webbriks.backendsafe.com/jwt',
                 emailData
             );
             if (res.data.token) {
