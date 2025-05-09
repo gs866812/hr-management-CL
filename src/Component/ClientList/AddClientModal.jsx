@@ -40,7 +40,6 @@ const AddClientModal = () => {
                 const modal = document.querySelector(`#add-new-client-modal`);
                 modal.close();
             } else {
-                console.log(response.data.message);
                 toast.error(response.data.message);
             }
 

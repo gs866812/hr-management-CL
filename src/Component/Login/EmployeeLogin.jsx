@@ -17,13 +17,11 @@ const EmployeeLogin = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     // ****************************************************************
-    console.log(email, password);
 
 
     const navigate = useNavigate();
     const handleEmployeeEmailLogin = async (e) => {
         e.preventDefault();
-        console.log(email, password);
         try {
             const userCredential = await signInWithEmailAndPassword(
                 auth,

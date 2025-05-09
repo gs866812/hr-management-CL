@@ -29,7 +29,6 @@ const DataProvider = ({ children }) => {
     const [employeeList, setEmployeeList] = useState([]);
     const [searchEmployee, setSearchEmployee] = useState('');
 
-console.log(searchEmployee);
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);

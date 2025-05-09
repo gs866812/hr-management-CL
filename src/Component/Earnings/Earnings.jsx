@@ -1,4 +1,3 @@
-import { Search } from 'lucide-react';
 import React, { useContext, useEffect, useState } from 'react';
 import { FaPlus, FaRegEdit } from 'react-icons/fa';
 import EarningsModal from './EarningsModal';
@@ -18,7 +17,6 @@ const Earnings = () => {
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
 
-    console.log(earnings);
 
     useEffect(() => {
         const fetchEarnings = async () => {

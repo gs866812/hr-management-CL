@@ -21,7 +21,6 @@ const EarningsModal = () => {
         convertedBdt: '',
         status: ''
     });
-    console.log(formData);
 
     // *******************************************************************************************
     const dispatch = useDispatch();
@@ -89,7 +88,6 @@ const EarningsModal = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log(formData);
 
         const postEarningsData = async () => {
             try {

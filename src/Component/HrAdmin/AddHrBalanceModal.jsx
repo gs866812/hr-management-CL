@@ -31,7 +31,6 @@ const AddHrBalanceModal = () => {
         if (/^\d*\.?\d*$/.test(newValue)) {
             setValue(newValue);
         }
-        console.log(newValue);
     };
     const handleConfirmChange = (e) => {
         let newValue = e.target.value;

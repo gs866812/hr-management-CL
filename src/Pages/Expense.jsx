@@ -85,7 +85,6 @@ const Expense = () => {
         const newAmount = parseFloat(formData.expenseAmount);
         // 1. Prepare the data:
         const dataToUpdate = { ...formData, userName: userName, expenseAmount: newAmount }; // Create a copy  
-        console.log(dataToUpdate);
         try {
 
             const response = await axiosSecure.put(`/editExpense/${editId}`, dataToUpdate); // Or your API endpoint

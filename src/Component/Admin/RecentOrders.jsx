@@ -20,7 +20,6 @@ const RecentOrders = () => {
 
     const navigate = useNavigate();
 
-    console.log(viewOrder);
 
 
 
