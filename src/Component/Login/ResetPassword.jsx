@@ -31,7 +31,7 @@ const ResetPassword = () => {
                 icon: "success",
                 timer: 4000
             });
-            navigate('/employee-login');
+            navigate('/');
 
         } catch (error) {
             Swal.fire({
