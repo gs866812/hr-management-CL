@@ -171,6 +171,7 @@ const Navbar = () => {
             )}
             
             {/*************************************************************/}
+            {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN') && (
             <Link
                 to="/analytics"
                 className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/settings'
@@ -181,6 +182,7 @@ const Navbar = () => {
                 <IoAnalyticsSharp />
                 <span>Analytics</span>
             </Link>
+            )}
             {/* ********************************************************* */}
             <Link
                 to="/settings"
