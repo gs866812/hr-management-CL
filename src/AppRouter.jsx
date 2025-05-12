@@ -22,11 +22,10 @@ import ProtectedRole from './Component/Protected/ProtectedRole';
 import ResetPassword from './Component/Login/ResetPassword';
 import EmployeeList from './Component/EmployeeList/EmployeeList';
 import MorningShift from './Component/Shifting/MorningShift';
+import Profile from './Component/Common/Profile';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
-    { path: '/employee-login', element: <EmployeeLogin/> },
-    { path: '/employee-sign-up', element: <EmployeeSignUp/> },
     { path: '/resetPassword', element: <ResetPassword /> },
     {
         path: '/',
@@ -40,7 +39,9 @@ export const router = createBrowserRouter([
             { path: '/', element: <Home /> },
             { path: '/notice-board', element: <NoticeBoard /> },
             { path: '/expense', element: <ProtectedRole><MyExpense /></ProtectedRole> },
+             { path: '/employee-registration', element: <ProtectedRole><EmployeeSignUp/></ProtectedRole> },
             { path: '/recentOrders', element: <RecentOrders /> },
+            { path: '/profile', element: <Profile /> },
             { path: '/recentOrders/:orderId', element: <ViewLocalOrder /> },
             { path: '/createLocalOrder', element: <ProtectedRole><CreateLocalOrder /></ProtectedRole> },
             { path: '/settings', element: <Settings /> },

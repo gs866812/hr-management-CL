@@ -247,12 +247,10 @@ const EmployeeList = () => {
                 {selectedEmployee && (
                     <div className="fixed inset-0 bg-gray-500 flex items-center justify-center z-50">
                         <div className="bg-white w-[90%] md:w-[600px] p-6 rounded-2xl relative">
-                            <button
-                                className="absolute top-2 right-3 text-gray-600 hover:text-red-500 text-xl"
-                                onClick={() => setSelectedEmployee(null)}
-                            >
-                                &times;
-                            </button>
+                            <button 
+                            onClick={() => setSelectedEmployee(null)}
+                            className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+
                             <img
                                 src={selectedEmployee.photo}
                                 alt={selectedEmployee.fullName}
@@ -295,14 +293,19 @@ const EmployeeList = () => {
                             <label className="block font-semibold mb-2">Select Employees</label>
                             <div className="rounded p-2 h-40 overflow-y-auto !border !border-gray-300">
                                 {employeeList.map(emp => (
-                                    <label key={emp.email} className="flex items-center space-x-2 mb-1 shadow p-1 rounded-md">
+                                    <label key={emp.email} className="flex items-center justify-start space-x-2 mb-1 shadow p-1 rounded-md">
                                         <input
                                             type="checkbox"
                                             className="checkbox !border !border-gray-300"
                                             checked={selectedEmployees.some(e => e.email === emp.email)}
                                             onChange={(e) => handleEmployeeCheckboxChange(e, emp)}
                                         />
-                                        <span>{emp.fullName} - {emp.designation}</span>
+                                        <span>
+                                            {emp.fullName} - {emp.designation}
+                                        </span>
+                                        <span className='text-sm'>
+                                            ({shiftedEmployees.find(e => e.email === emp.email)?.shiftName.charAt(0).toUpperCase()})
+                                        </span>
                                     </label>
                                 ))}
                             </div>

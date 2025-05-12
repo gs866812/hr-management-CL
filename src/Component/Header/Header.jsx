@@ -10,10 +10,10 @@ import logo from '/main_logo.png';
 
 
 const Header = () => {
-    const { logOut, user, currentUser } = useContext(ContextData);
+    const { logOut, user, employee } = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
     // ************************************************************
-    const navigate = useNavigate(); 
+    const navigate = useNavigate();
     const navigateHome = () => {
         navigate('/');
     };
@@ -27,9 +27,9 @@ const Header = () => {
     return (
         <div className='mx-auto'>
             <div className='lg:px-8 flex justify-between items-center'>
-                    {/**********main-logo*****************/}
-                    <img src={logo} alt="WEBBRIKS" className='w-[10%] cursor-pointer' onClick={navigateHome}/>
-                <section className='flex justify-center items-center gap-3 py-2 w-[300px]'>
+                {/**********main-logo*****************/}
+                <img src={logo} alt="WEBBRIKS" className='w-[10%] cursor-pointer' onClick={navigateHome} />
+                <section className='flex justify-end items-center gap-3 py-2 w-[300px]'>
 
                     {/*************************message and notifications start*******************************/}
 
@@ -43,14 +43,29 @@ const Header = () => {
 
 
                     {/*/*****************************user start******************************/}
-                    <div className='border-l border-gray-400 pl-2'>
-                        <button 
-                        className='hover:text-red-500 px-2 py-[2px] rounded-md cursor-pointer'
-                        onClick={handleLogout}>
-                            Log-out
-                        </button>
-                    </div>
 
+                        <div className="flex gap-2">
+                            <div className="dropdown dropdown-end">
+                                <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
+                                    <div className="w-8 rounded-full">
+                                        <img
+                                            alt={employee?.fullName}
+                                            src={employee?.photo} />
+                                    </div>
+                                </div>
+                                <ul
+                                    tabIndex={0}
+                                    className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
+                                    <li>
+                                        <a href='/profile' className="justify-between">
+                                            Profile
+                                        </a>
+                                    </li>
+                                    <li><a>Settings</a></li>
+                                    <li><a onClick={handleLogout}>Logout</a></li>
+                                </ul>
+                            </div>
+                        </div>
                     {/*/*****************************user end******************************/}
                 </section>
             </div>

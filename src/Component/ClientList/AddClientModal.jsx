@@ -62,7 +62,7 @@ const AddClientModal = () => {
                     <form method="dialog">
                         <button className="btn btn-sm btn-circle btn-ghost absolute right-0 top-0">✕</button>
                     </form>
-                    <h3 className="font-bold text-lg">Add new Client:</h3>
+                    <h3 className="font-bold text-lg">Add new client:</h3>
                     <form onSubmit={handleSubmit} className="mt-5 space-y-4">
                         <div>
                             <label className="label">Client ID</label>

@@ -34,7 +34,7 @@ const Login = () => {
 
             // Call backend to generate JWT
             const res = await axios.post(
-                'https://webbriks.backendsafe.com/jwt',
+                'http://localhost:5000/jwt',
                 emailData
             );
             if (res.data.token) {
@@ -53,7 +53,7 @@ const Login = () => {
     return (
         <div className="max-w-screen-2xl mx-auto">
             <div className="text-center border p-10 rounded-md w-96 mx-auto mt-20">
-                <h2>Login</h2>
+                <h2 className='text-xl font-bold'>Login</h2>
 
                 <form
                     className="flex flex-col gap-5 mt-5"
@@ -99,9 +99,9 @@ const Login = () => {
                         className="py-2 px-5 rounded-md w-full custom-button bg-[#6E3FF3] text-white cursor-pointer"
                     />
                     <div className="text-sm flex justify-between">
-                        <Link to="/">Forgot password</Link>
+                        <Link to="/resetPassword">Forgot password</Link>
                         {/* <Link to="/client-login">Login as Admin</Link> */}
-                        <Link to="/employee-login">Employee login</Link>
+                        {/* <Link to="/employee-login">Employee login</Link> */}
                     </div>
                 </form>
             </div>

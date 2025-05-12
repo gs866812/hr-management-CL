@@ -3,7 +3,8 @@ import { ContextData } from '../DataProvider';
 import AdminDashboard from '../Component/Admin/AdminDashboard';
 import ClientDashboard from '../Component/ClientDashboard/ClientDashboard';
 import HrDashboard from '../Component/HrAdmin/HrDashboard';
-import Employee from '../Component/EmployeeList/Employee';
+import EmployeeDashboard from '../Component/EmployeeDashboard/EmployeeDashboard';
+
 
 const roleComponentMap = {
     Admin: AdminDashboard,
@@ -19,7 +20,7 @@ const Home = () => {
         return <div className="skeleton h-32 w-32"></div>
     }
 
-    const ComponentToRender = roleComponentMap[currentUser.role] || Employee;
+    const ComponentToRender = roleComponentMap[currentUser.role] || EmployeeDashboard;
 
     return <ComponentToRender />;
 };
