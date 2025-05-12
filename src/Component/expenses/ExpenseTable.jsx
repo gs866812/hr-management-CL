@@ -306,7 +306,7 @@ const ExpenseTable = () => {
 
             {/******************************************************************************************************/}
             <ExpenseModal onExpenseData={getExpenseData} searchOption={searchExpense} />
-            {/****************************************Edit modal********************************************************/}
+            {/**************************************Edit modal********************************************************/}
             <div>
                 <dialog id="edit-expense-modal" className="modal overflow-y-scroll">
                     <div className="modal-box">

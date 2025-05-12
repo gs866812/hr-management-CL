@@ -4,7 +4,7 @@ import { CiInboxIn } from 'react-icons/ci';
 import { FaAngleDown, FaAngleUp } from 'react-icons/fa';
 import { FaClockRotateLeft } from 'react-icons/fa6';
 import { IoIosCreate } from 'react-icons/io';
-import { IoSettingsOutline } from 'react-icons/io5';
+import { IoAnalyticsSharp, IoSettingsOutline } from 'react-icons/io5';
 import { LuCalendarClock, LuUsers } from 'react-icons/lu';
 import { MdOutlineDashboard } from 'react-icons/md';
 import { PiClipboardText } from 'react-icons/pi';
@@ -171,6 +171,17 @@ const Navbar = () => {
             )}
             
             {/*************************************************************/}
+            <Link
+                to="/analytics"
+                className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/settings'
+                    ? 'bg-[#6E3FF3] text-white'
+                    : 'hover:bg-[#6E3FF3] hover:text-white'
+                    }`}
+            >
+                <IoAnalyticsSharp />
+                <span>Analytics</span>
+            </Link>
+            {/* ********************************************************* */}
             <Link
                 to="/settings"
                 className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/settings'

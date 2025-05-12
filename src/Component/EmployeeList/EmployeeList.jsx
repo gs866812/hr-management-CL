@@ -5,6 +5,7 @@ import useAxiosSecure from '../../utils/useAxiosSecure';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import { useDispatch, useSelector } from 'react-redux';
 import { setRefetch } from '../../redux/refetchSlice';
+import { Link } from 'react-router-dom';
 
 
 const EmployeeList = () => {
@@ -210,14 +211,16 @@ const EmployeeList = () => {
 
             {/* Search employee */}
             <section>
-                <div className="flex items-center mb-4">
+                <div className="flex gap-2 items-center mb-4">
                     <input
                         type="text"
                         placeholder="Search Employee"
                         className="bg-gray-200 rounded-lg p-2 w-full"
                         onChange={(e) => setSearchEmployee(e.target.value)}
                     />
+                    <Link to='/employee-registration' className="btn bg-[#6E3FF3] text-white">Add employee</Link>
                 </div>
+                
             </section>
             <section>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -247,9 +250,9 @@ const EmployeeList = () => {
                 {selectedEmployee && (
                     <div className="fixed inset-0 bg-gray-500 flex items-center justify-center z-50">
                         <div className="bg-white w-[90%] md:w-[600px] p-6 rounded-2xl relative">
-                            <button 
-                            onClick={() => setSelectedEmployee(null)}
-                            className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                            <button
+                                onClick={() => setSelectedEmployee(null)}
+                                className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
 
                             <img
                                 src={selectedEmployee.photo}

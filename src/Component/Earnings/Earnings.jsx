@@ -4,8 +4,9 @@ import EarningsModal from './EarningsModal';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import { ContextData } from '../../DataProvider';
 import { useDispatch, useSelector } from 'react-redux';
+import Analytics from '../Analytics/Analytics';
 
-const Earnings = () => {
+const Earnings = ({getEarningsData}) => {
 
     const { user } = useContext(ContextData);
 
@@ -27,6 +28,7 @@ const Earnings = () => {
                     },
                 });
                 SetEarnings(response.data);
+                getEarningsData(response.data);
             } catch (error) {
                 toast.error('Error fetching data:', error.message);
             }
@@ -76,6 +78,7 @@ const Earnings = () => {
                         <thead className='bg-[#6E3FF3] text-white'>
                             <tr>
                                 <th>Date</th>
+                                <th>Month</th>
                                 <th>Client ID</th>
                                 <th>Image QTY</th>
                                 <th>Total USD</th>
@@ -91,12 +94,19 @@ const Earnings = () => {
                                     earnings.map((earningList, index) => {
                                         return (
                                             <tr key={index}>
-                                                <td>{earningList.date}</td>
+                                                <td>{earningList.date || '00-00-0000'}</td>
+                                                <td>{earningList.month}</td>
                                                 <td>{earningList.clientId}</td>
                                                 <td>{earningList.imageQty}</td>
-                                                <td>{earningList.totalUsd}</td>
-                                                <td>{earningList.convertRate}</td>
-                                                <td>{earningList.convertedBdt}</td>
+                                                <td>
+                                                    {earningList.totalUsd.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td>
+                                                    {earningList.convertRate.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td>
+                                                    {earningList.convertedBdt.toLocaleString(undefined, {maximumFractionDigits: 2, minimumFractionDigits: 2})}
+                                                </td>
                                                 <td>{earningList.status}</td>
                                                 <td className='w-[5%]'>
                                                     <div className='flex justify-center'>

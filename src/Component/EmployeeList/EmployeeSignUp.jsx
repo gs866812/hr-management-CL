@@ -363,7 +363,7 @@ const EmployeeSignUp = () => {
                                 name="bloodGroup"
                                 value={employeeData.bloodGroup}
                                 onChange={handleChange}
-                                className="select select-bordered w-full"
+                                className="select select-bordered w-full !border !border-gray-300"
                             >
                                 <option value="">Select Blood Group</option>
                                 <option value="A+">A+</option>
@@ -454,17 +454,13 @@ const EmployeeSignUp = () => {
                 <div className="flex justify-center mt-6">
                     <button
                         type="submit"
-                        className="btn btn-primary w-full md:w-1/2"
+                        className="btn bg-[#6E3FF3] text-white w-full md:w-1/2"
                         disabled={loading}
                     >
                         {loading ? 'Registering...' : 'Register'}
                     </button>
                 </div>
             </form>
-
-            <div className="text-center mt-4">
-                <p>Already have an account? <a href="/employee-login" className="text-primary">Login here</a></p>
-            </div>
         </div>
     );
 };

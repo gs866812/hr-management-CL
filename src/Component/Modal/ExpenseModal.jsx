@@ -211,7 +211,7 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
                                         type="text"
                                         value={newCategory}
                                         onChange={handleNewCategoryChange}
-                                        className="w-full p-2 border border-gray-300 rounded-md mt-2"
+                                        className="w-full p-2 !border !border-gray-300 rounded-md mt-2"
                                         placeholder="Enter new category"
                                         required
                                     />
