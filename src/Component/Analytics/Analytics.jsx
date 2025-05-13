@@ -3,41 +3,68 @@ import { ContextData } from '../../DataProvider';
 import { toast } from 'react-toastify';
 import { useDispatch, useSelector } from 'react-redux';
 import useAxiosProtect from '../../utils/useAxiosProtect';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import moment from 'moment';
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
+    LineChart,
+    Line,
+    ComposedChart,
+    PieChart,
+    Pie,
+    Cell,
+    Sector,
+} from 'recharts';
 
 const Analytics = () => {
-    const { user, currentPage, expenseItemsPerPage, searchOption } = useContext(ContextData);
+    const { user, searchOption } = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
-
     const [expenseList, setExpenseList] = useState([]);
     const [earnings, setEarnings] = useState([]);
-    const [chartData, setChartData] = useState([]);
+    const [analyticsData, setAnalyticsData] = useState([]);
+    const [yearlyTotals, setYearlyTotals] = useState({
+        expense: 0,
+        earnings: 0,
+        profit: 0
+    });
+    const [activeIndex, setActiveIndex] = useState(0);
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
 
-    // Fetch expenses
+    const COLORS = ['#FF8042', '#8884d8', '#82ca9d'];
+
+    // **************************************************************************
     useEffect(() => {
         const fetchExpenseData = async () => {
             try {
                 const response = await axiosProtect.get('/getExpense', {
                     params: {
                         userEmail: user?.email,
-                        page: currentPage,
-                        size: expenseItemsPerPage,
+                        // Remove pagination to get all expenses for analytics
+                        // page: currentPage,
+                        // size: expenseItemsPerPage,
                         search: searchOption,
                     },
                 });
-                setExpenseList(response.data.expense);
+                console.log("Expense data received:", response.data.expense);
+                setExpenseList(response.data.allExpense);
             } catch (error) {
-                toast.error('Error fetching expenses:', error.message);
+                toast.error('Error fetching data:', error.message);
             }
         };
-        fetchExpenseData();
-    }, [refetch, currentPage, expenseItemsPerPage, searchOption]);
 
-    // Fetch earnings
+        if (user?.email) {
+            fetchExpenseData();
+        }
+    }, [refetch, searchOption, axiosProtect, user?.email]);
+
+    // **************************************************************************
     useEffect(() => {
         const fetchEarnings = async () => {
             try {
@@ -46,58 +73,297 @@ const Analytics = () => {
                         userEmail: user?.email,
                     },
                 });
+                console.log("Earnings data received:", response.data);
                 setEarnings(response.data);
             } catch (error) {
-                toast.error('Error fetching earnings:', error.message);
+                toast.error('Error fetching data:', error.message);
             }
         };
-        fetchEarnings();
-    }, [refetch]);
 
-    // Prepare chart data
+        if (user?.email) {
+            fetchEarnings();
+        }
+    }, [refetch, user?.email, axiosProtect]);
+
+    // **************************************************************************
     useEffect(() => {
-        const monthlyData = {};
-
-        // Process expenses
-        expenseList.forEach(item => {
-            const month = moment(item.expenseDate).format('MMMM'); // e.g., "March"
-            if (!monthlyData[month]) monthlyData[month] = { month, expense: 0, earnings: 0 };
-            monthlyData[month].expense += item.expenseAmount;
-        });
-
-        // Process earnings
-        earnings.forEach(item => {
-            const month = item.month;
-            if (!monthlyData[month]) monthlyData[month] = { month, expense: 0, earnings: 0 };
-            monthlyData[month].earnings += item.convertedBdt;
-        });
-
-        // Add profit
-        const finalChartData = Object.values(monthlyData).map(item => ({
-            ...item,
-            profit: item.earnings - item.expense
-        }));
-
-        setChartData(finalChartData);
+        // Process data for charts when both expenses and earnings are available
+        if (expenseList.length > 0 || earnings.length > 0) {
+            processDataForCharts();
+        }
     }, [expenseList, earnings]);
 
+    // Format number to have 2 decimal places
+    const formatNumber = (num) => {
+        return Number(num).toFixed(2);
+    };
+
+    // Process data for the charts
+    const processDataForCharts = () => {
+        const months = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+
+        // Initialize data structure for all months
+        const monthlyData = months.map(month => ({
+            month,
+            expense: 0,
+            earnings: 0,
+            profit: 0,
+        }));
+
+        // Process expense data - Debug logging
+        console.log("Processing expense data:", expenseList);
+
+        if (expenseList && expenseList.length > 0) {
+            expenseList.forEach(expense => {
+                try {
+                    const expenseDate = new Date(expense.expenseDate);
+                    const monthIndex = expenseDate.getMonth();
+                    if (isNaN(monthIndex)) {
+                        console.error("Invalid date for expense:", expense);
+                    } else {
+                        monthlyData[monthIndex].expense += Number(expense.expenseAmount) || 0;
+                        console.log(`Added expense ${expense.expenseAmount} to month ${months[monthIndex]}`);
+                    }
+                } catch (error) {
+                    console.error("Error processing expense:", expense, error);
+                }
+            });
+        }
+
+        // Process earnings data
+        console.log("Processing earnings data:", earnings);
+
+        if (earnings && earnings.length > 0) {
+            earnings.forEach(earning => {
+                try {
+                    const monthIndex = months.indexOf(earning.month);
+                    if (monthIndex !== -1) {
+                        monthlyData[monthIndex].earnings += Number(earning.convertedBdt) || 0;
+                        console.log(`Added earnings ${earning.convertedBdt} to month ${earning.month}`);
+                    } else {
+                        // Handle case where month string doesn't match
+                        // Try to extract month from date string if available
+                        if (earning.date) {
+                            const dateParts = earning.date.split('-');
+                            if (dateParts.length >= 2) {
+                                const monthNum = parseInt(dateParts[1]) - 1; // Month is 0-indexed in JS
+                                if (monthNum >= 0 && monthNum <= 11) {
+                                    monthlyData[monthNum].earnings += Number(earning.convertedBdt) || 0;
+                                    console.log(`Added earnings ${earning.convertedBdt} to month ${months[monthNum]} (from date)`);
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error processing earning:", earning, error);
+                }
+            });
+        }
+
+        // Calculate profit and round all numbers to 2 decimal places
+        monthlyData.forEach(data => {
+            data.expense = Number(parseFloat(data.expense).toFixed(2));
+            data.earnings = Number(parseFloat(data.earnings).toFixed(2));
+            data.profit = Number(parseFloat(data.earnings - data.expense).toFixed(2));
+        });
+
+        // Calculate yearly totals
+        const totals = {
+            expense: parseFloat(monthlyData.reduce((sum, data) => sum + data.expense, 0).toFixed(2)),
+            earnings: parseFloat(monthlyData.reduce((sum, data) => sum + data.earnings, 0).toFixed(2)),
+            profit: 0
+        };
+
+        totals.profit = parseFloat((totals.earnings - totals.expense).toFixed(2));
+
+        setYearlyTotals(totals);
+        console.log("Final analytics data:", monthlyData);
+        console.log("Yearly totals:", totals);
+        setAnalyticsData(monthlyData);
+    };
+
+    // Custom pie chart active shape
+    const renderActiveShape = (props) => {
+        const RADIAN = Math.PI / 180;
+        const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle,
+            fill, payload, percent, value } = props;
+        const sin = Math.sin(-RADIAN * midAngle);
+        const cos = Math.cos(-RADIAN * midAngle);
+        const sx = cx + (outerRadius + 10) * cos;
+        const sy = cy + (outerRadius + 10) * sin;
+        const mx = cx + (outerRadius + 30) * cos;
+        const my = cy + (outerRadius + 30) * sin;
+        const ex = mx + (cos >= 0 ? 1 : -1) * 22;
+        const ey = my;
+        const textAnchor = cos >= 0 ? 'start' : 'end';
+
+        return (
+            <g>
+                <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill}>{payload.name}</text>
+                <Sector
+                    cx={cx}
+                    cy={cy}
+                    innerRadius={innerRadius}
+                    outerRadius={outerRadius}
+                    startAngle={startAngle}
+                    endAngle={endAngle}
+                    fill={fill}
+                />
+                <Sector
+                    cx={cx}
+                    cy={cy}
+                    startAngle={startAngle}
+                    endAngle={endAngle}
+                    innerRadius={outerRadius + 6}
+                    outerRadius={outerRadius + 10}
+                    fill={fill}
+                />
+                <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
+                <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
+                <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333">{`${formatNumber(value)} BDT`}</text>
+                <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="#999">
+                    {`(${(percent * 100).toFixed(2)}%)`}
+                </text>
+            </g>
+        );
+    };
+
+    // Prepare yearly summary data for pie chart
+    const prepareYearlySummaryData = () => {
+        return [
+            { name: 'Expense', value: Math.abs(yearlyTotals.expense) },
+            { name: 'Earnings', value: yearlyTotals.earnings },
+            { name: 'Profit', value: Math.abs(yearlyTotals.profit) }
+        ];
+    };
+
+    const onPieEnter = (_, index) => {
+        setActiveIndex(index);
+    };
+
+    // **************************************************************************
     return (
-        <div className='w-full h-[400px] mt-10'>
-            <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                    data={chartData}
-                    margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
-                >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="earnings" fill="#4ade80" name="Earnings" />
-                    <Bar dataKey="expense" fill="#f87171" name="Expenses" />
-                    <Bar dataKey="profit" fill="#60a5fa" name="Profit" />
-                </BarChart>
-            </ResponsiveContainer>
+        <div className="w-full p-4">
+            <h2 className="text-2xl font-bold mb-6 text-center">Monthly Financial Analytics</h2>
+
+            {/* Chart showing expense, earnings and profit */}
+            <div className="bg-white rounded-lg shadow-lg p-4 mb-8">
+                <h3 className="text-sm font-semibold mb-4">Monthly Expense, Earnings & Profit</h3>
+                <div className="h-96">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart
+                            data={analyticsData}
+                            margin={{
+                                top: 20,
+                                right: 30,
+                                left: 20,
+                                bottom: 20,
+                            }}
+                        >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="month" />
+                            <YAxis />
+                            <Tooltip formatter={(value) => `${formatNumber(value)} BDT`} />
+                            <Legend />
+                            <Bar dataKey="expense" fill="#FF8042" name="Expense" />
+                            <Bar dataKey="earnings" fill="#8884d8" name="Earnings" />
+                            <Line type="monotone" dataKey="profit" stroke="#82ca9d" strokeWidth={2} name="Profit" />
+                        </ComposedChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+            <div className='bg-gray-100 rounded-md p-2 shadow'>
+                <h3 className="text-xl font-semibold mt-2">Yearly Summary</h3>
+                <div className='flex items-center'>
+                    <div className='w-1/2 flex gap-2'>
+                        <div className="bg-white rounded-md p-4">
+                            <h4 className="text-xl font-semibold text-orange-800 mb-2">Expense</h4>
+                            <p className=" font-bold text-orange-600">{formatNumber(yearlyTotals.expense)} BDT</p>
+                        </div>
+
+                        <div className="bg-white rounded-md p-4">
+                            <h4 className="text-xl font-semibold text-purple-800 mb-2">Earnings</h4>
+                            <p className="font-bold text-purple-600">{formatNumber(yearlyTotals.earnings)} BDT</p>
+                        </div>
+
+                        <div className={`${yearlyTotals.profit >= 0 ? 'bg-green-100 border-green-200' : 'bg-red-100 border-red-200'} rounded-lg p-4 shadow border`}>
+                            <h4 className={`text-xl font-semibold mt-2 ${yearlyTotals.profit >= 0 ? 'text-green-800' : 'text-red-800'}`}>Profit</h4>
+                            <p className={`font-bold ${yearlyTotals.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNumber(yearlyTotals.profit)} BDT</p>
+                        </div>
+                    </div>
+                    <div className='w-1/2 h-52'>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    activeIndex={activeIndex}
+                                    activeShape={renderActiveShape}
+                                    data={prepareYearlySummaryData()}
+                                    cx="60%"
+                                    cy="50%"
+                                    innerRadius={40}
+                                    outerRadius={60}
+                                    fill="#8884d8"
+                                    dataKey="value"
+                                    onMouseEnter={onPieEnter}
+                                >
+                                    {prepareYearlySummaryData().map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip formatter={(value) => `${formatNumber(value)} BDT`} />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
+
+            {/* <div className="bg-white rounded-lg shadow-lg p-4">
+                <h3 className="text-xl font-semibold mb-4">Monthly Breakdown</h3>
+                <div className="overflow-x-auto">
+                    <table className="min-w-full bg-white">
+                        <thead className="bg-gray-100">
+                            <tr>
+                                <th className="py-2 px-4 border-b text-left">Month</th>
+                                <th className="py-2 px-4 border-b text-right">Expense (BDT)</th>
+                                <th className="py-2 px-4 border-b text-right">Earnings (BDT)</th>
+                                <th className="py-2 px-4 border-b text-right">Profit (BDT)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {analyticsData.map((data, index) => (
+                                <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                                    <td className="py-2 px-4 border-b">{data.month}</td>
+                                    <td className="py-2 px-4 border-b text-right">{formatNumber(data.expense)}</td>
+                                    <td className="py-2 px-4 border-b text-right">{formatNumber(data.earnings)}</td>
+                                    <td className={`py-2 px-4 border-b text-right ${data.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        {formatNumber(data.profit)}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                        <tfoot className="bg-gray-200">
+                            <tr>
+                                <td className="py-2 px-4 border-b font-bold">Total</td>
+                                <td className="py-2 px-4 border-b text-right font-bold">
+                                    {formatNumber(yearlyTotals.expense)}
+                                </td>
+                                <td className="py-2 px-4 border-b text-right font-bold">
+                                    {formatNumber(yearlyTotals.earnings)}
+                                </td>
+                                <td className={`py-2 px-4 border-b text-right font-bold ${yearlyTotals.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    {formatNumber(yearlyTotals.profit)}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div> */}
         </div>
     );
 };

@@ -4,16 +4,22 @@ import EarningsModal from './EarningsModal';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import { ContextData } from '../../DataProvider';
 import { useDispatch, useSelector } from 'react-redux';
-import Analytics from '../Analytics/Analytics';
+import { toast } from 'react-toastify';
+import useAxiosSecure from '../../utils/useAxiosSecure';
+import { setRefetch } from '../../redux/refetchSlice';
+import EditEarningModal from './EditEarningModal';
 
-const Earnings = ({getEarningsData}) => {
+const Earnings = () => {
 
     const { user } = useContext(ContextData);
 
     const [searchEarnings, setSearchEarnings] = useState('');
     const [earnings, SetEarnings] = useState([]);
+    const [selectedEarning, setSelectedEarning] = useState(null);
+
 
     const axiosProtect = useAxiosProtect();
+    const axiosSecure = useAxiosSecure();
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
@@ -28,7 +34,6 @@ const Earnings = ({getEarningsData}) => {
                     },
                 });
                 SetEarnings(response.data);
-                getEarningsData(response.data);
             } catch (error) {
                 toast.error('Error fetching data:', error.message);
             }
@@ -37,9 +42,11 @@ const Earnings = ({getEarningsData}) => {
     }, [refetch]);
 
 
-    const handleEarnings = async () => {
-        console.log('Working');
+    const handleEditEarnings = (earning) => {
+        setSelectedEarning(earning);
+        document.getElementById('edit-earnings-modal').showModal();
     };
+
     return (
         <div className="mt-2">
             <section>
@@ -105,12 +112,12 @@ const Earnings = ({getEarningsData}) => {
                                                     {earningList.convertRate.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}
                                                 </td>
                                                 <td>
-                                                    {earningList.convertedBdt.toLocaleString(undefined, {maximumFractionDigits: 2, minimumFractionDigits: 2})}
+                                                    {earningList.convertedBdt.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}
                                                 </td>
                                                 <td>{earningList.status}</td>
                                                 <td className='w-[5%]'>
                                                     <div className='flex justify-center'>
-                                                        <FaRegEdit className='cursor-pointer' onClick={() => handleEarnings(expenseList._id)} />
+                                                        <FaRegEdit className='cursor-pointer' onClick={() => handleEditEarnings(earningList)} />
                                                     </div>
                                                 </td>
                                             </tr>
@@ -127,6 +134,10 @@ const Earnings = ({getEarningsData}) => {
                 </div>
             </section>
             <EarningsModal />
+            <EditEarningModal
+                selectedEarning={selectedEarning}
+                setSelectedEarning={setSelectedEarning}
+            />
         </div>
     );
 };
