@@ -4,12 +4,13 @@ import { toast } from 'react-toastify';
 import { useDispatch, useSelector } from 'react-redux';
 import { ContextData } from '../../DataProvider';
 import { setRefetch } from '../../redux/refetchSlice';
+import useAxiosSecure from '../../utils/useAxiosSecure';
 
 const EarningsModal = () => {
     const { user } = useContext(ContextData);
 
     const axiosProtect = useAxiosProtect();
-    const axiosSecure = useAxiosProtect();
+    const axiosSecure = useAxiosSecure();
 
     const [clientID, setClientID] = useState([]);
     const [formData, setFormData] = useState({
@@ -181,7 +182,7 @@ const EarningsModal = () => {
                             <select name="status" required value={formData.status} onChange={handleChange} className="input input-bordered w-full !border !border-gray-300 mt-1">
                                 <option value="">Select</option>
                                 <option value="Paid">Paid</option>
-                                <option value="Unpaid">Unpaid</option>
+                                <option value="Unpaid">Due</option>
                             </select>
                         </div>
 

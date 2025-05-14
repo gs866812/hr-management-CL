@@ -24,6 +24,7 @@ import EmployeeList from './Component/EmployeeList/EmployeeList';
 import MorningShift from './Component/Shifting/MorningShift';
 import Profile from './Component/Common/Profile';
 import Analytics from './Component/Analytics/Analytics';
+import EditEarnings from './Component/Earnings/EditEarnings';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
@@ -41,6 +42,7 @@ export const router = createBrowserRouter([
             { path: '/notice-board', element: <NoticeBoard /> },
             { path: '/expense', element: <ProtectedRole><MyExpense /></ProtectedRole> },
             { path: '/employee-registration', element: <ProtectedRole><EmployeeSignUp /></ProtectedRole> },
+            { path: '/earnings/editEarnings/:id', element: <EditEarnings /> },
             { path: '/analytics', element: <ProtectedRole><Analytics /></ProtectedRole> },
             { path: '/recentOrders', element: <RecentOrders /> },
             { path: '/profile', element: <Profile /> },

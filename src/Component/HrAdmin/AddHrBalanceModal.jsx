@@ -222,7 +222,7 @@ const AddHrBalanceModal = () => {
                             </button>
                             <button
                                 className='px-2 py-1 bg-[#6E3FF3] border-[#6E3FF3] text-white rounded-md cursor-pointer'>
-                                Add
+                                Return
                             </button>
                         </section>
 

@@ -107,7 +107,7 @@ const HrDashboard = () => {
                     </p>
                 </div>
                 <div className='w-1/4 rounded-md py-4 flex flex-col items-center shadow-md space-y-1.5'>
-                    <h2 className='text-xl'>Total Cost</h2>
+                    <h2 className='text-xl'>Monthly Cost</h2>
                     <p>
                         {
                             hrBalance &&

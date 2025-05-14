@@ -7,7 +7,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import useAxiosSecure from '../../utils/useAxiosSecure';
 import { setRefetch } from '../../redux/refetchSlice';
-import EditEarningModal from './EditEarningModal';
+import EditEarningModal from './EditEarnings';
+import { useNavigate } from 'react-router-dom';
 
 const Earnings = () => {
 
@@ -15,11 +16,12 @@ const Earnings = () => {
 
     const [searchEarnings, setSearchEarnings] = useState('');
     const [earnings, SetEarnings] = useState([]);
-    const [selectedEarning, setSelectedEarning] = useState(null);
+
 
 
     const axiosProtect = useAxiosProtect();
     const axiosSecure = useAxiosSecure();
+    const navigate = useNavigate();
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
@@ -42,9 +44,8 @@ const Earnings = () => {
     }, [refetch]);
 
 
-    const handleEditEarnings = (earning) => {
-        setSelectedEarning(earning);
-        document.getElementById('edit-earnings-modal').showModal();
+    const handleEditEarnings = (id) => {
+        navigate(`/earnings/editEarnings/${id}`);
     };
 
     return (
@@ -117,7 +118,7 @@ const Earnings = () => {
                                                 <td>{earningList.status}</td>
                                                 <td className='w-[5%]'>
                                                     <div className='flex justify-center'>
-                                                        <FaRegEdit className='cursor-pointer' onClick={() => handleEditEarnings(earningList)} />
+                                                        <FaRegEdit className='cursor-pointer' onClick={() => handleEditEarnings(earningList._id)} />
                                                     </div>
                                                 </td>
                                             </tr>
@@ -134,10 +135,6 @@ const Earnings = () => {
                 </div>
             </section>
             <EarningsModal />
-            <EditEarningModal
-                selectedEarning={selectedEarning}
-                setSelectedEarning={setSelectedEarning}
-            />
         </div>
     );
 };

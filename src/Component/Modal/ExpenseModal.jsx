@@ -28,6 +28,7 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
     });
 
 
+
     const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
     const [newCategory, setNewCategory] = useState('');
 
@@ -88,7 +89,7 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
         // Handle form submission here
         const newAmount = parseFloat(formData.expenseAmount);
 
-        if (currentUser?.role == "hr_admin") {
+        if (currentUser?.role == "HR-ADMIN") {
             if (hrBalance < newAmount) {
                 toast.error("Not enough funds");
                 return;
@@ -101,7 +102,7 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
             expenseAmount: newAmount,
             expenseCategory: selectedCategory, // Use the correct category
             expenseDate: selectedDate,
-            userName,
+            userName: currentUser?.userName,
             userMail: user?.email,
         };
 

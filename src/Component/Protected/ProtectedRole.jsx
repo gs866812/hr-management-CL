@@ -7,7 +7,7 @@ const ProtectedRole = ({ children }) => {
     const { user, loading, currentUser } = useContext(ContextData);
 
     const location = useLocation();
-    const allowedRoles = ["Developer", "HR-ADMIN", "Admin"];
+    const allowedRoles = ["Developer", "Admin"];
 
 
 

@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import { useDispatch, useSelector } from 'react-redux';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import {
-    BarChart,
+    ComposedChart,
     Bar,
     XAxis,
     YAxis,
@@ -12,13 +12,13 @@ import {
     Tooltip,
     Legend,
     ResponsiveContainer,
-    LineChart,
     Line,
-    ComposedChart,
+    LabelList,
+    ReferenceLine,
     PieChart,
     Pie,
     Cell,
-    Sector,
+    Sector
 } from 'recharts';
 
 const Analytics = () => {
@@ -33,6 +33,7 @@ const Analytics = () => {
         profit: 0
     });
     const [activeIndex, setActiveIndex] = useState(0);
+
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
@@ -245,50 +246,73 @@ const Analytics = () => {
     };
 
     // **************************************************************************
+    const renderBarLabel = (props) => {
+        const { x, y, width, value } = props;
+
+        return (
+            <g>
+                <text
+                    x={x + width / 2}
+                    y={y - 10}
+                    fill="#333"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize="11"
+                >
+                    {formatNumber(value)}
+                </text>
+            </g>
+        );
+    };
+
+
+    const renderProfitLabel = (props) => {
+        const { x, y, value } = props;
+
+        return (
+            <g>
+                <rect
+                    x={x - 25}
+                    y={y - 18}
+                    width="50"
+                    height="16"
+                    fill="#ecf0f1"
+                    rx="4"
+                    ry="4"
+                    opacity="0.8"
+                />
+                <text
+                    x={x}
+                    y={y - 10}
+                    fill="#006400"
+                    textAnchor="middle"
+                    fontWeight="bold"
+                    fontSize="11"
+                >
+                    {formatNumber(value)}
+                </text>
+            </g>
+        );
+    };
+
+    // **************************************************************************
     return (
         <div className="w-full p-4">
-            <h2 className="text-2xl font-bold mb-6 text-center">Monthly Financial Analytics</h2>
-
-            {/* Chart showing expense, earnings and profit */}
-            <div className="bg-white rounded-lg shadow-lg p-4 mb-8">
-                <h3 className="text-sm font-semibold mb-4">Monthly Expense, Earnings & Profit</h3>
-                <div className="h-96">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart
-                            data={analyticsData}
-                            margin={{
-                                top: 20,
-                                right: 30,
-                                left: 20,
-                                bottom: 20,
-                            }}
-                        >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="month" />
-                            <YAxis />
-                            <Tooltip formatter={(value) => `${formatNumber(value)} BDT`} />
-                            <Legend />
-                            <Bar dataKey="expense" fill="#FF8042" name="Expense" />
-                            <Bar dataKey="earnings" fill="#8884d8" name="Earnings" />
-                            <Line type="monotone" dataKey="profit" stroke="#82ca9d" strokeWidth={2} name="Profit" />
-                        </ComposedChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
 
             <div className='bg-gray-100 rounded-md p-2 shadow'>
-                <h3 className="text-xl font-semibold mt-2">Yearly Summary</h3>
+                <h3 className="text-xl font-bold mt-2">Yearly Summary</h3>
                 <div className='flex items-center'>
                     <div className='w-1/2 flex gap-2'>
+                        <div className="bg-white rounded-md p-4">
+                            <h4 className="text-xl font-semibold text-purple-800 mb-2">Revenue</h4>
+                            <p className="font-bold text-purple-600">{formatNumber(yearlyTotals.earnings)} BDT</p>
+                        </div>
                         <div className="bg-white rounded-md p-4">
                             <h4 className="text-xl font-semibold text-orange-800 mb-2">Expense</h4>
                             <p className=" font-bold text-orange-600">{formatNumber(yearlyTotals.expense)} BDT</p>
                         </div>
 
-                        <div className="bg-white rounded-md p-4">
-                            <h4 className="text-xl font-semibold text-purple-800 mb-2">Earnings</h4>
-                            <p className="font-bold text-purple-600">{formatNumber(yearlyTotals.earnings)} BDT</p>
-                        </div>
+
 
                         <div className={`${yearlyTotals.profit >= 0 ? 'bg-green-100 border-green-200' : 'bg-red-100 border-red-200'} rounded-lg p-4 shadow border`}>
                             <h4 className={`text-xl font-semibold mt-2 ${yearlyTotals.profit >= 0 ? 'text-green-800' : 'text-red-800'}`}>Profit</h4>
@@ -323,47 +347,50 @@ const Analytics = () => {
             </div>
 
 
-            {/* <div className="bg-white rounded-lg shadow-lg p-4">
-                <h3 className="text-xl font-semibold mb-4">Monthly Breakdown</h3>
-                <div className="overflow-x-auto">
-                    <table className="min-w-full bg-white">
-                        <thead className="bg-gray-100">
-                            <tr>
-                                <th className="py-2 px-4 border-b text-left">Month</th>
-                                <th className="py-2 px-4 border-b text-right">Expense (BDT)</th>
-                                <th className="py-2 px-4 border-b text-right">Earnings (BDT)</th>
-                                <th className="py-2 px-4 border-b text-right">Profit (BDT)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {analyticsData.map((data, index) => (
-                                <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                                    <td className="py-2 px-4 border-b">{data.month}</td>
-                                    <td className="py-2 px-4 border-b text-right">{formatNumber(data.expense)}</td>
-                                    <td className="py-2 px-4 border-b text-right">{formatNumber(data.earnings)}</td>
-                                    <td className={`py-2 px-4 border-b text-right ${data.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        {formatNumber(data.profit)}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                        <tfoot className="bg-gray-200">
-                            <tr>
-                                <td className="py-2 px-4 border-b font-bold">Total</td>
-                                <td className="py-2 px-4 border-b text-right font-bold">
-                                    {formatNumber(yearlyTotals.expense)}
-                                </td>
-                                <td className="py-2 px-4 border-b text-right font-bold">
-                                    {formatNumber(yearlyTotals.earnings)}
-                                </td>
-                                <td className={`py-2 px-4 border-b text-right font-bold ${yearlyTotals.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {formatNumber(yearlyTotals.profit)}
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
+            {/* Chart showing expense, earnings and profit */}
+            <h2 className="text-xl font-bold mb-6 mt-5">Monthly Financial Analytics</h2>
+            <div className="bg-white rounded-lg shadow-lg p-4 mb-8">
+                <div className="h-96">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart
+                            data={analyticsData}
+                            margin={{
+                                top: 40,
+                                right: 30,
+                                left: 20,
+                                bottom: 20,
+                            }}
+                        >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="month" />
+                            <YAxis />
+                            <Tooltip formatter={(value) => `${formatNumber(value)} BDT`} />
+                            <Legend wrapperStyle={{ bottom: 0 }} />
+
+                            <Bar dataKey="expense" fill="#FF8042" name="Expense">
+                                <LabelList dataKey="expense" position="top" content={renderBarLabel} />
+                            </Bar>
+
+                            <Bar dataKey="earnings" fill="#8884d8" name="Earnings">
+                                <LabelList dataKey="earnings" position="top" content={renderBarLabel} />
+                            </Bar>
+
+                            <Line
+                                type="monotone"
+                                dataKey="profit"
+                                stroke="#82ca9d"
+                                strokeWidth={3}
+                                name="Profit"
+                                dot={{ stroke: '#82ca9d', strokeWidth: 2, r: 4, fill: '#ffffff' }}
+                            >
+                                <LabelList dataKey="profit" position="top" content={renderProfitLabel} />
+                            </Line>
+                        </ComposedChart>
+                    </ResponsiveContainer>
                 </div>
-            </div> */}
+            </div>
+
+
         </div>
     );
 };
