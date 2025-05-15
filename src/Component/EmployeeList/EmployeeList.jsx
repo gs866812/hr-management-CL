@@ -6,6 +6,7 @@ import useAxiosProtect from '../../utils/useAxiosProtect';
 import { useDispatch, useSelector } from 'react-redux';
 import { setRefetch } from '../../redux/refetchSlice';
 import { Link } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 
 const EmployeeList = () => {
@@ -76,13 +77,28 @@ const EmployeeList = () => {
 
             // Notify details
             if (insertedNames.length) {
-                toast.success(`Added: ${insertedNames.join(', ')}`);
+                // toast.success(`Added: ${insertedNames.join(', ')}`);
+                Swal.fire({
+                    title: "Added",
+                    text: `${insertedNames.join(', ')}`,
+                    icon: "success"
+                });
             }
             if (updatedNames.length) {
-                toast.info(`Updated: ${updatedNames.join(', ')}`);
+                // toast.info(`Updated: ${updatedNames.join(', ')}`);
+                Swal.fire({
+                    title: "Updated",
+                    text: `${updatedNames.join(', ')}`,
+                    icon: "info"
+                });
             }
             if (skippedNames.length) {
-                toast.warning(`Skipped (already in shift): ${skippedNames.join(', ')}`);
+                // toast.warning(`Skipped (already in shift): ${skippedNames.join(', ')}`);
+                Swal.fire({
+                    title: "Skipped",
+                    text: `${skippedNames.join(', ')}`,
+                    icon: "warning"
+                });
             }
 
             handleReset();
@@ -96,12 +112,15 @@ const EmployeeList = () => {
 
     // **********************************************************************
 
+
     return (
         <div className="p-6">
             <section className=''>
                 {/* name of each tab group should be unique */}
                 <div className="tabs tabs-box overflow-hidden mb-4">
-                    <input type="radio" name="my_tabs_6" className="tab" aria-label="Morning shift" defaultChecked />
+                    <input type="radio" name="my_tabs_6" className={`tab`} aria-label="Morning shift" defaultChecked />
+
+
                     <div className="tab-content bg-base-100 border-base-300 p-6 overflow-y-auto max-h-52">
                         {
                             shiftedEmployees?.filter(emp => emp.shiftName === 'Morning').length > 0 &&
@@ -128,6 +147,7 @@ const EmployeeList = () => {
                     </div>
                     {/* Evening shift */}
                     <input type="radio" name="my_tabs_6" className="tab" aria-label="Evening shift" />
+
                     <div className="tab-content bg-base-100 border-base-300 p-6">
                         {
                             shiftedEmployees?.filter(emp => emp.shiftName === 'Evening').length > 0 &&
@@ -202,6 +222,32 @@ const EmployeeList = () => {
                         }
                     </div>
 
+                    <input type="radio" name="my_tabs_6" className="tab" aria-label="OT list" />
+                    <div className="tab-content bg-base-100 border-base-300 p-6 overflow-y-auto max-h-52">
+                        {
+                            shiftedEmployees?.filter(emp => emp.shiftName === 'OT list').length > 0 &&
+                            shiftedEmployees?.filter(emp => emp.shiftName === 'OT list').map((emp, index) => (
+                                <div key={index} className="flex items-center mb-4">
+                                    <img
+                                        src={employeeList.find(e => e.email === emp.email)?.photo}
+                                        alt={emp.fullName}
+                                        className="w-8 h-8 object-cover rounded-md mr-"
+                                    />
+                                    <div>
+                                        <h2 className="text-xl font-bold">
+                                            {emp.fullName}
+                                            <span className='text-sm text-gray-500 ml-1'>
+                                                ({employeeList.find(e => e.email === emp.email)?.designation})
+                                            </span>
+                                        </h2>
+                                    </div>
+
+                                </div>
+                            ))
+                        }
+
+                    </div>
+
                     <button className='btn text-x'
                         onClick={() => document.getElementById('addEmployeeToShift').showModal()}>
                         +
@@ -220,7 +266,7 @@ const EmployeeList = () => {
                     />
                     <Link to='/employee-registration' className="btn bg-[#6E3FF3] text-white">Add employee</Link>
                 </div>
-                
+
             </section>
             <section>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -293,7 +339,7 @@ const EmployeeList = () => {
 
                         {/* Custom multiselect with checkboxes */}
                         <div className="mb-4">
-                            <label className="block font-semibold mb-2">Select Employees</label>
+                            {/* <label className="block font-semibold mb-2">Select Employees</label> */}
                             <div className="rounded p-2 h-40 overflow-y-auto !border !border-gray-300">
                                 {employeeList.map(emp => (
                                     <label key={emp.email} className="flex items-center justify-start space-x-2 mb-1 shadow p-1 rounded-md">
@@ -326,6 +372,7 @@ const EmployeeList = () => {
                             <option>Evening</option>
                             <option>Night</option>
                             <option>General</option>
+                            <option>OT list</option>
                         </select>
 
                         <div className='flex justify-end gap-1'>
