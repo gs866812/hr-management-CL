@@ -54,7 +54,6 @@ const Analytics = () => {
                         search: searchOption,
                     },
                 });
-                console.log("Expense data received:", response.data.expense);
                 setExpenseList(response.data.allExpense);
             } catch (error) {
                 toast.error('Error fetching data:', error.message);
@@ -75,7 +74,6 @@ const Analytics = () => {
                         userEmail: user?.email,
                     },
                 });
-                console.log("Earnings data received:", response.data);
                 setEarnings(response.data);
             } catch (error) {
                 toast.error('Error fetching data:', error.message);
@@ -116,7 +114,6 @@ const Analytics = () => {
         }));
 
         // Process expense data - Debug logging
-        console.log("Processing expense data:", expenseList);
 
         if (expenseList && expenseList.length > 0) {
             expenseList.forEach(expense => {
@@ -127,7 +124,6 @@ const Analytics = () => {
                         console.error("Invalid date for expense:", expense);
                     } else {
                         monthlyData[monthIndex].expense += Number(expense.expenseAmount) || 0;
-                        console.log(`Added expense ${expense.expenseAmount} to month ${months[monthIndex]}`);
                     }
                 } catch (error) {
                     console.error("Error processing expense:", expense, error);
@@ -136,7 +132,6 @@ const Analytics = () => {
         }
 
         // Process earnings data
-        console.log("Processing earnings data:", earnings);
 
         if (earnings && earnings.length > 0) {
             earnings.forEach(earning => {
@@ -144,7 +139,6 @@ const Analytics = () => {
                     const monthIndex = months.indexOf(earning.month);
                     if (monthIndex !== -1) {
                         monthlyData[monthIndex].earnings += Number(earning.convertedBdt) || 0;
-                        console.log(`Added earnings ${earning.convertedBdt} to month ${earning.month}`);
                     } else {
                         // Handle case where month string doesn't match
                         // Try to extract month from date string if available
@@ -154,7 +148,6 @@ const Analytics = () => {
                                 const monthNum = parseInt(dateParts[1]) - 1; // Month is 0-indexed in JS
                                 if (monthNum >= 0 && monthNum <= 11) {
                                     monthlyData[monthNum].earnings += Number(earning.convertedBdt) || 0;
-                                    console.log(`Added earnings ${earning.convertedBdt} to month ${months[monthNum]} (from date)`);
                                 }
                             }
                         }
@@ -182,8 +175,6 @@ const Analytics = () => {
         totals.profit = parseFloat((totals.earnings - totals.expense).toFixed(2));
 
         setYearlyTotals(totals);
-        console.log("Final analytics data:", monthlyData);
-        console.log("Yearly totals:", totals);
         setAnalyticsData(monthlyData);
     };
 

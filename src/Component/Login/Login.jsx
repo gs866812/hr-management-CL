@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5';
 import { MdOutlineMail } from 'react-icons/md';
 import { RiLockPasswordLine } from 'react-icons/ri';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import auth from '../../firebase.config';
 import axios from 'axios';
 import { ContextData } from '../../DataProvider';
@@ -17,12 +17,20 @@ const Login = () => {
     // const [user, setUser] = useState([]);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
     // ****************************************************************
 
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const originalPath = localStorage.getItem('originalPath');
+    const from = location.state?.from || originalPath || "/";
+
+
 
     const handleAdminEmailLogin = async (e) => {
         e.preventDefault();
+        setIsLoggingIn(true);
         try {
             const userCredential = await signInWithEmailAndPassword(
                 auth,
@@ -40,10 +48,22 @@ const Login = () => {
             if (res.data.token) {
                 localStorage.setItem('jwtToken', res.data.token); // Store token in localStorage
                 setUser(user); // Set the user context
-                navigate('/'); // Redirect after login
+                localStorage.removeItem('originalPath');
+
+                setTimeout(() => {
+                    navigate(from, { replace: true });
+                    setIsLoggingIn(false);
+                }, 100);
+            } else {
+                setIsLoggingIn(false);
+                Swal.fire({
+                    title: 'Authentication error',
+                    text: 'Could not complete login',
+                });
             }
-            navigate('/');
         } catch (error) {
+            console.error("🚫 Login error:", error);
+            setIsLoggingIn(false);
             Swal.fire({
                 title: 'Invalid credentials',
             });
@@ -68,6 +88,7 @@ const Login = () => {
                             onChange={(e) => setEmail(e.target.value)}
                             required
                             className="w-full"
+                            disabled={isLoggingIn}
                         />
                     </label>
 
@@ -80,6 +101,7 @@ const Login = () => {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             className="w-full pr-5"
+                            disabled={isLoggingIn}
                         />
                         <span
                             onClick={() => setShowPassword(!showPassword)}
@@ -97,11 +119,10 @@ const Login = () => {
                         type="submit"
                         value="Submit"
                         className="py-2 px-5 rounded-md w-full custom-button bg-[#6E3FF3] text-white cursor-pointer"
+                        disabled={isLoggingIn}
                     />
                     <div className="text-sm flex justify-between">
                         <Link to="/resetPassword">Forgot password</Link>
-                        {/* <Link to="/client-login">Login as Admin</Link> */}
-                        {/* <Link to="/employee-login">Employee login</Link> */}
                     </div>
                 </form>
             </div>

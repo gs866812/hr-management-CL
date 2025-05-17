@@ -20,6 +20,7 @@ const DataProvider = ({ children }) => {
     const [hrExpense, setHrExpense] = useState([]);
 
     const [mainBalance, setMainBalance] = useState(0);
+    const [authChecked, setAuthChecked] = useState(false);
 
 
     const [expenseItemsPerPage, setExpenseItemsPerPage] = useState(10);
@@ -166,34 +167,154 @@ const DataProvider = ({ children }) => {
 
     // ****************************************************************
     // Token validation logic
-    const validateToken = async () => {
-        const token = localStorage.getItem('jwtToken');
-        if (token) {
-            try {
-                const response = await axios.post(
-                    'https://webbriks.backendsafe.com/validate-token',
-                    null,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
+    // const validateToken = async () => {
+    //     const token = localStorage.getItem('jwtToken');
+    //     if (token) {
+    //         try {
+    //             const response = await axios.post(
+    //                 '/validate-token',
+    //                 null,
+    //                 {
+    //                     headers: { Authorization: `Bearer ${token}` },
+    //                 }
+    //             );
+    //             if (response.data.success) {
+    //                 setUser(response.data.user); // Set user if token is valid
+    //                 // setTokenReady(true);
+    //             } else {
+    //                 localStorage.removeItem('jwtToken');
+    //                 setUser(null);
+    //             }
+    //         } catch (error) {
+    //             console.error('Error validating token:', error);
+    //             localStorage.removeItem('jwtToken');
+    //             setUser(null);
+    //         }
+    //     } else {
+    //         setUser(null);
+    //     }
+    //     setLoading(false); // Stop loading after token validation
+    // };
+
+    useEffect(() => {
+        let authTimeout;
+        let isUnmounted = false;
+
+        // We'll use this flag to prevent state updates after unmount
+        const safeSetState = (setter, value) => {
+            if (!isUnmounted) setter(value);
+        };
+
+        // Make sure we stay in loading state until auth is verified
+        safeSetState(setLoading, true);
+
+        // First, check for an existing JWT token
+        const checkToken = async () => {
+            const token = localStorage.getItem('jwtToken');
+
+            if (token) {
+                try {
+                    const response = await axios.post(
+                        'https://webbriks.backendsafe.com/validate-token',
+                        null,
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    );
+
+                    if (response.data.success) {
+                        return { valid: true, userData: response.data.user };
+                    } else {
+                        localStorage.removeItem('jwtToken');
+                        return { valid: false };
                     }
-                );
-                if (response.data.success) {
-                    setUser(response.data.user); // Set user if token is valid
-                    // setTokenReady(true);
-                } else {
+                } catch (error) {
+                    console.error('🚫 Error validating token:', error);
                     localStorage.removeItem('jwtToken');
-                    setUser(null);
+                    return { valid: false };
                 }
-            } catch (error) {
-                console.error('Error validating token:', error);
-                localStorage.removeItem('jwtToken');
-                setUser(null);
             }
-        } else {
-            setUser(null);
-        }
-        setLoading(false); // Stop loading after token validation
-    };
+            return { valid: false };
+        };
+
+        // Set a maximum time to wait for auth
+        authTimeout = setTimeout(() => {
+            if (!isUnmounted && loading) {
+                safeSetState(setLoading, false);
+                safeSetState(setUser, null);
+                safeSetState(setAuthChecked, true);
+            }
+        }, 5000); // 5 second timeout
+
+        // Listen for Firebase auth state
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+
+            // Clear timeout since we got a response
+            clearTimeout(authTimeout);
+
+            // Check Firebase authentication first
+            if (firebaseUser) {
+                // Then check JWT token
+                const tokenResult = await checkToken();
+
+                if (tokenResult.valid) {
+                    // Both Firebase and JWT are valid
+                    safeSetState(setUser, firebaseUser);
+                    safeSetState(setCurrentUser, tokenResult.userData);
+                } else {
+                    // Firebase authenticated but no valid JWT
+                    // This likely means the JWT expired or was deleted
+
+                    // Try to generate a new JWT
+                    try {
+                        const emailData = { email: firebaseUser.email };
+                        const res = await axios.post(
+                            'https://webbriks.backendsafe.com/jwt',
+                            emailData
+                        );
+
+                        if (res.data.token) {
+                            localStorage.setItem('jwtToken', res.data.token);
+                            safeSetState(setUser, firebaseUser);
+
+                            // Fetch user data with new token
+                            try {
+                                const userRes = await axios.get(
+                                    'https://webbriks.backendsafe.com/users',
+                                    { headers: { Authorization: `Bearer ${res.data.token}` } }
+                                );
+                                const userData = userRes.data.find(u => u.email === firebaseUser.email);
+                                if (userData) {
+                                    safeSetState(setCurrentUser, userData);
+                                }
+                            } catch (error) {
+                                console.error("🚫 Error fetching user data:", error);
+                            }
+                        } else {
+                            safeSetState(setUser, null);
+                        }
+                    } catch (error) {
+                        console.error("🚫 Error generating JWT:", error);
+                        safeSetState(setUser, null);
+                    }
+                }
+            } else {
+                // No Firebase user
+                localStorage.removeItem('jwtToken');
+                safeSetState(setUser, null);
+                safeSetState(setCurrentUser, null);
+            }
+
+            // Auth check complete
+            safeSetState(setLoading, false);
+            safeSetState(setAuthChecked, true);
+        });
+
+        // Cleanup function
+        return () => {
+            isUnmounted = true;
+            clearTimeout(authTimeout);
+            unsubscribe();
+        };
+    }, []); // Empty dependency array ensures this runs only once on mount
 
 
 
@@ -230,22 +351,23 @@ const DataProvider = ({ children }) => {
 
     // ****************************************************************
     // Firebase authentication listener
-    useEffect(() => {
-        const unSubscribe = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
-            setLoading(false);
-        });
-        return () => {
-            unSubscribe();
-        };
-    }, []);
+    // useEffect(() => {
+    //     const unSubscribe = onAuthStateChanged(auth, (currentUser) => {
+    //         setUser(currentUser);
+    //         setLoading(false);
+    //     });
+    //     return () => {
+    //         unSubscribe();
+    //     };
+    // }, []);
+
 
     // ****************************************************************
 
     // Validate token on app load
-    useEffect(() => {
-        validateToken();
-    }, []);
+    // useEffect(() => {
+    //     validateToken();
+    // }, []);
     // ****************************************************************
     const info = {
         user,
@@ -272,6 +394,7 @@ const DataProvider = ({ children }) => {
         refetch,
         employeeList,
         setSearchEmployee,
+        authChecked,
     };
 
     return <ContextData.Provider value={info}>{children}</ContextData.Provider>;
