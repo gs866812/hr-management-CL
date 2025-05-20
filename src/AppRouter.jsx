@@ -5,17 +5,14 @@ import Protected from './Component/Protected/Protected';
 import Home from './Pages/Home';
 import Login from './Component/Login/Login';
 import RecentOrders from './Component/Admin/RecentOrders';
-import OrdersDeadline from './Component/Admin/OrdersDeadline';
 import Settings from './Pages/Settings';
 import CreateLocalOrder from './Component/Admin/CreateLocalOrder';
 import MyExpense from './Pages/MyExpense';
 import OrderManagement from './Pages/OrderManagement';
 import ViewLocalOrder from './Component/Admin/ViewLocalOrder';
 import NoticeBoard from './Component/NoticeBoard/NoticeBoard';
-import Employee from './Component/EmployeeList/Employee';
 import Clients from './Component/ClientList/Clients';
 import Leave from './Component/Leave/Leave';
-import EmployeeLogin from './Component/Login/EmployeeLogin';
 import EmployeeSignUp from './Component/EmployeeList/EmployeeSignUp';
 import Earnings from './Component/Earnings/Earnings';
 import ProtectedRole from './Component/Protected/ProtectedRole';
@@ -25,6 +22,7 @@ import MorningShift from './Component/Shifting/MorningShift';
 import Profile from './Component/Common/Profile';
 import Analytics from './Component/Analytics/Analytics';
 import EditEarnings from './Component/Earnings/EditEarnings';
+import ProtectHr from './Component/Protected/ProtectHr';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
@@ -43,7 +41,7 @@ export const router = createBrowserRouter([
             { path: '/expense', element: <ProtectedRole><MyExpense /></ProtectedRole> },
             { path: '/employee-registration', element: <ProtectedRole><EmployeeSignUp /></ProtectedRole> },
             { path: '/earnings/editEarnings/:id', element: <EditEarnings /> },
-            { path: '/analytics', element: <ProtectedRole><Analytics /></ProtectedRole> },
+            { path: '/analytics', element: <ProtectHr><Analytics /></ProtectHr> },
             { path: '/recentOrders', element: <RecentOrders /> },
             { path: '/profile', element: <Profile /> },
             { path: '/recentOrders/:orderId', element: <ViewLocalOrder /> },
