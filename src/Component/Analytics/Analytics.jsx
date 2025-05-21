@@ -22,7 +22,7 @@ import {
 } from 'recharts';
 
 const Analytics = () => {
-    const { user, searchOption } = useContext(ContextData);
+    const { user, searchOption, setTotalEarnings } = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
     const [expenseList, setExpenseList] = useState([]);
     const [earnings, setEarnings] = useState([]);
@@ -34,12 +34,14 @@ const Analytics = () => {
     });
     const [activeIndex, setActiveIndex] = useState(0);
 
-
+    // *********************************************************************
+    
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
 
     const COLORS = ['#FF8042', '#8884d8', '#82ca9d'];
+
 
     // **************************************************************************
     useEffect(() => {

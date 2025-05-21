@@ -30,11 +30,14 @@ const DataProvider = ({ children }) => {
     const [employeeList, setEmployeeList] = useState([]);
     const [searchEmployee, setSearchEmployee] = useState('');
 
+    const [totalProfit, setTotalProfit] = useState(0);
+
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
 
     const axiosProtect = useAxiosProtect();
+
 
 
 
@@ -165,6 +168,29 @@ const DataProvider = ({ children }) => {
     }, [refetch, user]);
 
 
+    // ****************************************************************
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const token = localStorage.getItem('jwtToken');
+            if (user && token) {
+                clearInterval(interval);
+                fetchProfit();
+            }
+        }, 200);
+
+        const fetchProfit = async () => {
+            try {
+                const response = await axiosProtect.get('/getProfit', {
+                    params: { userEmail: user.email },
+                });
+                setTotalProfit(response.data.profit);
+            } catch (error) {
+                toast.error('Error fetching data');
+            }
+        };
+
+        return () => clearInterval(interval);
+    }, [refetch, user]);
     // ****************************************************************
     // Token validation logic
     // const validateToken = async () => {
@@ -395,6 +421,7 @@ const DataProvider = ({ children }) => {
         employeeList,
         setSearchEmployee,
         authChecked,
+        totalProfit,
     };
 
     return <ContextData.Provider value={info}>{children}</ContextData.Provider>;

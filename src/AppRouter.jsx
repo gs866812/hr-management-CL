@@ -23,6 +23,7 @@ import Profile from './Component/Common/Profile';
 import Analytics from './Component/Analytics/Analytics';
 import EditEarnings from './Component/Earnings/EditEarnings';
 import ProtectHr from './Component/Protected/ProtectHr';
+import ProfitShare from './Component/ProfitShare/ProfitShare';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
@@ -53,6 +54,7 @@ export const router = createBrowserRouter([
             { path: '/leave', element: <Leave /> },
             { path: '/earnings', element: <ProtectedRole><Earnings /></ProtectedRole> },
             { path: '/employeeList/morning-shift', element: <MorningShift /> },
+            { path: '/profit-share', element: <ProtectHr><ProfitShare /></ProtectHr> },
 
 
 
