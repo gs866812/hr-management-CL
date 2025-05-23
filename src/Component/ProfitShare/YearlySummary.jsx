@@ -1,27 +1,10 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { ContextData } from '../../DataProvider';
-import { toast } from 'react-toastify';
-import { useDispatch, useSelector } from 'react-redux';
 import useAxiosProtect from '../../utils/useAxiosProtect';
-import {
-    ComposedChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-    Line,
-    LabelList,
-    ReferenceLine,
-    PieChart,
-    Pie,
-    Cell,
-    Sector
-} from 'recharts';
+import { useDispatch, useSelector } from 'react-redux';
+import { Bar, CartesianGrid, Cell, ComposedChart, LabelList, Legend, Line, Pie, PieChart, ResponsiveContainer, Sector, Tooltip, XAxis, YAxis } from 'recharts';
 
-const Analytics = () => {
+const YearlySummary = () => {
     const { user, searchOption, setTotalEarnings } = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
     const [expenseList, setExpenseList] = useState([]);
@@ -35,7 +18,7 @@ const Analytics = () => {
     const [activeIndex, setActiveIndex] = useState(0);
 
     // *********************************************************************
-    
+
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
@@ -288,8 +271,6 @@ const Analytics = () => {
             </g>
         );
     };
-
-    // **************************************************************************
     return (
         <div className="w-full p-4">
 
@@ -339,52 +320,8 @@ const Analytics = () => {
                     </div>
                 </div>
             </div>
-
-
-            {/* Chart showing expense, earnings and profit */}
-            <h2 className="text-xl font-bold mb-6 mt-5">Monthly Financial Analytics</h2>
-            <div className="bg-white rounded-lg shadow-lg p-4 mb-8">
-                <div className="h-96">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart
-                            data={analyticsData}
-                            margin={{
-                                top: 40,
-                                right: 30,
-                                left: 20,
-                                bottom: 20,
-                            }}
-                        >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="month" />
-                            <YAxis />
-                            <Tooltip formatter={(value) => `${formatNumber(value)} BDT`} />
-                            <Legend wrapperStyle={{ bottom: 0 }} />
-
-                            <Bar dataKey="expense" fill="#FF8042" name="Expense">
-                                <LabelList dataKey="expense" position="top" content={renderBarLabel} />
-                            </Bar>
-
-                            <Bar dataKey="earnings" fill="#8884d8" name="Earnings">
-                                <LabelList dataKey="earnings" position="top" content={renderBarLabel} />
-                            </Bar>
-
-                            <Line
-                                type="monotone"
-                                dataKey="profit"
-                                stroke="#82ca9d"
-                                strokeWidth={3}
-                                name="Profit"
-                                dot={{ stroke: '#82ca9d', strokeWidth: 2, r: 4, fill: '#ffffff' }}
-                            >
-                                <LabelList dataKey="profit" position="top" content={renderProfitLabel} />
-                            </Line>
-                        </ComposedChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
         </div>
     );
 };
 
-export default Analytics;
+export default YearlySummary;

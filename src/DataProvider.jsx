@@ -30,6 +30,8 @@ const DataProvider = ({ children }) => {
     const [employeeList, setEmployeeList] = useState([]);
     const [searchEmployee, setSearchEmployee] = useState('');
 
+    const [totalExpense, setTotalExpense] = useState(0);
+    const [totalEarnings, setTotalEarnings] = useState(0);
     const [totalProfit, setTotalProfit] = useState(0);
 
 
@@ -183,6 +185,8 @@ const DataProvider = ({ children }) => {
                 const response = await axiosProtect.get('/getProfit', {
                     params: { userEmail: user.email },
                 });
+                setTotalExpense(response.data.totalExpense);
+                setTotalEarnings(response.data.totalEarnings);
                 setTotalProfit(response.data.profit);
             } catch (error) {
                 toast.error('Error fetching data');
@@ -422,6 +426,8 @@ const DataProvider = ({ children }) => {
         setSearchEmployee,
         authChecked,
         totalProfit,
+        totalExpense,
+        totalEarnings,
     };
 
     return <ContextData.Provider value={info}>{children}</ContextData.Provider>;

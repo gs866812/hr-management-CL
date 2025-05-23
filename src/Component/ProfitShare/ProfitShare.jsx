@@ -1,115 +1,177 @@
-import React, { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { ContextData } from '../../DataProvider';
+import YearlySummary from './YearlySummary';
 import useAxiosProtect from '../../utils/useAxiosProtect';
+import { toast } from 'react-toastify';
 import { useDispatch, useSelector } from 'react-redux';
-import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 const ProfitShare = () => {
-    const { user, totalProfit } = useContext(ContextData);
+    const { user, totalProfit, totalExpense, totalEarnings, currentUser } = useContext(ContextData);
+    const axiosProtect = useAxiosProtect();
 
-    const [activeIndex, setActiveIndex] = useState(0);
 
-    const [yearlyTotals, setYearlyTotals] = useState({
-        expense: 0,
-        earnings: 0,
-        profit: 0
-    });
+    const [shareHolders, setShareHolders] = useState([]);
+    const [hoveredIndex, setHoveredIndex] = useState(null);
+    const [shareProfit, setShareProfit] = useState([]);
+    const [profitPercent, setProfitPercent] = useState('');
+    const [profitBalance, setProfitBalance] = useState('');
 
-    // *************************************************************************
-    const onPieEnter = (_, index) => {
-        setActiveIndex(index);
-    };
-    // *************************************************************************
+    console.log(currentUser);
+
+
+    // ****************************************************************
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
+    // ****************************************************************
+    useEffect(() => {
+        const fetchShareHolders = async () => {
+            try {
+                const response = await axiosProtect.get('/getShareHolders', {
+                    params: {
+                        userEmail: user?.email,
+                    },
+                });
+                setShareHolders(response.data);
+            } catch (error) {
+                toast.error('Error fetching data:', error.message);
+            }
 
-    // ******************************************************************
-    const COLORS = ['#FF8042', '#8884d8', '#82ca9d'];
-    // ******************************************************************
-    // Custom pie chart active shape
-    const renderActiveShape = (props) => {
-        const RADIAN = Math.PI / 180;
-        const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle,
-            fill, payload, percent, value } = props;
-        const sin = Math.sin(-RADIAN * midAngle);
-        const cos = Math.cos(-RADIAN * midAngle);
-        const sx = cx + (outerRadius + 10) * cos;
-        const sy = cy + (outerRadius + 10) * sin;
-        const mx = cx + (outerRadius + 30) * cos;
-        const my = cy + (outerRadius + 30) * sin;
-        const ex = mx + (cos >= 0 ? 1 : -1) * 22;
-        const ey = my;
-        const textAnchor = cos >= 0 ? 'start' : 'end';
+        };
+        fetchShareHolders();
+    }, [refetch]);
+    // ****************************************************************
+    const handleShareProfit = async (shareHolder) => {
+        const { _id, ...share } = shareHolder;
+        setShareProfit(share);
+        document.getElementById('shareProfit').showModal()
+    };
+    // ****************************************************************
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const dataToSend = {
+            name: shareProfit.shareHoldersName,
+            mobile: shareProfit.mobile,
+            email: shareProfit.email,
+            profitPercent: parseFloat(profitPercent),
+            totalProfit: parseFloat(totalProfit),
+            userName: currentUser?.userName,
+            profitBalance: parseFloat(profitBalance),
+        };
 
-        return (
-            <g>
-                <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill}>{payload.name}</text>
-                <Sector
-                    cx={cx}
-                    cy={cy}
-                    innerRadius={innerRadius}
-                    outerRadius={outerRadius}
-                    startAngle={startAngle}
-                    endAngle={endAngle}
-                    fill={fill}
-                />
-                <Sector
-                    cx={cx}
-                    cy={cy}
-                    startAngle={startAngle}
-                    endAngle={endAngle}
-                    innerRadius={outerRadius + 6}
-                    outerRadius={outerRadius + 10}
-                    fill={fill}
-                />
-                <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
-                <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-                <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333">{`${formatNumber(value)} BDT`}</text>
-                <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="#999">
-                    {`(${(percent * 100).toFixed(2)}%)`}
-                </text>
-            </g>
-        );
     };
-    // ******************************************************************
-    // Prepare yearly summary data for pie chart
-    const prepareYearlySummaryData = () => {
-        return [
-            { name: 'Expense', value: Math.abs(yearlyTotals.expense) },
-            { name: 'Earnings', value: yearlyTotals.earnings },
-            { name: 'Profit', value: Math.abs(yearlyTotals.profit) }
-        ];
+    // ****************************************************************
+    const handleProfitPercent = (e) => {
+        const value = e.target.value;
+        setProfitPercent(value);
+        const singleShare = (parseFloat(totalProfit) * parseFloat(value)/100);
+        setProfitBalance(singleShare);
+        console.log(profitBalance);
     };
-    // ******************************************************************
+    // ****************************************************************
 
     return (
         <div>
+            <section className='rounded-md'>
+                <YearlySummary />
+            </section>
+
             <section>
-                <div className='w-1/2 h-52'>
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Pie
-                                activeIndex={activeIndex}
-                                activeShape={renderActiveShape}
-                                data={prepareYearlySummaryData()}
-                                cx="60%"
-                                cy="50%"
-                                innerRadius={40}
-                                outerRadius={60}
-                                fill="#8884d8"
-                                dataKey="value"
-                                onMouseEnter={onPieEnter}
-                            >
-                                {prepareYearlySummaryData().map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Tooltip formatter={(value) => `${formatNumber(value)} BDT`} />
-                            <Legend />
-                        </PieChart>
-                    </ResponsiveContainer>
+                {/* Share holders card */}
+                <div className='flex flex-wrap gap-4 justify-center my-10'>
+                    {
+                        shareHolders &&
+                        shareHolders.map((shareHolder, index) => (
+                            <div key={index} className='flex border border-gray-300 rounded-md hover:text-white hover:bg-[#6E3FF3]' onMouseEnter={() => setHoveredIndex(index)}
+                                onMouseLeave={() => setHoveredIndex(null)}>
+                                <div className='flex flex-col items-center gap-2 p-4' >
+                                    <img src={shareHolder?.userImage} alt="" className='w-10 h-10 rounded-full' />
+                                    <h1 className='text-xl font-bold'>{shareHolder?.shareHoldersName}</h1>
+                                    <h1 className='font-semibold'>{shareHolder?.mobile}</h1>
+                                    <h1 className='text-sm font-semibold'>{shareHolder?.email}</h1>
+                                    {/* button name Share profit */}
+                                    {
+                                        hoveredIndex === index && (
+                                            <button className='mt-2 px-4 py-1 bg-white text-[#6E3FF3] font-semibold rounded cursor-pointer' onClick={() => handleShareProfit(shareHolder)}>
+                                                Share Profit
+                                            </button>
+                                        )
+                                    }
+                                </div>
+                            </div>
+                        ))
+                    }
                 </div>
             </section>
+
+            {/* Modal */}
+            <dialog id="shareProfit" className="modal">
+                <div className="modal-box">
+                    <form method="dialog">
+                        {/* if there is a button in form, it will close the modal */}
+                        <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                    </form>
+                    <h3 className="font-bold text-lg">Share profit</h3>
+                    <form onSubmit={handleSubmit} className='space-y-4'>
+                        <div>
+                            <label className='block font-semibold'>Share holder name:</label>
+                            <input
+                                type="text"
+                                value={shareProfit.shareHoldersName}
+                                readOnly
+                                className='border px-3 py-2 rounded w-full bg-gray-100'
+                            />
+                        </div>
+
+                        <div>
+                            <label className='block font-semibold'>Share holder number:</label>
+                            <input
+                                type="text"
+                                value={shareProfit.mobile}
+                                readOnly
+                                className='border px-3 py-2 rounded w-full bg-gray-100'
+                            />
+                        </div>
+
+                        <div>
+                            <label className='block font-semibold'>Share holder email:</label>
+                            <input
+                                type="email"
+                                value={shareProfit.email}
+                                readOnly
+                                className='border px-3 py-2 rounded w-full bg-gray-100'
+                            />
+                        </div>
+
+                        <div>
+                            <label className='block font-semibold'>Profit share (%):</label>
+                            <input
+                                type="number"
+                                required
+                                value={profitPercent}
+                                onChange={handleProfitPercent}
+                                className='!border !border-gray-300 px-3 py-2 rounded w-full'
+                            />
+                        </div>
+                        <div>
+                            <label className='block font-semibold'>Will get({totalProfit}):</label>
+                            <input
+                                type="text"
+                                value={profitBalance}
+                                readOnly
+                                className='!border !border-gray-300 px-3 py-2 rounded w-full'
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            className='bg-[#6E3FF3] text-white px-4 py-2 rounded font-semibold'
+                        >
+                            Submit
+                        </button>
+                    </form>
+                </div>
+            </dialog>
+            {/* Modal */}
         </div>
     );
 };
