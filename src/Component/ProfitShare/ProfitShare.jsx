@@ -4,10 +4,14 @@ import YearlySummary from './YearlySummary';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import { toast } from 'react-toastify';
 import { useDispatch, useSelector } from 'react-redux';
+import { setRefetch } from '../../redux/refetchSlice';
+import useAxiosSecure from '../../utils/useAxiosSecure';
+import moment from 'moment';
 
 const ProfitShare = () => {
-    const { user, totalProfit, totalExpense, totalEarnings, currentUser } = useContext(ContextData);
+    const { user, totalProfit, totalExpense, totalEarnings, currentUser, mainBalance } = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
+    const axiosSecure = useAxiosSecure();
 
 
     const [shareHolders, setShareHolders] = useState([]);
@@ -15,13 +19,15 @@ const ProfitShare = () => {
     const [shareProfit, setShareProfit] = useState([]);
     const [profitPercent, setProfitPercent] = useState('');
     const [profitBalance, setProfitBalance] = useState('');
+    const [shareHolderInfo, setShareHolderInfo] = useState([]);
 
-    console.log(currentUser);
 
 
     // ****************************************************************
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
+
+    console.log(shareHolderInfo);
     // ****************************************************************
     useEffect(() => {
         const fetchShareHolders = async () => {
@@ -48,25 +54,67 @@ const ProfitShare = () => {
     // ****************************************************************
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (profitBalance > mainBalance) {
+            toast.error('No available balance to share profit');
+            return;
+        };
+        const currentTime = moment().format('hh:mm:ss A');
+
         const dataToSend = {
             name: shareProfit.shareHoldersName,
             mobile: shareProfit.mobile,
             email: shareProfit.email,
-            profitPercent: parseFloat(profitPercent),
-            totalProfit: parseFloat(totalProfit),
+            sharedPercent: parseFloat(profitPercent),
+            totalProfitBalance: parseFloat(totalProfit),
             userName: currentUser?.userName,
-            profitBalance: parseFloat(profitBalance),
+            sharedProfitBalance: parseFloat(profitBalance),
+            mainBalance,
+            currentTime,
+
         };
+        const postProfitData = async () => {
+            try {
+                const response = await axiosSecure.post('/addProfitShareData', dataToSend);
+                if (response.data.insertedId) {
+                    dispatch(setRefetch(!refetch));
+                    setProfitBalance('');
+                    setProfitPercent('');
+                    document.getElementById('shareProfit').close();
+                    toast.success('Profit added successfully');
+                } else {
+                    toast.error(response.data.message || 'Something went wrong');
+                }
+            } catch (error) {
+                toast.error('Failed to add profit sharing', error.message);
+            }
+        };
+        postProfitData();
 
     };
     // ****************************************************************
     const handleProfitPercent = (e) => {
         const value = e.target.value;
         setProfitPercent(value);
-        const singleShare = (parseFloat(totalProfit) * parseFloat(value)/100);
+        const singleShare = (parseFloat(totalProfit) * parseFloat(value) / 100);
         setProfitBalance(singleShare);
-        console.log(profitBalance);
+
     };
+    // ****************************************************************
+    useEffect(() => {
+        const fetchShareHolderInfo = async () => {
+            try {
+                const response = await axiosProtect.get('/getShareholderInfo', {
+                    params: {
+                        userEmail: user?.email,
+                    },
+                });
+                setShareHolderInfo(response.data);
+            } catch (error) {
+                toast.error('Error fetching data:', error.message);
+            }
+        };
+        fetchShareHolderInfo();
+    }, [refetch]);
     // ****************************************************************
 
     return (
@@ -100,6 +148,47 @@ const ProfitShare = () => {
                             </div>
                         ))
                     }
+                </div>
+            </section>
+
+            {/* Shareholders info table */}
+            <section>
+                <div className="overflow-x-auto mt-5 mb-5">
+                    <table className="table table-zebra">
+                        {/* head */}
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Name</th>
+                                <th>Mobile</th>
+                                <th>Share(%)</th>
+                                <th>Profit Balance</th>
+                                <th>User</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {
+                                shareHolderInfo.length > 0 ? (
+                                    shareHolderInfo.map((info, index) => {
+                                        return (
+                                            <tr key={index}>
+                                                <td>{info.date}</td>
+                                                <td>{info.name}</td>
+                                                <td>{info.mobile}</td>
+                                                <td>{info.sharedPercent}</td>
+                                                <td>{info.sharedProfitBalance}</td>
+                                                <td>{info.userName}</td>
+                                            </tr>
+                                        );
+                                    })
+                                ) : (
+                                    <tr>
+                                        <td colSpan="8" className="text-center">No record found</td>
+                                    </tr>
+                                )
+                            }
+                        </tbody>
+                    </table>
                 </div>
             </section>
 
@@ -153,10 +242,13 @@ const ProfitShare = () => {
                             />
                         </div>
                         <div>
-                            <label className='block font-semibold'>Will get({totalProfit}):</label>
+                            <label className='block font-semibold'>
+                                Will get
+                                <span className='text-sm'>(Current Balance {mainBalance})</span>:
+                            </label>
                             <input
                                 type="text"
-                                value={profitBalance}
+                                value={profitBalance || 0}
                                 readOnly
                                 className='!border !border-gray-300 px-3 py-2 rounded w-full'
                             />
@@ -164,7 +256,7 @@ const ProfitShare = () => {
 
                         <button
                             type="submit"
-                            className='bg-[#6E3FF3] text-white px-4 py-2 rounded font-semibold'
+                            className='bg-[#6E3FF3] text-white px-4 py-2 rounded font-semibold cursor-pointer'
                         >
                             Submit
                         </button>

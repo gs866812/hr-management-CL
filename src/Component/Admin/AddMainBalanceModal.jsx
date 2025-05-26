@@ -46,7 +46,7 @@ const AddMainBalanceModal = () => {
 
         if (value === confirmValue) {
             const parseValue = parseFloat(value);
-            const balanceInfo = { parseValue, note, date: moment(new Date()).format("DD-MM-YYYY") };
+            const balanceInfo = { parseValue, note };
 
             const addMainBalance = async () => {
                 try {
