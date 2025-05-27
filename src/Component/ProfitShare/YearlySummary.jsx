@@ -80,7 +80,7 @@ const YearlySummary = () => {
 
     // Format number to have 2 decimal places
     const formatNumber = (num) => {
-        return Number(num).toFixed(2);
+        return Number(num).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     };
 
     // Process data for the charts

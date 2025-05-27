@@ -5,6 +5,8 @@ import useAxiosProtect from '../../utils/useAxiosProtect';
 import { useDispatch, useSelector } from 'react-redux';
 import { setRefetch } from '../../redux/refetchSlice';
 import { ContextData } from '../../DataProvider';
+import moment from 'moment';
+import { toast } from 'react-toastify';
 
 // Mock data
 const attendanceData = [
@@ -41,7 +43,9 @@ const notifications = [
 
 const EmployeeDashboard = () => {
     const axiosSecure = useAxiosProtect();
-    const {user} = useContext(ContextData);
+    const axiosProtect = useAxiosProtect();
+    const { user } = useContext(ContextData);
+    const [inTime, setInTime] = useState('');
 
     // **********************************************************
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -79,35 +83,57 @@ const EmployeeDashboard = () => {
 
     // *******************************************************
     const handleCheckIn = async () => {
-        const now = new Date();
 
-        const mail = user?.email;
-        // Convert to GMT+6
-        const gmtPlus6 = new Date(now.getTime());
+        const date = moment(new Date()).format("DD-MMM-YYYY");
+        const month = moment(new Date()).format("MMMM");
+        const checkInTime = Date.now();
+        const displayTime = moment(checkInTime).format("hh:mm:ss A");
 
-        const time = gmtPlus6.toTimeString().split(' ')[0]; // "HH:MM:SS"
-        const month = gmtPlus6.toLocaleString('default', { month: 'long' }); // "May"
-        const date = gmtPlus6.toISOString().split('T')[0]; // "2025-05-08"
+
+        const checkInInfo = {
+            date,
+            month,
+            checkInTime,
+            displayTime,
+            email: user.email,
+        };
 
         try {
-            const res = await axiosSecure.post('/employee/checkIn', {
-                email: mail,
-                inTime: time,   // "13:25:45"
-                month,  // "May"
-                date,   // "2025-05-08"
-            });
-
-            dispatch(setRefetch(prev => !prev));
+            const res = await axiosSecure.post('/employee/checkIn', { checkInInfo });
+            dispatch(setRefetch(!refetch));
+            if (res.data.message === 'Already checked in today') {
+                toast.warning(res.data.message);
+                return;
+            }
+            toast.success(res.data.message);
         } catch (error) {
-            console.error('Check-in failed:', error);
+            toast.error('Check-in failed:', error);
         }
     };
+    // *************************************************************************************************
+    useEffect(() => {
+        const fetchInTime = async () => {
+            try {
+                const date = moment(new Date()).format("DD-MMM-YYYY");
+                const response = await axiosProtect.get(`/getCheckInInfo`, {
+                    params: {
+                        userEmail: user?.email,
+                        date,
+                    },
+                });
+                console.log(response.data);
+                setInTime(response.data[0]?.displayTime);
+            } catch (error) {
+                console.error('Error fetching check-in time:', error);
+                setInTime('-- : --');
+            }
+        };
+        fetchInTime();
+    }, [refetch, user.email]);
 
 
-    // const currentTime = formatTime(new Date());
-
-    const checkInTime = "09:15";
     const workHours = "7h 45m";
+    // *************************************************************************************************
     return (
         <div className="p-6">
             {/* Time Tracking */}
@@ -125,7 +151,7 @@ const EmployeeDashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
                         <div className="text-xs text-gray-500 mb-1">Check-in Time</div>
-                        <div className="text-lg font-semibold">{checkInTime}</div>
+                        <div className="text-lg font-semibold">{inTime || `-- : --`}</div>
                     </div>
 
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
@@ -145,14 +171,19 @@ const EmployeeDashboard = () => {
                 </div>
 
                 <div className="flex mt-6 gap-4">
-                    <button
-                        onClick={handleCheckIn}
-                        className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded btn">
-                        Check In
-                    </button>
-                    <button className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded">
-                        Check Out
-                    </button>
+                    {
+                        inTime.length > 0 ?
+                            <button className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded">
+                                Check Out
+                            </button> :
+                            <button
+                                onClick={handleCheckIn}
+                                className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded btn">
+                                Check In
+                            </button>
+                    }
+
+
                     <button className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded">
                         Start OT
                     </button>

@@ -27,7 +27,6 @@ const ProfitShare = () => {
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
 
-    console.log(shareHolderInfo);
     // ****************************************************************
     useEffect(() => {
         const fetchShareHolders = async () => {
@@ -116,6 +115,10 @@ const ProfitShare = () => {
         fetchShareHolderInfo();
     }, [refetch]);
     // ****************************************************************
+    const numberFormat = (num) => {
+        return Number(num).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    };
+    // ****************************************************************
 
     return (
         <div>
@@ -176,7 +179,7 @@ const ProfitShare = () => {
                                                 <td>{info.name}</td>
                                                 <td>{info.mobile}</td>
                                                 <td>{info.sharedPercent}</td>
-                                                <td>{info.sharedProfitBalance}</td>
+                                                <td>{numberFormat(info.sharedProfitBalance)}</td>
                                                 <td>{info.userName}</td>
                                             </tr>
                                         );
@@ -244,7 +247,9 @@ const ProfitShare = () => {
                         <div>
                             <label className='block font-semibold'>
                                 Will get
-                                <span className='text-sm'>(Current Balance {mainBalance})</span>:
+                                <span className='text-sm'>
+                                    (Current Balance {numberFormat(mainBalance)} BDT)
+                                </span>:
                             </label>
                             <input
                                 type="text"
