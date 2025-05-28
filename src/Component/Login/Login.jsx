@@ -62,7 +62,7 @@ const Login = () => {
                 });
             }
         } catch (error) {
-            console.error("🚫 Login error:", error);
+            console.error("🚫 Login error: ", error);
             setIsLoggingIn(false);
             Swal.fire({
                 title: 'Invalid credentials',

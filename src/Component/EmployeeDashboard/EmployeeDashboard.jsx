@@ -44,8 +44,12 @@ const notifications = [
 const EmployeeDashboard = () => {
     const axiosSecure = useAxiosProtect();
     const axiosProtect = useAxiosProtect();
+
     const { user } = useContext(ContextData);
-    const [inTime, setInTime] = useState('');
+    const [checkInInfo, setCheckInfo] = useState({});
+    const [checkOutInfo, setCheckOutInfo] = useState('');
+
+
 
     // **********************************************************
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -59,6 +63,8 @@ const EmployeeDashboard = () => {
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
+
+
 
     // ***********************************************************
     useEffect(() => {
@@ -88,6 +94,7 @@ const EmployeeDashboard = () => {
         const month = moment(new Date()).format("MMMM");
         const checkInTime = Date.now();
         const displayTime = moment(checkInTime).format("hh:mm:ss A");
+        const signInTime = moment(user?.metadata.lastSignInTime).format('hh:mm:ss A');
 
 
         const checkInInfo = {
@@ -95,6 +102,7 @@ const EmployeeDashboard = () => {
             month,
             checkInTime,
             displayTime,
+            signInTime,
             email: user.email,
         };
 
@@ -121,18 +129,76 @@ const EmployeeDashboard = () => {
                         date,
                     },
                 });
-                console.log(response.data);
-                setInTime(response.data[0]?.displayTime);
+                setCheckInfo(response.data);
             } catch (error) {
                 console.error('Error fetching check-in time:', error);
-                setInTime('-- : --');
             }
         };
         fetchInTime();
     }, [refetch, user.email]);
 
 
-    const workHours = "7h 45m";
+
+    // *************************************************************************************************
+    const handleCheckOut = async () => {
+
+        const date = moment(new Date()).format("DD-MMM-YYYY");
+        const month = moment(new Date()).format("MMMM");
+        const checkOutTime = Date.now();
+        const displayTime = moment(checkOutTime).format("hh:mm:ss A");
+
+        const checkOutInfo = {
+            date,
+            month,
+            checkOutTime,
+            displayTime,
+            email: user.email,
+        };
+
+        try {
+            const res = await axiosSecure.post('/employee/checkOut', checkOutInfo);
+            dispatch(setRefetch(!refetch));
+            if (res.data.message === 'Already check out') {
+                toast.warning(res.data.message);
+                return;
+            }
+            toast.success(res.data.message);
+        } catch (error) {
+            toast.error('Check-out failed:', error);
+        }
+    };
+
+    // *************************************************************************************************
+    useEffect(() => {
+        const fetchOutTime = async () => {
+            try {
+                const date = moment(new Date()).format("DD-MMM-YYYY");
+                const response = await axiosProtect.get(`/getCheckOutInfo`, {
+                    params: {
+                        userEmail: user?.email,
+                        date,
+                    },
+                });
+                setCheckOutInfo(response.data);
+            } catch (error) {
+                console.error('Error fetching check-out time:', error);
+            }
+        };
+        fetchOutTime();
+    }, [refetch, user.email]);
+    // *************************************************************************************************
+    const inTime = checkInInfo?.checkInTime; //In time is 1748415033052
+    const outTime = checkOutInfo?.checkOutTime; // Out time is 1748425859974
+    const calculateTime = outTime - inTime;
+
+    const totalSeconds = Math.floor(calculateTime / 1000);
+    const hours = Math.floor(totalSeconds / 3600) || 0;
+    const minutes = Math.floor((totalSeconds % 3600) / 60) || 0;
+    // const seconds = totalSeconds % 60 || 0;
+
+    const workHours = `${hours}h ${minutes}m`;
+
+
     // *************************************************************************************************
     return (
         <div className="p-6">
@@ -151,12 +217,12 @@ const EmployeeDashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
                         <div className="text-xs text-gray-500 mb-1">Check-in Time</div>
-                        <div className="text-lg font-semibold">{inTime || `-- : --`}</div>
+                        <div className="text-lg font-semibold">{checkInInfo?.displayTime || `-- : --`}</div>
                     </div>
 
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
                         <div className="text-xs text-gray-500 mb-1">Check-out Time</div>
-                        <div className="text-lg font-semibold">-- : --</div>
+                        <div className="text-lg font-semibold">{checkOutInfo?.displayTime || `-- : --`}</div>
                     </div>
 
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
@@ -172,15 +238,23 @@ const EmployeeDashboard = () => {
 
                 <div className="flex mt-6 gap-4">
                     {
-                        inTime.length > 0 ?
-                            <button className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded">
-                                Check Out
-                            </button> :
+                        checkInInfo ?
+                            // checkOutInfo ?
+                            //     null :
+                                <button
+                                    onClick={handleCheckOut}
+                                    className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded btn">
+                                    Check Out
+                                </button>
+                            :
+
                             <button
                                 onClick={handleCheckIn}
                                 className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded btn">
                                 Check In
                             </button>
+
+
                     }
 
 
