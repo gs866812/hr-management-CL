@@ -94,7 +94,7 @@ const EmployeeDashboard = () => {
         const month = moment(new Date()).format("MMMM");
         const checkInTime = Date.now();
         const displayTime = moment(checkInTime).format("hh:mm:ss A");
-        const signInTime = moment(user?.metadata.lastSignInTime).format('hh:mm:ss A');
+        const signInTime = moment(user?.metadata.lastSignInTime).format('DD MMM hh:mm:ss A');
 
 
         const checkInInfo = {
@@ -200,6 +200,46 @@ const EmployeeDashboard = () => {
 
 
     // *************************************************************************************************
+
+    const handleStartOverTime = async () => {
+        if (checkInInfo?.checkInTime && !checkOutInfo) {
+            return toast.error('You are still on duty.');
+        };
+        const date = moment(new Date()).format("DD-MMM-YYYY");
+        const month = moment(new Date()).format("MMMM");
+        const startingOverTime = Date.now();
+        const displayTime = moment(startingOverTime).format("hh:mm:ss A");
+        const signInTime = moment(user?.metadata.lastSignInTime).format('DD MMM hh:mm:ss A');
+
+        const overTimeInfo = {
+            date,
+            month,
+            startingOverTime,
+            displayTime,
+            signInTime,
+            email: user.email,
+        };
+        try {
+            const res = await axiosSecure.post('/employee/startOverTime', overTimeInfo);
+            dispatch(setRefetch(!refetch));
+            if (res.data.message === 'OT Already started') {
+                toast.warning(res.data.message);
+                return;
+            }else if(res.data.message === 'You are not eligible for over time') {
+                toast.warning(res.data.message);
+                return;
+            }
+            toast.success(res.data.message);
+        } catch (error) {
+            toast.error('Overtime start failed:', error);
+        }
+
+    };
+    // *************************************************************************************************
+    const handleStopOverTime = async () => {
+
+    };
+    // *************************************************************************************************
     return (
         <div className="p-6">
             {/* Time Tracking */}
@@ -239,13 +279,13 @@ const EmployeeDashboard = () => {
                 <div className="flex mt-6 gap-4">
                     {
                         checkInInfo ?
-                            // checkOutInfo ?
-                            //     null :
-                                <button
-                                    onClick={handleCheckOut}
-                                    className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded btn">
-                                    Check Out
-                                </button>
+                            checkOutInfo ?
+                                null :
+                            <button
+                                onClick={handleCheckOut}
+                                className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded btn">
+                                Check Out
+                            </button>
                             :
 
                             <button
@@ -258,8 +298,13 @@ const EmployeeDashboard = () => {
                     }
 
 
-                    <button className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded">
+                    <button onClick={handleStartOverTime}
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded btn">
                         Start OT
+                    </button>
+                    <button onClick={handleStopOverTime}
+                        className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded btn">
+                        Stop OT
                     </button>
                 </div>
             </div>

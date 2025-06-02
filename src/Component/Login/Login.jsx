@@ -42,7 +42,7 @@ const Login = () => {
 
             // Call backend to generate JWT
             const res = await axios.post(
-                'https://webbriks.backendsafe.com/jwt',
+                'http://localhost:5000/jwt',
                 emailData
             );
             if (res.data.token) {

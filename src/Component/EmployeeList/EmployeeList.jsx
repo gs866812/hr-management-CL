@@ -19,6 +19,7 @@ const EmployeeList = () => {
     const [selectedShift, setSelectedShift] = useState('');
     const [selectedEmployees, setSelectedEmployees] = useState([]);
     const [shiftedEmployees, setShiftedEmployees] = useState([]);
+    const [OTHours, setOTHours] = useState(0);
 
     const axiosSecure = useAxiosSecure();
     // **********************************************************************
@@ -109,6 +110,22 @@ const EmployeeList = () => {
         }
     };
 
+
+    // **********************************************************************
+    const handleRemoveOT = async (id) => {
+        try {
+            const response = await axiosSecure.delete(`/removeOT/${id}`);
+            if (response.data.message === 'success') {
+                dispatch(setRefetch(!refetch));
+                toast.success('Removed successfully');
+            } else {
+                toast.error('Failed to remove');
+            }
+        } catch (error) {
+            toast.error('Error removing OT:', error.message);
+        }
+    };
+    // **********************************************************************
 
     // **********************************************************************
 
@@ -227,9 +244,9 @@ const EmployeeList = () => {
                         {
                             shiftedEmployees?.filter(emp => emp.shiftName === 'OT list').length > 0 &&
                             shiftedEmployees?.filter(emp => emp.shiftName === 'OT list').map((emp, index) => (
-                                <div key={index} className="flex items-center mb-4">
+                                <div key={index} className="flex items-center gap-2 mb-4">
                                     <img
-                                        src={employeeList.find(e => e.email === emp.email)?.photo}
+                                        src={employeeList.find(e => e.email === emp.actualEmail)?.photo}
                                         alt={emp.fullName}
                                         className="w-8 h-8 object-cover rounded-md mr-"
                                     />
@@ -237,11 +254,12 @@ const EmployeeList = () => {
                                         <h2 className="text-xl font-bold">
                                             {emp.fullName}
                                             <span className='text-sm text-gray-500 ml-1'>
-                                                ({employeeList.find(e => e.email === emp.email)?.designation})
+                                                ({employeeList.find(e => e.email === emp.actualEmail)?.designation})
                                             </span>
                                         </h2>
                                     </div>
-
+                                    <button onClick={() => handleRemoveOT(emp._id)}
+                                        className='cursor-pointer text-red-500 text-sm'>Remove</button>
                                 </div>
                             ))
                         }
@@ -353,7 +371,10 @@ const EmployeeList = () => {
                                             {emp.fullName} - {emp.designation}
                                         </span>
                                         <span className='text-sm'>
-                                            ({shiftedEmployees.find(e => e.email === emp.email)?.shiftName.charAt(0).toUpperCase()})
+                                            (
+                                            {shiftedEmployees.find(e => e.email === emp.email)?.shiftName.charAt(0).toUpperCase()}
+                                            {shiftedEmployees.find(e => e.actualEmail === emp.email)?.shiftName.charAt(0).toUpperCase()}
+                                            )
                                         </span>
                                     </label>
                                 ))}
@@ -374,6 +395,13 @@ const EmployeeList = () => {
                             <option>General</option>
                             <option>OT list</option>
                         </select>
+                        {selectedShift === 'OT list' &&
+                            <section>
+                                <input 
+                                onChange={(e) => setOTHours(e.target.value)} type="text" placeholder='Enter OT hours' className="w-full mb-4 p-2 !border !border-gray-300 rounded-md"
+                                 />
+                            </section>
+                        }
 
                         <div className='flex justify-end gap-1'>
                             <button type="reset" className="btn bg-yellow-600 text-white"
