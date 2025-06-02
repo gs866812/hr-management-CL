@@ -32,6 +32,11 @@ const EmployeeList = () => {
         }
     };
     // **********************************************************************
+    const handleShiftingChange = (e) => {
+        setSelectedShift(e.target.value);
+        setOTHours(0); // Reset OT hours when changing shift
+    };
+    // **********************************************************************
     const axiosProtect = useAxiosProtect();
 
     useEffect(() => {
@@ -66,6 +71,8 @@ const EmployeeList = () => {
             const payload = {
                 employees: selectedEmployees,
                 shift: selectedShift,
+                OTFor: Number(OTHours) || 0, // Default to 0 if not provided
+                
             };
 
             const response = await axiosSecure.post('/assign-shift', payload);
@@ -113,6 +120,9 @@ const EmployeeList = () => {
 
     // **********************************************************************
     const handleRemoveOT = async (id) => {
+        if (!id) {
+            return toast.error('Invalid ID for removal.');
+        };
         try {
             const response = await axiosSecure.delete(`/removeOT/${id}`);
             if (response.data.message === 'success') {
@@ -385,7 +395,7 @@ const EmployeeList = () => {
                         <select
                             className="select select-bordered w-full mb-4 !border !border-gray-300"
                             value={selectedShift}
-                            onChange={(e) => setSelectedShift(e.target.value)}
+                            onChange={handleShiftingChange}
                             required
                         >
                             <option value="" disabled>Select Shift</option>
@@ -398,7 +408,7 @@ const EmployeeList = () => {
                         {selectedShift === 'OT list' &&
                             <section>
                                 <input 
-                                onChange={(e) => setOTHours(e.target.value)} type="text" placeholder='Enter OT hours' className="w-full mb-4 p-2 !border !border-gray-300 rounded-md"
+                                onChange={(e) => setOTHours(e.target.value)} type="text" placeholder='Enter OT hours' className="w-full mb-4 p-2 !border !border-gray-300 rounded-md" required
                                  />
                             </section>
                         }

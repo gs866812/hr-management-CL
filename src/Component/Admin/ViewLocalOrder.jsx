@@ -11,7 +11,7 @@ import useAxiosSecure from '../../utils/useAxiosSecure';
 import { setRefetch } from '../../redux/refetchSlice';
 
 const ViewLocalOrder = () => {
-    const { user, userName } = useContext(ContextData);
+    const { user, currentUser } = useContext(ContextData);
     const axiosSecure = useAxiosSecure();
 
     const [localOrder, setLocalOrder] = useState({});
@@ -293,7 +293,15 @@ const ViewLocalOrder = () => {
                             </section>
                             {/* ------------------------------------------------------------------------ */}
                             <section className='shadow-md rounded-md p-4 mt-5 space-y-2'>
-                                <h2>Client ID: <span className='font-semibold'>{localOrder?.clientID}</span></h2>
+                                <h2>
+                                    Client ID:{" "}
+                                    <span className="font-semibold">
+                                        {currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN' || currentUser?.role === 'Developer'
+                                            ? localOrder?.clientID
+                                            : '*****'}
+                                    </span>
+                                </h2>
+
                                 <h2>Order Name: <span className='font-semibold'>{localOrder?.orderName}</span></h2>
                                 <h2>Order QTY: <span className='font-semibold'>{localOrder?.orderQTY}</span></h2>
                                 <h2>
