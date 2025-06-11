@@ -107,13 +107,14 @@ const EmployeeDashboard = () => {
         };
 
         try {
-            const res = await axiosSecure.post('/employee/checkIn', { checkInInfo });
+            const res = await axiosSecure.post('/employee/checkIn', checkInInfo );
             dispatch(setRefetch(!refetch));
-            if (res.data.message === 'Already checked in today') {
-                toast.warning(res.data.message);
-                return;
-            }
             toast.success(res.data.message);
+            // if (res.data.message === 'Already checked in today') {
+            //     toast.warning(res.data.message);
+            //     return;
+            // }
+            // toast.success(res.data.message);
         } catch (error) {
             toast.error('Check-in failed:', error);
         }
