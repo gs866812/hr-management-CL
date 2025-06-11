@@ -109,12 +109,11 @@ const EmployeeDashboard = () => {
         try {
             const res = await axiosSecure.post('/employee/checkIn', checkInInfo );
             dispatch(setRefetch(!refetch));
-            toast.success(res.data.message);
-            // if (res.data.message === 'Already checked in today') {
-            //     toast.warning(res.data.message);
-            //     return;
-            // }
-            // toast.success(res.data.message);
+            if (res.data.message === 'Check-in successful') {
+                toast.success(res.data.message);
+            }else{
+                toast.warning(res.data.message);
+            }
         } catch (error) {
             toast.error('Check-in failed:', error);
         }
@@ -159,11 +158,13 @@ const EmployeeDashboard = () => {
         try {
             const res = await axiosSecure.post('/employee/checkOut', checkOutInfo);
             dispatch(setRefetch(!refetch));
-            if (res.data.message === 'Already check out') {
-                toast.warning(res.data.message);
+            if (res.data.message === 'Check-out successful') {
+                toast.success(res.data.message);
                 return;
+            }else{
+                toast.warning(res.data.message);
             }
-            toast.success(res.data.message);
+            
         } catch (error) {
             toast.error('Check-out failed:', error);
         }
