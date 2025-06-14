@@ -48,6 +48,8 @@ const EmployeeDashboard = () => {
     const { user } = useContext(ContextData);
     const [checkInInfo, setCheckInfo] = useState({});
     const [checkOutInfo, setCheckOutInfo] = useState('');
+    const [startOTInfo, setStartOTInfo] = useState({});
+
 
 
 
@@ -107,11 +109,11 @@ const EmployeeDashboard = () => {
         };
 
         try {
-            const res = await axiosSecure.post('/employee/checkIn', checkInInfo );
+            const res = await axiosSecure.post('/employee/checkIn', checkInInfo);
             dispatch(setRefetch(!refetch));
             if (res.data.message === 'Check-in successful') {
                 toast.success(res.data.message);
-            }else{
+            } else {
                 toast.warning(res.data.message);
             }
         } catch (error) {
@@ -161,10 +163,10 @@ const EmployeeDashboard = () => {
             if (res.data.message === 'Check-out successful') {
                 toast.success(res.data.message);
                 return;
-            }else{
+            } else {
                 toast.warning(res.data.message);
             }
-            
+
         } catch (error) {
             toast.error('Check-out failed:', error);
         }
@@ -202,6 +204,24 @@ const EmployeeDashboard = () => {
 
 
     // *************************************************************************************************
+    useEffect(() => {
+        const fetchStartOT = async () => {
+            try {
+                const date = moment(new Date()).format("DD-MMM-YYYY");
+                const response = await axiosProtect.get(`/getStartOTInfo`, {
+                    params: {
+                        userEmail: user?.email,
+                        date,
+                    },
+                });
+                setStartOTInfo(response.data);
+            } catch (error) {
+                console.error('Error fetching OT time:', error);
+            }
+        };
+        fetchStartOT();
+    }, [refetch, user.email]);
+    // *************************************************************************************************
 
     const handleStartOverTime = async () => {
         if (checkInInfo?.checkInTime && !checkOutInfo) {
@@ -224,14 +244,11 @@ const EmployeeDashboard = () => {
         try {
             const res = await axiosSecure.post('/employee/startOverTime', overTimeInfo);
             dispatch(setRefetch(!refetch));
-            if (res.data.message === 'OT Already started') {
+            if (res.data.message === 'Over time started') {
+                toast.success(res.data.message);
+            } else {
                 toast.warning(res.data.message);
-                return;
-            }else if(res.data.message === 'You are not eligible for over time') {
-                toast.warning(res.data.message);
-                return;
             }
-            toast.success(res.data.message);
         } catch (error) {
             toast.error('Overtime start failed:', error);
         }
@@ -283,31 +300,51 @@ const EmployeeDashboard = () => {
                         checkInInfo ?
                             checkOutInfo ?
                                 null :
-                            <button
-                                onClick={handleCheckOut}
-                                className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded btn">
-                                Check Out
-                            </button>
+                                <button
+                                    onClick={handleCheckOut}
+                                    className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded btn">
+                                    Check Out
+                                </button>
                             :
 
-                            <button
-                                onClick={handleCheckIn}
-                                className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded btn">
-                                Check In
-                            </button>
+                            startOTInfo ?
+                                null
+                                :
+                                <button
+                                    onClick={handleCheckIn}
+                                    className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded btn">
+                                    Check In
+                                </button>
 
 
                     }
 
+                    {
+                        startOTInfo ?
+                            <button
+                                onClick={handleStopOverTime}
+                                className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded btn">
+                                Stop OT
+                            </button>
+                            :
+                            <button
+                                onClick={handleStartOverTime}
+                                className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded btn">
+                                Start OT
+                            </button>
+                    }
+
+
+
+                    {/* <button onClick={handleStopOverTime}
+                        className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded btn">
+                        Stop OT
+                    </button>
 
                     <button onClick={handleStartOverTime}
                         className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded btn">
                         Start OT
-                    </button>
-                    <button onClick={handleStopOverTime}
-                        className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded btn">
-                        Stop OT
-                    </button>
+                    </button> */}
                 </div>
             </div>
 
