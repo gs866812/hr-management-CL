@@ -50,6 +50,11 @@ const EmployeeDashboard = () => {
     const [checkOutInfo, setCheckOutInfo] = useState('');
     const [startOTInfo, setStartOTInfo] = useState({});
 
+    
+    // const otTime = moment(startOTInfo?.startingOverTime).add(2, 'hours') //startingOverTime is 1750051553907
+
+    // const timeFormat = moment(otTime).format('hh:mm: A');
+    // console.log(timeFormat);
 
 
 
@@ -201,6 +206,8 @@ const EmployeeDashboard = () => {
     // const seconds = totalSeconds % 60 || 0;
 
     const workHours = `${hours}h ${minutes}m`;
+
+    
 
 
     // *************************************************************************************************
