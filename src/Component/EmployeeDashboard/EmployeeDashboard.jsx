@@ -48,13 +48,16 @@ const EmployeeDashboard = () => {
     const { user } = useContext(ContextData);
     const [checkInInfo, setCheckInfo] = useState({});
     const [checkOutInfo, setCheckOutInfo] = useState('');
+
     const [startOTInfo, setStartOTInfo] = useState({});
+    const [stopOTInfo, setStopOTInfo] = useState({});
 
-    
-    // const otTime = moment(startOTInfo?.startingOverTime).add(2, 'hours') //startingOverTime is 1750051553907
+    const [attendanceInfo, setAttendanceInfo] = useState([]);
+    // console.log(attendanceInfo);
 
-    // const timeFormat = moment(otTime).format('hh:mm: A');
-    // console.log(timeFormat);
+
+
+
 
 
 
@@ -196,6 +199,8 @@ const EmployeeDashboard = () => {
         fetchOutTime();
     }, [refetch, user.email]);
     // *************************************************************************************************
+
+    // Calculate work hours
     const inTime = checkInInfo?.checkInTime; //In time is 1748415033052
     const outTime = checkOutInfo?.checkOutTime; // Out time is 1748425859974
     const calculateTime = outTime - inTime;
@@ -207,7 +212,16 @@ const EmployeeDashboard = () => {
 
     const workHours = `${hours}h ${minutes}m`;
 
-    
+    // Calculate OT hours
+    const otStartTime = startOTInfo?.startingOverTime; // OT start time is 1750051553907
+    const otStopTime = stopOTInfo?.OTStopTime; // OT stop time is 1750051553907
+    const calculateOTTime = otStopTime - otStartTime;
+    const totalOTSeconds = Math.floor(calculateOTTime / 1000);
+    const otHours = Math.floor(totalOTSeconds / 3600) || 0;
+    const otMinutes = Math.floor((totalOTSeconds % 3600) / 60) || 0;
+    const otTime = `${otHours}h ${otMinutes}m` || '0h 0m'; // Default to '0h 0m' if no OT time is available
+
+
 
 
     // *************************************************************************************************
@@ -262,9 +276,79 @@ const EmployeeDashboard = () => {
 
     };
     // *************************************************************************************************
+    // const otTime = moment(startOTInfo?.startingOverTime).add(2, 'hours') //startingOverTime is 1750051553907
+
+    // const timeFormat = moment(otTime).format('hh:mm: A');
+    // console.log(timeFormat);
+    // *************************************************************************************************
     const handleStopOverTime = async () => {
 
+        const date = moment(new Date()).format("DD-MMM-YYYY");
+        const month = moment(new Date()).format("MMMM");
+        const OTStopTime = Date.now();
+        const displayTime = moment(OTStopTime).format("hh:mm:ss A");
+
+        const OTStopInfo = {
+            date,
+            month,
+            OTStopTime,
+            displayTime,
+            email: user.email,
+        };
+
+        try {
+            const res = await axiosSecure.post('/employee/stopOverTime', OTStopInfo);
+            dispatch(setRefetch(!refetch));
+            if (res.data.message === 'OT stop successful') {
+                toast.success(res.data.message);
+            } else {
+                toast.warning(res.data.message);
+            }
+
+        } catch (error) {
+            toast.error('OT stop failed:', error);
+        }
+
     };
+    // *************************************************************************************************
+    useEffect(() => {
+        const fetchStopOTTime = async () => {
+            try {
+                const date = moment(new Date()).format("DD-MMM-YYYY");
+                const response = await axiosProtect.get(`/getStopOTTime`, {
+                    params: {
+                        userEmail: user?.email,
+                        date,
+                    },
+                });
+
+                setStopOTInfo(response.data);
+            } catch (error) {
+                console.error('Error fetching stop over time:', error);
+            }
+        };
+        fetchStopOTTime();
+    }, [refetch, user.email]);
+    // *************************************************************************************************
+    useEffect(() => {
+        const fetchAttendance = async () => {
+            try {
+                const date = moment(new Date()).format("DD-MMM-YYYY");
+                const month = moment(new Date()).format("MMMM");
+                const response = await axiosProtect.get(`/getAttendance`, {
+                    params: {
+                        userEmail: user?.email,
+                        month,
+                    },
+                });
+
+                console.log(response.data);
+            } catch (error) {
+                console.error('Error fetching attendance:', error);
+            }
+        };
+        fetchAttendance();
+    }, [refetch, user.email]);
     // *************************************************************************************************
     return (
         <div className="p-6">
@@ -298,7 +382,7 @@ const EmployeeDashboard = () => {
 
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
                         <div className="text-xs text-gray-500 mb-1">Over Time</div>
-                        <div className="text-lg font-semibold">1h 00m</div>
+                        <div className="text-lg font-semibold">{otTime}</div>
                     </div>
                 </div>
 
@@ -314,7 +398,7 @@ const EmployeeDashboard = () => {
                                 </button>
                             :
 
-                            startOTInfo ?
+                            checkOutInfo ?
                                 null
                                 :
                                 <button
@@ -328,11 +412,14 @@ const EmployeeDashboard = () => {
 
                     {
                         startOTInfo ?
-                            <button
-                                onClick={handleStopOverTime}
-                                className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded btn">
-                                Stop OT
-                            </button>
+                            stopOTInfo.OTStopTime ?
+                                null
+                                :
+                                <button
+                                    onClick={handleStopOverTime}
+                                    className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded btn">
+                                    Stop OT
+                                </button>
                             :
                             <button
                                 onClick={handleStartOverTime}
@@ -340,20 +427,36 @@ const EmployeeDashboard = () => {
                                 Start OT
                             </button>
                     }
-
-
-
-                    {/* <button onClick={handleStopOverTime}
-                        className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded btn">
-                        Stop OT
-                    </button>
-
-                    <button onClick={handleStartOverTime}
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded btn">
-                        Start OT
-                    </button> */}
                 </div>
             </div>
+
+            <section>
+                <h2>Attendance summary of last 7 days</h2>
+                <div className="overflow-x-auto my-5">
+                    <table className="table table-zebra">
+                        {/* head */}
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Check-in time</th>
+                                <th>Check-out time</th>
+                                <th>Working hour</th>
+                                <th>OT hour</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {/* row 1 */}
+                            <tr>
+                                <th>1</th>
+                                <td>Cy Ganderton</td>
+                                <td>Quality Control Specialist</td>
+                                <td>Blue</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 {/* Attendance Summary */}
