@@ -5,6 +5,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useDispatch, useSelector } from 'react-redux';
 import useAxiosProtect from './utils/useAxiosProtect';
+import moment from 'moment';
 export const ContextData = createContext(null);
 
 const DataProvider = ({ children }) => {
@@ -33,6 +34,8 @@ const DataProvider = ({ children }) => {
     const [totalExpense, setTotalExpense] = useState(0);
     const [totalEarnings, setTotalEarnings] = useState(0);
     const [totalProfit, setTotalProfit] = useState(0);
+
+    const [attendanceInfo, setAttendanceInfo] = useState([]);
 
 
     const dispatch = useDispatch();
@@ -245,7 +248,7 @@ const DataProvider = ({ children }) => {
             if (token) {
                 try {
                     const response = await axios.post(
-                        'http://localhost:5000/validate-token',
+                        'https://webbriks.backendsafe.com/validate-token',
                         null,
                         { headers: { Authorization: `Bearer ${token}` } }
                     );
@@ -297,7 +300,7 @@ const DataProvider = ({ children }) => {
                     try {
                         const emailData = { email: firebaseUser.email };
                         const res = await axios.post(
-                            'http://localhost:5000/jwt',
+                            'https://webbriks.backendsafe.com/jwt',
                             emailData
                         );
 
@@ -308,7 +311,7 @@ const DataProvider = ({ children }) => {
                             // Fetch user data with new token
                             try {
                                 const userRes = await axios.get(
-                                    'http://localhost:5000/users',
+                                    'https://webbriks.backendsafe.com/users',
                                     { headers: { Authorization: `Bearer ${res.data.token}` } }
                                 );
                                 const userData = userRes.data.find(u => u.email === firebaseUser.email);
@@ -348,6 +351,33 @@ const DataProvider = ({ children }) => {
 
 
 
+    // ****************************************************************
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const token = localStorage.getItem('jwtToken');
+            if (user && token) {
+                clearInterval(interval);
+                fetchAttendance();
+            }
+        }, 200);
+
+        const fetchAttendance = async () => {
+            try {
+
+                // const date = moment(new Date()).format("DD-MMM-YYYY");
+                const month = moment(new Date()).format("MMMM");
+
+                const response = await axiosProtect.get('/getAttendance', {
+                    params: { userEmail: user?.email, month },
+                });
+                setAttendanceInfo(response.data);
+            } catch (error) {
+                toast.error('Error fetching data');
+            }
+        };
+
+        return () => clearInterval(interval);
+    }, [refetch, user]);
     // ****************************************************************
     const logOut = async () => {
         setLoading(true);
@@ -428,6 +458,7 @@ const DataProvider = ({ children }) => {
         totalProfit,
         totalExpense,
         totalEarnings,
+        attendanceInfo,
     };
 
     return <ContextData.Provider value={info}>{children}</ContextData.Provider>;

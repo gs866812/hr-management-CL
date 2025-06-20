@@ -7,6 +7,7 @@ import { setRefetch } from '../../redux/refetchSlice';
 import { ContextData } from '../../DataProvider';
 import moment from 'moment';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 
 // Mock data
 const attendanceData = [
@@ -45,17 +46,20 @@ const EmployeeDashboard = () => {
     const axiosSecure = useAxiosProtect();
     const axiosProtect = useAxiosProtect();
 
-    const { user } = useContext(ContextData);
+    const { user, attendanceInfo } = useContext(ContextData);
     const [checkInInfo, setCheckInfo] = useState({});
     const [checkOutInfo, setCheckOutInfo] = useState('');
 
     const [startOTInfo, setStartOTInfo] = useState({});
     const [stopOTInfo, setStopOTInfo] = useState({});
 
-    const [attendanceInfo, setAttendanceInfo] = useState([]);
-    // console.log(attendanceInfo);
+    const [shiftedEmployees, setShiftedEmployees] = useState([]);
 
 
+    const month = moment(new Date()).format("MMMM"); // Get current month in format "MMMM" (e.g., "January", "February", etc.)
+
+    const presentCount = attendanceInfo?.filter(attendance => attendance.email === user?.email && attendance.month === month).length || 0; // Count late check-ins
+    const lateCount = attendanceInfo?.filter(attendance => attendance.lateCheckIn && attendance.email === user?.email && attendance.month === month).length || 0; // Count late check-ins
 
 
 
@@ -97,6 +101,23 @@ const EmployeeDashboard = () => {
     }, []);
 
 
+    // *******************************************************
+    useEffect(() => {
+        const fetchShiftedEmployee = async () => {
+            try {
+                const response = await axiosProtect.get('/gethShiftedEmployee', {
+                    params: {
+                        userEmail: user?.email,
+                    },
+                });
+                setShiftedEmployees(response.data);
+
+            } catch (error) {
+                toast.error('Error fetching data:', error.message);
+            }
+        };
+        fetchShiftedEmployee();
+    }, [refetch]);
     // *******************************************************
     const handleCheckIn = async () => {
 
@@ -151,9 +172,18 @@ const EmployeeDashboard = () => {
 
     // *************************************************************************************************
     const handleCheckOut = async () => {
+        const now = Date.now();
 
-        const date = moment(new Date()).format("DD-MMM-YYYY");
-        const month = moment(new Date()).format("MMMM");
+        // Define shift end times
+        const morningShiftEnd = moment().startOf('day').add(14, 'hours').valueOf();  // 2:00 PM
+        const generalShiftEnd = moment().startOf('day').add(18, 'hours').valueOf();  // 6:00 PM
+        const eveningShiftEnd = moment().startOf('day').add(22, 'hours').valueOf();  // 10:00 PM
+
+        // Find current user's shift name
+        const shiftName = shiftedEmployees?.find(emp => emp.email === user?.email)?.shiftName || 'General';
+
+        const date = moment().format("DD-MMM-YYYY");
+        const month = moment().format("MMMM");
         const checkOutTime = Date.now();
         const displayTime = moment(checkOutTime).format("hh:mm:ss A");
 
@@ -166,19 +196,40 @@ const EmployeeDashboard = () => {
         };
 
         try {
+            const isEarly =
+                (shiftName === 'Morning' && now < morningShiftEnd) ||
+                (shiftName === 'General' && now < generalShiftEnd) ||
+                (shiftName === 'Evening' && now < eveningShiftEnd);
+
+            if (isEarly) {
+                const result = await Swal.fire({
+                    title: "Are you sure?",
+                    text: "You want to check-out before the end of your shift",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, check-out!",
+                });
+
+                if (!result.isConfirmed) return;
+            }
+
             const res = await axiosSecure.post('/employee/checkOut', checkOutInfo);
             dispatch(setRefetch(!refetch));
-            if (res.data.message === 'Check-out successful') {
+
+            if (res.data?.message === 'Check-out successful') {
                 toast.success(res.data.message);
-                return;
             } else {
-                toast.warning(res.data.message);
+                toast.warning(res.data?.message || 'Check-out response unknown');
             }
 
         } catch (error) {
-            toast.error('Check-out failed:', error);
+            toast.error('Check-out failed');
+            console.error('Check-out Error:', error);
         }
     };
+
 
     // *************************************************************************************************
     useEffect(() => {
@@ -329,26 +380,8 @@ const EmployeeDashboard = () => {
         };
         fetchStopOTTime();
     }, [refetch, user.email]);
-    // *************************************************************************************************
-    useEffect(() => {
-        const fetchAttendance = async () => {
-            try {
-                const date = moment(new Date()).format("DD-MMM-YYYY");
-                const month = moment(new Date()).format("MMMM");
-                const response = await axiosProtect.get(`/getAttendance`, {
-                    params: {
-                        userEmail: user?.email,
-                        month,
-                    },
-                });
 
-                console.log(response.data);
-            } catch (error) {
-                console.error('Error fetching attendance:', error);
-            }
-        };
-        fetchAttendance();
-    }, [refetch, user.email]);
+
     // *************************************************************************************************
     return (
         <div className="p-6">
@@ -436,22 +469,44 @@ const EmployeeDashboard = () => {
                     <table className="table table-zebra">
                         {/* head */}
                         <thead>
-                            <tr>
+                            <tr className='bg-[#6E3FF3] text-white'>
                                 <th>Date</th>
                                 <th>Check-in time</th>
                                 <th>Check-out time</th>
                                 <th>Working hour</th>
                                 <th>OT hour</th>
+                                <th>Late In</th>
+                                <th>Early out</th>
+                                <th>Remarks</th>
                             </tr>
                         </thead>
                         <tbody>
                             {/* row 1 */}
-                            <tr>
-                                <th>1</th>
-                                <td>Cy Ganderton</td>
-                                <td>Quality Control Specialist</td>
-                                <td>Blue</td>
-                            </tr>
+                            {attendanceInfo &&
+                                attendanceInfo?.map((attendance, index) => (
+                                    <tr key={index} className={`${attendance.lateCheckIn ? 'text-red-500' : ''}`}>
+                                        <td>{attendance.date}</td>
+                                        <td>{attendance.checkInTime ? moment(attendance.checkInTime).format('hh:mm:ss A') : 'N/A'}</td>
+                                        <td>{attendance.checkOutTime ? moment(attendance.checkOutTime).format('hh:mm:ss A') : 'N/A'}</td>
+                                        <td>{attendance.workingDisplay || 'N/A'}</td>
+                                        <td>{attendance.
+                                            displayOTHour || '-'}</td>
+                                        <td>
+                                            <div>
+                                                {attendance.lateCheckIn || 'On time'}
+                                                {
+                                                    attendance.lateCheckIn ?
+                                                        <sup className="ml-1 bg-red-500 px-2 py-1 rounded-2xl text-white text-[10px]">
+                                                            late
+                                                        </sup>
+                                                        : null
+                                                }
+                                            </div>
+                                        </td>
+                                        <td> </td>
+                                        <td> </td>
+                                    </tr>
+                                ))}
 
                         </tbody>
                     </table>
@@ -470,7 +525,7 @@ const EmployeeDashboard = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="text-center p-3 bg-gray-50 rounded-lg">
-                            <div className="text-3xl font-bold text-green-600">21</div>
+                            <div className="text-3xl font-bold text-green-600">{presentCount}</div>
                             <div className="text-xs text-gray-500 mt-1">Present Days</div>
                         </div>
 
@@ -485,7 +540,7 @@ const EmployeeDashboard = () => {
                         </div>
 
                         <div className="text-center p-3 bg-gray-50 rounded-lg">
-                            <div className="text-3xl font-bold text-blue-600">3</div>
+                            <div className="text-3xl font-bold text-blue-600">{lateCount}</div>
                             <div className="text-xs text-gray-500 mt-1">Late Check-ins</div>
                         </div>
                     </div>
