@@ -10,21 +10,18 @@ import { FaPhoneAlt, FaUserTie } from 'react-icons/fa';
 import { MdBloodtype, MdDriveFileRenameOutline, MdEmail } from 'react-icons/md';
 import { IoMdHelpBuoy } from 'react-icons/io';
 import { HiMiniCalendarDateRange } from "react-icons/hi2";
-import { CgNametag } from "react-icons/cg";
+import { SiRedhatopenshift } from "react-icons/si";
 import ProfileModal from '../Modal/ProfileModal';
 
 const Employee = () => {
     const { user, employee } = useContext(ContextData);
     const inputRef = useRef(null);
-    const [inTime, setInTime] = useState(null);
-    const [outTime, setOutTime] = useState(null);
-    const [isInClicked, setIsInClicked] = useState(false);
-    const [workingHours, setWorkingHours] = useState(null);
 
     const [image, setImage] = useState(null);
     const [hovered, setHovered] = useState(false);
-
     const [loading, setLoading] = useState(false);
+    const [workingShift, setWorkingShift] = useState('');
+
 
 
 
@@ -33,58 +30,6 @@ const Employee = () => {
 
     const axiosProtect = useAxiosProtect();
     const axiosSecure = useAxiosSecure();
-
-
-    // ********************************************************************************
-    const handleInTime = async () => {
-        if (isInClicked) return;
-
-        const now = new Date();
-        setInTime(now);
-        setIsInClicked(true);
-
-        try {
-            await axios.post('/api/employee/in-time', { time: now });
-            toast.success('In-Time recorded');
-        } catch (error) {
-            toast.error('Failed to save In-Time');
-        }
-    };
-
-    const handleOutTime = async () => {
-        if (!inTime) {
-            toast.error('In-Time not recorded yet');
-            return;
-        }
-
-        const now = new Date();
-        setOutTime(now);
-
-        const workedMs = new Date(now) - new Date(inTime);
-        const hours = (workedMs / (1000 * 60 * 60)).toFixed(2);
-        setWorkingHours(hours);
-
-        try {
-            await axios.post('/api/employee/out-time', {
-                inTime,
-                outTime: now,
-                workedHours: hours
-            });
-            toast.success('Out-Time recorded');
-        } catch (error) {
-            toast.error('Failed to save Out-Time');
-        }
-
-        // Reset to allow next session
-        setTimeout(() => {
-            setIsInClicked(false);
-            setInTime(null);
-            setOutTime(null);
-            setWorkingHours(null);
-        }, 2000);
-    };
-    // ********************************************************************************
-
 
 
 
@@ -132,36 +77,27 @@ const Employee = () => {
 
 
     // ********************************************************************************
+    useEffect(() => {
+        const fetchWorkingShift = async () => {
+            try {
+                const response = await axiosProtect.get('/gethWorkingShift', {
+                    params: {
+                        userEmail: user?.email,
+                    },
+                });
+                setWorkingShift(response.data);
+
+            } catch (error) {
+                toast.error('Error fetching data:', error.message);
+            }
+        };
+        fetchWorkingShift();
+    }, [refetch]);
+    // ********************************************************************************
 
 
     return (
         <div>
-            {/* <section>
-                <h2 className="text-xl font-semibold mb-4">Employee Time Tracker</h2>
-                <div className="flex gap-4">
-                    <button
-                        className="btn btn-primary"
-                        onClick={handleInTime}
-                        disabled={isInClicked}
-                    >
-                        In Time
-                    </button>
-
-                    <button
-                        className="btn btn-secondary"
-                        onClick={handleOutTime}
-                        disabled={!isInClicked || outTime}
-                    >
-                        Out Time
-                    </button>
-                </div>
-
-                <div className="mt-4 text-sm text-gray-700">
-                    {inTime && <p>In Time: {new Date(inTime).toLocaleTimeString()}</p>}
-                    {outTime && <p>Out Time: {new Date(outTime).toLocaleTimeString()}</p>}
-                    {workingHours && <p>Worked: {workingHours} hours</p>}
-                </div>
-            </section> */}
             <div className='flex gap-4 overflow-hidden h-[calc(100vh-64px)]'>
                 <div className='w-3/4 !border !border-gray-300 shadow rounded-md p-2 overflow-y-auto custom-scrollbar'>
                     <section>
@@ -224,8 +160,11 @@ const Employee = () => {
                             <p className='text-sm flex items-center gap-2 tooltip' data-tip="Joining date">
                                 <HiMiniCalendarDateRange className='text-[#6E3FF3]' /> Filled-up by admin
                             </p>
+                            <p className='text-sm flex items-center gap-2 tooltip' data-tip="Shift">
+                                <SiRedhatopenshift className='text-[#6E3FF3]' /> {workingShift}
+                            </p>
                             <p className='text-sm'>
-                                Status: <span className='!border !border-green-300 rounded-md px-1 capitalize'>{
+                                Status: <span className='!border !border-green-500 rounded-md px-1 capitalize'>{
                                     employee.status}
                                 </span>
                             </p>

@@ -5,7 +5,7 @@ import useAxiosProtect from '../../utils/useAxiosProtect';
 import { useDispatch, useSelector } from 'react-redux';
 import { setRefetch } from '../../redux/refetchSlice';
 import { ContextData } from '../../DataProvider';
-import moment from 'moment';
+import moment from 'moment-timezone';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 
@@ -172,19 +172,19 @@ const EmployeeDashboard = () => {
 
     // *************************************************************************************************
     const handleCheckOut = async () => {
-        const now = Date.now();
+        const now = moment().tz("Asia/Dhaka");
 
         // Define shift end times
-        const morningShiftEnd = moment().startOf('day').add(14, 'hours').valueOf();  // 2:00 PM
-        const generalShiftEnd = moment().startOf('day').add(18, 'hours').valueOf();  // 6:00 PM
-        const eveningShiftEnd = moment().startOf('day').add(22, 'hours').valueOf();  // 10:00 PM
+        const morningShiftEnd = now.clone().startOf('day').add(14, 'hours').valueOf();  // 2:00 PM
+        const generalShiftEnd = now.clone().startOf('day').add(18, 'hours').valueOf();  // 6:00 PM
+        const eveningShiftEnd = now.clone().startOf('day').add(22, 'hours').valueOf();  // 10:00 PM
 
         // Find current user's shift name
         const shiftName = shiftedEmployees?.find(emp => emp.email === user?.email)?.shiftName || 'General';
 
         const date = moment().format("DD-MMM-YYYY");
         const month = moment().format("MMMM");
-        const checkOutTime = Date.now();
+        const checkOutTime = moment().tz('Asia/Dhaka').valueOf();
         const displayTime = moment(checkOutTime).format("hh:mm:ss A");
 
         const checkOutInfo = {
