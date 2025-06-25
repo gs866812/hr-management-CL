@@ -2,9 +2,10 @@ import React, { useContext, useEffect, useState } from 'react';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import { ContextData } from '../../DataProvider';
 import { IoEyeOutline } from 'react-icons/io5';
-import { FaPlus } from 'react-icons/fa';
+import { FaPlus, FaRegEdit } from 'react-icons/fa';
 import AddClientModal from './AddClientModal';
 import { useDispatch, useSelector } from 'react-redux';
+import EditClientList from './EditClientList';
 
 const Clients = () => {
 
@@ -12,6 +13,8 @@ const Clients = () => {
 
     const [clientList, setClientList] = useState([]);
     const [searchClient, setSearchClient] = useState('');
+    const [clientId, setClientId] = useState('');
+    const [clientCountry, setClientCountry] = useState('');
 
     // const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
@@ -35,6 +38,12 @@ const Clients = () => {
         };
         fetchClient();
     }, [refetch]);
+    // *****************************************************************************************
+    const handleEditClient = (id, country) => {
+        document.getElementById('edit-client-list').showModal();
+        setClientId(id);
+        setClientCountry(country);
+    };
     // *****************************************************************************************
     return (
         <div>
@@ -90,7 +99,7 @@ const Clients = () => {
                                                 <td>{client.country}</td>
                                                 <td className='w-[5%]'>
                                                     <div className='flex justify-center'>
-                                                        <IoEyeOutline className='text-xl cursor-pointer hover:text-[#6E3FF3]' />
+                                                        <FaRegEdit className='text-xl cursor-pointer hover:text-[#6E3FF3]' title='Edit' onClick={() => handleEditClient(client.clientID, client.country)}/>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -107,6 +116,7 @@ const Clients = () => {
                 </div>
             </section>
             <AddClientModal />
+            <EditClientList clientInfo = {{clientId, clientCountry}}/>
         </div>
     );
 };

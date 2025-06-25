@@ -1,76 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useAxiosSecure from '../../utils/useAxiosSecure';
-import { toast } from 'react-toastify';
 import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
 import { setRefetch } from '../../redux/refetchSlice';
 
-const AddClientModal = () => {
-
+const EditClientList = ({ clientInfo }) => {
+    const { clientId, clientCountry } = clientInfo;
     const axiosSecure = useAxiosSecure();
 
-    const [clientId, setClientId] = useState('');
-    const [country, setCountry] = useState('');
-
+    const [newClientId, setNewClientId] = useState('');
+    const [newCountry, setNewCountry] = useState('');
     const [loading, setLoading] = useState(false);
-
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
 
-    // ************************************************************************************
+    // 🔁 Update input state when clientInfo changes (e.g., when modal opens)
+    useEffect(() => {
+        setNewClientId(clientId);
+        setNewCountry(clientCountry);
+    }, [clientId, clientCountry]);
 
+    // ✅ Handle form submit
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        if (loading) return; // block if already submitting
-
-        setLoading(true);
-
-        const clientData = {
-            clientId,
-            country,
-        };
+        console.log('Submitted:', newClientId, newCountry);
 
         try {
-            const response = await axiosSecure.put('/addClient', clientData);
-            if (response.data.insertedId) {
-                setClientId('');
-                setCountry('');
-                toast.success('Client added successfully');
-                dispatch(setRefetch(!refetch));
-                const modal = document.querySelector(`#add-new-client-modal`);
-                modal.close();
-            } else {
-                toast.error(response.data.message);
-            }
+            setLoading(true);
+            const response = await axiosSecure.put(`/clients/${clientId}`, {
+                clientId: newClientId,
+                clientCountry: newCountry,
+            });
 
+            if (response?.data?.message === 'Client updated successfully') {
+                toast.success('Client updated successfully');
+                // dispatch or refetch if needed
+                dispatch(setRefetch(!refetch));
+                document.getElementById('edit-client-list').close(); // Close modal
+            } else {
+               toast.error(response?.data?.message || 'Update failed. Please try again.');
+            }
         } catch (error) {
-            toast.error('Error adding client:', error);
+            toast.error('Update error:', error);
         } finally {
             setLoading(false);
         }
     };
-    // ************************************************************************************
+
+    // 🔁 Reset to original values
     const handleReset = () => {
-        setClientId('');
-        setCountry('');
+        setNewClientId(clientId);
+        setNewCountry(clientCountry);
     };
-    // ************************************************************************************
+
     return (
         <div>
-            <dialog id="add-new-client-modal" className="modal overflow-y-scroll">
+            <dialog id="edit-client-list" className="modal overflow-y-scroll">
                 <div className="modal-box">
                     <form method="dialog">
                         <button className="btn btn-sm btn-circle btn-ghost absolute right-0 top-0">✕</button>
                     </form>
-                    <h3 className="font-bold text-lg">Add new client:</h3>
+                    <h3 className="font-bold text-lg">Edit client:</h3>
                     <form onSubmit={handleSubmit} className="mt-5 space-y-4">
                         <div>
                             <label className="label">Client ID</label>
                             <input
                                 type="text"
-                                value={clientId}
-                                onChange={(e) => setClientId(e.target.value)}
+                                value={newClientId}
+                                onChange={(e) => setNewClientId(e.target.value)}
                                 required
                                 className="input !border !border-gray-300 w-full mt-1"
                             />
@@ -79,14 +77,13 @@ const AddClientModal = () => {
                             <label className="label">Country</label>
                             <input
                                 type="text"
-                                value={country}
-                                onChange={(e) => setCountry(e.target.value)}
+                                value={newCountry}
+                                onChange={(e) => setNewCountry(e.target.value)}
                                 required
                                 className="input !border !border-gray-300 w-full mt-1"
                             />
                         </div>
                         <div className="flex justify-end gap-4 pt-4">
-
                             <button
                                 type="button"
                                 onClick={handleReset}
@@ -95,7 +92,6 @@ const AddClientModal = () => {
                             >
                                 Reset
                             </button>
-
                             <button
                                 type="submit"
                                 className="btn bg-[#6E3FF3] text-white"
@@ -111,4 +107,4 @@ const AddClientModal = () => {
     );
 };
 
-export default AddClientModal;
+export default EditClientList;
