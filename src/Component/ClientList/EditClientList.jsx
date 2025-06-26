@@ -24,7 +24,6 @@ const EditClientList = ({ clientInfo }) => {
     // ✅ Handle form submit
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Submitted:', newClientId, newCountry);
 
         try {
             setLoading(true);

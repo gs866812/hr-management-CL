@@ -99,9 +99,9 @@ const Navbar = () => {
 
 
             {/* ********************************************************* order management section*/}
-
+            {/* currently hidden below section */}
             <section
-                className={`${isOpenOrderManagement ? 'bg-gray-100' : ''
+                className={`hidden ${isOpenOrderManagement ? 'bg-gray-100' : ''
                     } rounded-md mb-[1px]`}
             >
                 <div
@@ -140,6 +140,17 @@ const Navbar = () => {
                     </div>
                 )}
             </section>
+            {/*************************************************************/}
+            <Link
+                to="/orders"
+                className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/order-management'
+                    ? 'bg-[#6E3FF3] text-white'
+                    : 'hover:bg-[#6E3FF3] hover:text-white'
+                    }`}
+            >
+                <CiInboxIn />
+                <span>Order Management</span>
+            </Link>
             {/*************************************************************/}
             {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN') && (
                 <Link
