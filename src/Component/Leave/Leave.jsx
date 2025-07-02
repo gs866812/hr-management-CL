@@ -119,10 +119,6 @@ const Leave = () => {
                 <option value="">Select Leave Type</option>
                 <option value="casual">Casual Leave</option>
                 <option value="sick">Sick Leave</option>
-                <option value="annual">Annual Leave</option>
-                <option value="maternity">Maternity Leave</option>
-                <option value="paternity">Paternity Leave</option>
-                <option value="unpaid">Unpaid Leave</option>
               </select>
               {errors.leaveType && <p className="mt-1 text-sm text-red-600">{errors.leaveType.message}</p>}
             </div>
@@ -142,7 +138,7 @@ const Leave = () => {
                   }
                 })}
                 className={`w-full px-3 py-2 border ${errors.contactNumber ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-[#6E3FF3] focus:border-[#6E3FF3]`}
-                placeholder="e.g. 0123456789"
+                placeholder="e.g. 017xxxxxxxx"
               />
               {errors.contactNumber && <p className="mt-1 text-sm text-red-600">{errors.contactNumber.message}</p>}
             </div>

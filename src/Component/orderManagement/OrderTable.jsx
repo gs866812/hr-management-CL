@@ -224,11 +224,11 @@ const OrderTable = () => {
                                     <tr key={index}>
                                         <td>{order.clientID}</td>
                                         <td>{order.orderName}</td>
-                                        <td>{order.orderQTY}</td>
+                                        <td>{Number(order.orderQTY).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
                                         {
                                             currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN' ||
                                             currentUser?.role === 'Developer'
-                                            && <td>{order.orderPrice}</td>
+                                            && <td>{Number(order.orderPrice).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
                                         }
                                         <td>
                                             {order?.orderDeadLine && (
