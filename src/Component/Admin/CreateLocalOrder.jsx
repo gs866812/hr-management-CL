@@ -158,6 +158,7 @@ const CreateLocalOrder = () => {
             orderStatus: "Pending"
         };
 
+
         try {
             const response = await axiosSecure.post('/createLocalOrder', updateOrder);
             if (response.data.insertedId) {
@@ -294,7 +295,7 @@ const CreateLocalOrder = () => {
                 {/* Buttons */}
                 <div className="flex justify-between mt-6">
                     <button type="reset" onClick={resetOrder} className="bg-yellow-500 text-white px-4 py-2 rounded">Reset</button>
-                    <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded">Create Order</button>
+                    <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded cursor-pointer">Create Order</button>
                 </div>
             </form>
 

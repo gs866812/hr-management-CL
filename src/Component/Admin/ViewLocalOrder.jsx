@@ -9,13 +9,18 @@ import moment from 'moment';
 import Swal from 'sweetalert2';
 import useAxiosSecure from '../../utils/useAxiosSecure';
 import { setRefetch } from '../../redux/refetchSlice';
+import DatePicker from 'react-datepicker';
 
 const ViewLocalOrder = () => {
     const { user, currentUser } = useContext(ContextData);
+
     const axiosSecure = useAxiosSecure();
 
     const [localOrder, setLocalOrder] = useState({});
     const [isRunning, setIsRunning] = useState(false);
+    const [deadline, setDeadline] = useState(null);
+
+
     // const [totalSeconds, setTotalSeconds] = useState(0);
     const [totalSeconds, setTotalSeconds] = useState(parseInt(localOrder?.lastUpdated) || 0);
     // const savedTotalSeconds = useRef(parseInt(parseInt(localOrder?.lastUpdated) || 0) || 0); // Store initial saved value
@@ -29,6 +34,18 @@ const ViewLocalOrder = () => {
     const { orderId } = useParams();
 
 
+    // ************************************************************************************************
+    const handleDeadlineChange = (date) => {
+        const timezoneName = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const deadlineWithTimezone = {
+            date: date.toISOString(),
+            timezoneName,
+        };
+        setDeadline(deadlineWithTimezone);
+    };
+
+    const getSelectedDate = () => (deadline ? new Date(deadline.date) : null);
+    const filterPastTimes = (time) => moment(time).isSameOrAfter(moment());
     // ************************************************************************************************
     const axiosProtect = useAxiosProtect();
 
@@ -224,6 +241,23 @@ const ViewLocalOrder = () => {
     };
 
     // ************************************************************************************************
+    const handleDeadlineExtend = async (e) => {
+        e.preventDefault();
+        const deadlineMoment = moment(deadline.date).tz(deadline.timezoneName);
+        const newDeadline = deadlineMoment.format('DD-MMM-YYYY HH:mm:ss');
+        try {
+            const response = await axiosSecure.put(`/extendDeadline/${orderId}`, {newDeadline});
+
+            if (response.data.modifiedCount > 0) {
+                // Update the order with the new deadline
+                dispatch(setRefetch(!refetch));
+                toast.success('Deadline extended successfully');
+            }
+        } catch (error) {
+            toast.error(`Error fetching data: ${error.message}`);
+        }
+    };
+    // ************************************************************************************************
 
     return (
         <>
@@ -261,6 +295,43 @@ const ViewLocalOrder = () => {
                         <div className='w-[30%] border-r'>
                             <section className='shadow-md rounded-md p-4'>
                                 <h2 className='font-semibold text-xl'>Time left to deliver</h2>
+
+                                {/*  */}
+                                {(localOrder && (currentUser.role === 'Admin' || currentUser.role === 'Developer')) && (
+                                    <Countdown
+                                        date={moment(localOrder.orderDeadLine).valueOf()}
+                                        renderer={({ days, hours, minutes, seconds, completed }) => {
+                                            if (completed) {
+                                                return (
+                                                    <form onSubmit={handleDeadlineExtend} className="flex">
+                                                        <DatePicker
+                                                            selected={getSelectedDate()}
+                                                            onChange={handleDeadlineChange}
+                                                            showTimeSelect
+                                                            dateFormat="dd.MM.yyyy hh:mm aa"
+                                                            filterTime={filterPastTimes}
+                                                            className="!border !border-gray-300 p-2 rounded-l-md w-full"
+                                                            minDate={new Date()}
+                                                            placeholderText="Extend deadline"
+                                                            required
+                                                        />
+                                                        <button
+                                                            type="submit"
+                                                            className="!border !border-gray-300 p-2 bg-[#6E3FF3] text-white rounded-r-md cursor-pointer"
+                                                        >
+                                                            Extend
+                                                        </button>
+                                                    </form>
+                                                );
+                                            } else {
+                                                return null;
+                                            }
+                                        }}
+                                    />
+                                )}
+
+                                {/*  */}
+
                                 <div>
                                     {localOrder?.orderDeadLine && (
                                         <Countdown
