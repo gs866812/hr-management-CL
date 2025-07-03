@@ -13,7 +13,7 @@ import { setRefetch } from "../../redux/refetchSlice";
 import 'react-datepicker/dist/react-datepicker.css';
 
 const CreateLocalOrder = () => {
-    const { user, userName } = useContext(ContextData);
+    const { user, currentUser } = useContext(ContextData);
     const axiosSecure = useAxiosSecure();
     const axiosProtect = useAxiosProtect();
     const dispatch = useDispatch();
@@ -153,7 +153,7 @@ const CreateLocalOrder = () => {
             returnFormat: returnFile,
             orderQTY: orderQuantity,
             orderPrice: totalPrice,
-            userName: userName,
+            userName: currentUser?.userName,
             orderDeadLine: newDeadline,
             orderStatus: "Pending"
         };
