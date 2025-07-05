@@ -10,7 +10,7 @@ import Swal from 'sweetalert2';
 
 
 const EmployeeList = () => {
-    const { employeeList, setSearchEmployee, user } = useContext(ContextData);
+    const { employeeList, setSearchEmployee, user, currentUser } = useContext(ContextData);
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch)
@@ -72,7 +72,7 @@ const EmployeeList = () => {
                 employees: selectedEmployees,
                 shift: selectedShift,
                 OTFor: Number(OTHours) || 0, // Default to 0 if not provided
-                
+
             };
 
             const response = await axiosSecure.post('/assign-shift', payload);
@@ -199,7 +199,14 @@ const EmployeeList = () => {
                         }
                     </div>
                     {/* Night shift */}
-                    <input type="radio" name="my_tabs_6" className="tab" aria-label="Night shift" />
+                    {currentUser?.role !== 'teamLeader' && (
+                        <input
+                            type="radio"
+                            name="my_tabs_6"
+                            className="tab"
+                            aria-label="Night shift"
+                        />
+                    )}
                     <div className="tab-content bg-base-100 border-base-300 p-6">
                         {
                             shiftedEmployees?.filter(emp => emp.shiftName === 'Night').length > 0 &&
@@ -407,9 +414,9 @@ const EmployeeList = () => {
                         </select>
                         {selectedShift === 'OT list' &&
                             <section>
-                                <input 
-                                onChange={(e) => setOTHours(e.target.value)} type="text" placeholder='Enter OT hours' className="w-full mb-4 p-2 !border !border-gray-300 rounded-md" required
-                                 />
+                                <input
+                                    onChange={(e) => setOTHours(e.target.value)} type="text" placeholder='Enter OT hours' className="w-full mb-4 p-2 !border !border-gray-300 rounded-md" required
+                                />
                             </section>
                         }
 
