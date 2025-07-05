@@ -56,6 +56,7 @@ const EmployeeDashboard = () => {
     const [shiftedEmployees, setShiftedEmployees] = useState([]);
 
 
+
     const month = moment(new Date()).format("MMMM"); // Get current month in format "MMMM" (e.g., "January", "February", etc.)
 
     const presentCount = attendanceInfo?.filter(attendance => attendance.email === user?.email && attendance.month === month).length || 0; // Count late check-ins
@@ -118,6 +119,8 @@ const EmployeeDashboard = () => {
         };
         fetchShiftedEmployee();
     }, [refetch]);
+
+
     // *******************************************************
     const handleCheckIn = async () => {
 

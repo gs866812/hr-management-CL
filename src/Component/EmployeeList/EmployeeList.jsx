@@ -175,7 +175,7 @@ const EmployeeList = () => {
                     {/* Evening shift */}
                     <input type="radio" name="my_tabs_6" className="tab" aria-label="Evening shift" />
 
-                    <div className="tab-content bg-base-100 border-base-300 p-6">
+                    <div className="tab-content bg-base-100 border-base-300 p-6 overflow-y-auto max-h-52">
                         {
                             shiftedEmployees?.filter(emp => emp.shiftName === 'Evening').length > 0 &&
                             shiftedEmployees?.filter(emp => emp.shiftName === 'Evening').map((emp, index) => (
@@ -199,15 +199,14 @@ const EmployeeList = () => {
                         }
                     </div>
                     {/* Night shift */}
-                    {currentUser?.role !== 'teamLeader' && (
-                        <input
-                            type="radio"
-                            name="my_tabs_6"
-                            className="tab"
-                            aria-label="Night shift"
-                        />
-                    )}
-                    <div className="tab-content bg-base-100 border-base-300 p-6">
+
+                    <input
+                        type="radio"
+                        name="my_tabs_6"
+                        className="tab"
+                        aria-label="Night shift"
+                    />
+                    <div className="tab-content bg-base-100 border-base-300 p-6 overflow-y-auto max-h-52">
                         {
                             shiftedEmployees?.filter(emp => emp.shiftName === 'Night').length > 0 &&
                             shiftedEmployees?.filter(emp => emp.shiftName === 'Night').map((emp, index) => (
@@ -231,8 +230,11 @@ const EmployeeList = () => {
                         }
                     </div>
                     {/* General shift */}
-                    <input type="radio" name="my_tabs_6" className="tab" aria-label="General shift" />
-                    <div className="tab-content bg-base-100 border-base-300 p-6">
+                    {currentUser?.role !== 'teamLeader' && (
+                        <input type="radio" name="my_tabs_6" className="tab" aria-label="General shift" />
+                    )}
+
+                    <div className="tab-content bg-base-100 border-base-300 p-6 overflow-y-auto max-h-52">
                         {
                             shiftedEmployees?.filter(emp => emp.shiftName === 'General').length > 0 &&
                             shiftedEmployees?.filter(emp => emp.shiftName === 'General').map((emp, index) => (
@@ -409,7 +411,11 @@ const EmployeeList = () => {
                             <option>Morning</option>
                             <option>Evening</option>
                             <option>Night</option>
-                            <option>General</option>
+
+                            {currentUser?.role !== 'teamLeader' && (
+                                <option>General</option>
+                            )}
+
                             <option>OT list</option>
                         </select>
                         {selectedShift === 'OT list' &&

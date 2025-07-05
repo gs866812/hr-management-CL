@@ -355,7 +355,7 @@ const DataProvider = ({ children }) => {
     useEffect(() => {
         const interval = setInterval(() => {
             const token = localStorage.getItem('jwtToken');
-            if (user && token) {
+            if (user?.email && token) {
                 clearInterval(interval);
                 fetchAttendance();
             }
@@ -363,12 +363,8 @@ const DataProvider = ({ children }) => {
 
         const fetchAttendance = async () => {
             try {
-
-                // const date = moment(new Date()).format("DD-MMM-YYYY");
-                const month = moment(new Date()).format("MMMM");
-
                 const response = await axiosProtect.get('/getAttendance', {
-                    params: { userEmail: user?.email, month },
+                    params: { userEmail: user.email.toLowerCase().trim() },
                 });
                 setAttendanceInfo(response.data);
             } catch (error) {
@@ -376,8 +372,10 @@ const DataProvider = ({ children }) => {
             }
         };
 
+
         return () => clearInterval(interval);
     }, [refetch, user]);
+
     // ****************************************************************
     const logOut = async () => {
         setLoading(true);
