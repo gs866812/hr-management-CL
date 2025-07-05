@@ -24,6 +24,7 @@ import Analytics from './Component/Analytics/Analytics';
 import EditEarnings from './Component/Earnings/EditEarnings';
 import ProtectHr from './Component/Protected/ProtectHr';
 import ProfitShare from './Component/ProfitShare/ProfitShare';
+import ProtectedEmployee from './Component/Protected/ProtectedEmployee';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
@@ -49,15 +50,12 @@ export const router = createBrowserRouter([
             { path: '/createLocalOrder', element: <ProtectedRole><CreateLocalOrder /></ProtectedRole> },
             { path: '/settings', element: <Settings /> },
             { path: '/orders', element: <OrderManagement /> },
-            { path: '/employeeList', element: <ProtectedRole><EmployeeList /></ProtectedRole> },
+            { path: '/employeeList', element: <ProtectedEmployee><EmployeeList /></ProtectedEmployee> },
             { path: '/clients', element: <ProtectedRole><Clients /></ProtectedRole> },
             { path: '/leave', element: <Leave /> },
             { path: '/earnings', element: <ProtectedRole><Earnings /></ProtectedRole> },
             { path: '/employeeList/morning-shift', element: <MorningShift /> },
             { path: '/profit-share', element: <ProtectHr><ProfitShare /></ProtectHr> },
-
-
-
         ],
     },
 ]);

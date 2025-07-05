@@ -203,6 +203,7 @@ const OrderTable = () => {
                     {/* head */}
                     <thead className='bg-[#6E3FF3] text-white'>
                         <tr>
+                            <th className='w-[12%]'>Date</th>
                             <th>Client ID</th>
                             <th>Order Name</th>
                             <th>Order QTY</th>
@@ -222,6 +223,7 @@ const OrderTable = () => {
                             localOrder.map((order, index) => {
                                 return (
                                     <tr key={index}>
+                                        <td>{moment(order.date).format('DD-MMM-YYYY')}</td>
                                         <td>{order.clientID}</td>
                                         <td>{order.orderName}</td>
                                         <td>{Number(order.orderQTY).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>

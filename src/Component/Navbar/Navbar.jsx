@@ -56,7 +56,7 @@ const Navbar = () => {
                 <span>Notice Board</span>
             </Link>
             {/* ************************************************* ********************/}
-            {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN') && (
+            {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN' || currentUser?.role === 'teamLeader') && (
                 <Link
                     to="/employeeList"
                     className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/employee'
