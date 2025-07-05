@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { ContextData } from '../../DataProvider';
 import { Navigate, useLocation } from 'react-router-dom';
 
-const ProtectedEmployee = () => {
+const ProtectedEmployee = ({ children }) => {
     const { user, loading, currentUser } = useContext(ContextData);
 
     const location = useLocation();
