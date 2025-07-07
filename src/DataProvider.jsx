@@ -36,13 +36,13 @@ const DataProvider = ({ children }) => {
     const [totalProfit, setTotalProfit] = useState(0);
 
     const [attendanceInfo, setAttendanceInfo] = useState([]);
+    const [salaryAndPF, setSalaryAndPF] = useState({});
 
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
 
     const axiosProtect = useAxiosProtect();
-
 
 
 
@@ -408,6 +408,30 @@ const DataProvider = ({ children }) => {
     }, []);
 
     // ****************************************************************
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const token = localStorage.getItem('jwtToken');
+            if (user?.email && token) {
+                clearInterval(interval);
+                fetchPFAndSalary();
+            }
+        }, 200);
+
+        const fetchPFAndSalary = async () => {
+            try {
+                const response = await axiosProtect.get('/getSalaryAndPF', {
+                    params: { userEmail: user.email.toLowerCase().trim() },
+                });
+                setSalaryAndPF(response.data[0]);
+            } catch (error) {
+                toast.error('Error fetching data');
+            }
+        };
+
+
+        return () => clearInterval(interval);
+    }, [refetch, user]);
+    // ****************************************************************
     // Firebase authentication listener
     // useEffect(() => {
     //     const unSubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -457,6 +481,7 @@ const DataProvider = ({ children }) => {
         totalExpense,
         totalEarnings,
         attendanceInfo,
+        salaryAndPF,
     };
 
     return <ContextData.Provider value={info}>{children}</ContextData.Provider>;

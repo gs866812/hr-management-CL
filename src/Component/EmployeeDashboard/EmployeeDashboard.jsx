@@ -46,7 +46,7 @@ const EmployeeDashboard = () => {
     const axiosSecure = useAxiosProtect();
     const axiosProtect = useAxiosProtect();
 
-    const { user, attendanceInfo } = useContext(ContextData);
+    const { user, attendanceInfo, salaryAndPF } = useContext(ContextData);
     const [checkInInfo, setCheckInfo] = useState({});
     const [checkOutInfo, setCheckOutInfo] = useState('');
 
@@ -386,7 +386,11 @@ const EmployeeDashboard = () => {
 
 
     // *************************************************************************************************
-    return (
+    // Monthly PF
+    const monthlyPF = parseFloat((salaryAndPF?.salary * 5) / 100) || 0; // Assuming pfContribution is the monthly PF contribution
+
+    // *************************************************************************************************
+;    return (
         <div className="p-6">
             {/* Time Tracking */}
             <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -642,12 +646,12 @@ const EmployeeDashboard = () => {
 
                         <div className="bg-gray-50 p-3 rounded-lg">
                             <div className="text-xs text-gray-500 mb-1">Monthly PF Contribution</div>
-                            <div className="font-medium text-green-600">₹6,600</div>
+                            <div className="font-medium text-green-600">{Number(monthlyPF).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits: 2})}</div>
                         </div>
 
                         <div className="bg-gray-50 p-3 rounded-lg">
                             <div className="text-xs text-gray-500 mb-1">Total PF Balance</div>
-                            <div className="font-medium text-green-600">₹2,45,500</div>
+                            <div className="font-medium text-green-600">BDT: {Number(salaryAndPF.pfContribution).toLocaleString(undefined, {minimumIntegerDigits:2, maximumFractionDigits:2})}</div>
                         </div>
                     </div>
 
