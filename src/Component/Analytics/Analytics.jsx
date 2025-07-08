@@ -35,7 +35,7 @@ const Analytics = () => {
     const [activeIndex, setActiveIndex] = useState(0);
 
     // *********************************************************************
-    
+
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
@@ -76,7 +76,7 @@ const Analytics = () => {
                         userEmail: user?.email,
                     },
                 });
-                setEarnings(response.data);
+                setEarnings(response.data.totalRev);
             } catch (error) {
                 toast.error('Error fetching data:', error.message);
             }
@@ -97,7 +97,7 @@ const Analytics = () => {
 
     // Format number to have 2 decimal places
     const formatNumber = (num) => {
-        return Number(num).toFixed(2);
+        return Number(num).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 
     // Process data for the charts

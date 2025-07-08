@@ -44,7 +44,7 @@ const EditEarnings = () => {
                         userEmail: user?.email,
                     },
                 });
-                setEarnings(response.data);
+                setEarnings(response.data.totalRev);
             } catch (error) {
                 toast.error('Error fetching data:', error.message);
             }

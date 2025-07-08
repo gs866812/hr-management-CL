@@ -1,132 +1,109 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import useAxiosSecure from '../../utils/useAxiosSecure';
-import { setRefetch } from '../../redux/refetchSlice';
-import { toast } from 'react-toastify';
 import { ContextData } from '../../DataProvider';
-import useAxiosProtect from '../../utils/useAxiosProtect';
 import DatePicker from 'react-datepicker';
+import { toast } from 'react-toastify';
+import useAxiosSecure from '../../utils/useAxiosSecure';
+import useAxiosProtect from '../../utils/useAxiosProtect';
+import { setRefetch } from '../../redux/refetchSlice';
+import { useDispatch, useSelector } from 'react-redux';
 
-const ExpenseModal = ({ onExpenseData, searchOption }) => {
-
-    // *************************************************************************************************
-    const { user, userName, categories, setCategories, currentPage, expenseItemsPerPage, hrBalance, currentUser } = useContext(ContextData);
-
+const ExpenseModal = ({ onExpenseData, searchOption, selectedMonth }) => {
+    const { user, currentPage, expenseItemsPerPage, hrBalance, currentUser } = useContext(ContextData);
 
     const axiosSecure = useAxiosSecure();
     const axiosProtect = useAxiosProtect();
+    const dispatch = useDispatch();
+    const refetch = useSelector(state => state.refetch.refetch);
+    const [categories, setCategories] = useState([]);
 
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [formData, setFormData] = useState({
-        userName: '',
         expenseName: '',
         expenseCategory: '',
         expenseAmount: '',
         expenseStatus: '',
         expenseNote: '',
-        expenseDate: '',
     });
-
-
-
-    const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
     const [newCategory, setNewCategory] = useState('');
+    const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
 
+    // Fetch fresh expense data after new entry
+    const fetchExpenseData = async () => {
+        try {
+            const response = await axiosProtect.get('/getExpense', {
+                params: {
+                    userEmail: user?.email,
+                    page: currentPage,
+                    size: expenseItemsPerPage,
+                    search: searchOption,
+                    selectedMonth,
+                },
+            });
 
+            onExpenseData(response.data);
+            setCategories(response.data.category);
+        } catch (error) {
+            toast.error('Error fetching data');
+        }
+    };
 
-    const dispatch = useDispatch();
-    const refetch = useSelector((state) => state.refetch.refetch);
-
-
-
-
-    // *************************************************************************************************
     useEffect(() => {
-        const fetchExpenseData = async () => {
-            try {
-                const response = await axiosProtect.get('/getExpense', {
-                    params: {
-                        userEmail: user?.email,
-                        page: currentPage,
-                        size: expenseItemsPerPage,
-                        search: searchOption,
-                    },
-                });
-                onExpenseData(response.data);
-                setCategories(response.data.category);
-
-            } catch (error) {
-                toast.error('Error fetching data:', error.message);
-            }
-        };
         fetchExpenseData();
-    }, [refetch, currentPage, expenseItemsPerPage, searchOption, axiosProtect]);
-    // *************************************************************************************************
+    }, [refetch]);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData({
-            ...formData,
+        setFormData(prev => ({
+            ...prev,
             [name]: value,
-        });
+        }));
 
         if (name === 'expenseCategory' && value === 'new') {
             setShowNewCategoryInput(true);
-        } else {
+        } else if (name === 'expenseCategory') {
             setShowNewCategoryInput(false);
         }
     };
-    // *************************************************************************************************
+
     const handleNewCategoryChange = (e) => {
         setNewCategory(e.target.value);
     };
-    // *************************************************************************************************
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Handle form submission here
-        const selectedCategory = formData.expenseCategory === 'new' ? newCategory : formData.expenseCategory;
 
-        // Handle form submission here
-        const newAmount = parseFloat(formData.expenseAmount);
+        const finalCategory = formData.expenseCategory === 'new' ? newCategory : formData.expenseCategory;
+        const amount = parseFloat(formData.expenseAmount);
 
-        if (currentUser?.role == "HR-ADMIN") {
-            if (hrBalance < newAmount) {
-                toast.error("Not enough funds");
-                return;
-            }
+        if (currentUser?.role === "HR-ADMIN" && hrBalance < amount) {
+            toast.error("Not enough funds.");
+            return;
         }
 
-
-        const updatedFormData = {
+        const payload = {
             ...formData,
-            expenseAmount: newAmount,
-            expenseCategory: selectedCategory, // Use the correct category
+            expenseAmount: amount,
+            expenseCategory: finalCategory,
             expenseDate: selectedDate,
             userName: currentUser?.userName,
             userMail: user?.email,
         };
 
-        // console.log(updatedFormData);
-
-        const postExpenseData = async () => {
-            try {
-                const response = await axiosSecure.post('/addExpense', updatedFormData);
-                if (response.data.insertedId) {
-                    dispatch(setRefetch(!refetch));
-                    toast.success('Expense added successfully');
-                } else {
-                    toast.error(response.data);
-                }
-            } catch (error) {
-                console.error('Error fetching data:', error.message);
+        try {
+            const response = await axiosSecure.post('/addExpense', payload);
+            if (response.data.insertedId) {
+                dispatch(setRefetch(!refetch));
+                toast.success('Expense added successfully');
+                handleReset();
+            } else {
+                toast.error('Error: ' + (response.data?.message || 'Insert failed'));
             }
-        };
-
-        postExpenseData();
-        handleReset();
-
+        } catch (error) {
+            console.error(error);
+            toast.error('Error submitting form');
+        }
     };
-    // *************************************************************************************************
+
     const handleReset = () => {
         setFormData({
             expenseName: '',
@@ -134,164 +111,134 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
             expenseAmount: '',
             expenseStatus: '',
             expenseNote: '',
-
         });
         setNewCategory('');
         setShowNewCategoryInput(false);
         setSelectedDate(new Date());
     };
-    // *************************************************************************************************
 
     return (
         <div>
-            <dialog id="add-new-expense-modal" className="modal overflow-y-scroll">
-                <div className="modal-box">
+            <dialog id="add-new-expense-modal" className="modal">
+                <div className="modal-box max-w-2xl">
                     <form method="dialog">
-                        {/* if there is a button in form, it will close the modal */}
-                        <button className="btn btn-sm btn-circle btn-ghost absolute right-0 top-0">✕</button>
+                        <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
                     </form>
-                    <h3 className="font-bold text-lg">Add new expense:</h3>
-                    <form onSubmit={handleSubmit} className="max-w-2xl mx-auto mt-5">
-                        <div className="grid grid-cols-2 gap-1">
-                            {/* Expense Name */}
-                            <div className="flex items-center">
-                                <label htmlFor="expenseName" className="font-medium">Expense Date:</label>
-                            </div>
-                            <div className='border rounded-md border-gray-300'>
-                                <label>
-                                    <DatePicker
-                                        dateFormat="dd.MM.yyyy"
-                                        selected={selectedDate} // Pass the Date object
-                                        onChange={(date) => setSelectedDate(date)}        // Handle Date object
-                                        placeholderText="Select date"
-                                        maxDate={new Date()}
-                                        required
-                                        className="py-1 px-2 rounded-md border-none"
-                                    />
-                                </label>
-                            </div>
-                            <div className="flex items-center">
-                                <label htmlFor="expenseName" className="font-medium">Expense Name:</label>
-                            </div>
-                            <div className='border rounded-md border-gray-300'>
-                                <input
-                                    type="text"
-                                    id="expenseName"
-                                    name="expenseName"
-                                    value={formData.expenseName}
-                                    onChange={handleChange}
-                                    className="w-full p-2 rounded-md outline-none"
-                                    placeholder="Enter expense name"
-                                    required
-                                />
-                            </div>
 
-                            {/* Expense Category */}
-                            <div className="flex items-center">
-                                <label htmlFor="expenseCategory" className="font-medium">Expense Category:</label>
-                            </div>
-                            <div className='border rounded-md border-gray-300'>
-                                <select
-                                    id="expenseCategory"
-                                    name="expenseCategory"
-                                    value={formData.expenseCategory}
-                                    onChange={handleChange}
-                                    className="w-full p-2 border border-gray-300 rounded-md"
-                                    required
-                                >
-                                    <option value="">Select category</option>
-                                    {categories.map((category, index) => (
-                                        <option key={index} value={category.expenseCategory}>
-                                            {category.expenseCategory}
-                                        </option>
-                                    ))}
-                                    <option value="new">Add New Category</option>
-                                </select>
-                                {showNewCategoryInput && (
-                                    <input
-                                        type="text"
-                                        value={newCategory}
-                                        onChange={handleNewCategoryChange}
-                                        className="w-full p-2 !border !border-gray-300 rounded-md mt-2"
-                                        placeholder="Enter new category"
-                                        required
-                                    />
-                                )}
-                            </div>
+                    <h3 className="font-bold text-lg mb-4">Add New Expense</h3>
 
-                            {/* Expense Amount */}
-                            <div className="flex items-center">
-                                <label htmlFor="expenseAmount" className="font-medium">Expense Amount:</label>
-                            </div>
-                            <div className='border rounded-md border-gray-300'>
-                                <input
-                                    type="number"
-                                    id="expenseAmount"
-                                    name="expenseAmount"
-                                    value={formData.expenseAmount}
-                                    min='0'
-                                    onChange={handleChange}
-                                    className="w-full p-2 border border-gray-300 rounded-md"
-                                    placeholder="Enter expense amount"
-                                    required
-                                />
-                            </div>
-
-                            {/* Expense Status */}
-                            <div className="flex items-center">
-                                <label htmlFor="expenseStatus" className="font-medium">Expense Status:</label>
-                            </div>
-                            <div className='border rounded-md border-gray-300'>
-                                <select
-                                    id="expenseStatus"
-                                    name="expenseStatus"
-                                    value={formData.expenseStatus}
-                                    onChange={handleChange}
-                                    className="w-full p-2 border border-gray-300 rounded-md"
-                                    required
-                                >
-                                    <option value="">Select status</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Paid">Paid</option>
-                                    <option value="Partial payment">Partial payment</option>
-                                </select>
-                            </div>
-
-                            {/* Expense Note */}
-                            <div className="flex items-center">
-                                <label htmlFor="expenseNote" className="font-medium">Expense Note:</label>
-                            </div>
-                            <div className='border rounded-md border-gray-300'>
-                                <textarea
-                                    id="expenseNote"
-                                    name="expenseNote"
-                                    value={formData.expenseNote}
-                                    onChange={handleChange}
-                                    className="w-full p-2 border border-gray-300 rounded-md"
-                                    placeholder="Add a note (optional)"
-                                    rows="2"
-                                />
-                            </div>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Expense Date */}
+                        <div>
+                            <label className="block font-medium mb-1">Expense Date:</label>
+                            <DatePicker
+                                selected={selectedDate}
+                                onChange={(date) => setSelectedDate(date)}
+                                dateFormat="dd.MM.yyyy"
+                                maxDate={new Date()}
+                                className="w-full border border-gray-300 px-3 py-2 rounded-md"
+                                required
+                            />
                         </div>
 
-                        {/* Submit Button */}
-                        <div className="mt-6 flex gap-2">
+                        {/* Expense Name */}
+                        <div>
+                            <label className="block font-medium mb-1">Expense Name:</label>
+                            <input
+                                type="text"
+                                name="expenseName"
+                                value={formData.expenseName}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 px-3 py-2 rounded-md"
+                                placeholder="Enter expense name"
+                                required
+                            />
+                        </div>
 
-                            <button onClick={handleReset}
-                                type="reset"
-                                className="w-full bg-yellow-500 text-white p-2 rounded-md transition-colors cursor-pointer"
+                        {/* Expense Category */}
+                        <div>
+                            <label className="block font-medium mb-1">Expense Category:</label>
+                            <select
+                                name="expenseCategory"
+                                value={formData.expenseCategory}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 px-3 py-2 rounded-md"
+                                required
                             >
+                                <option value="">Select Category</option>
+                                {Array.isArray(categories) && categories.map((cat, i) => (
+                                    <option key={i} value={cat.expenseCategory}>{cat.expenseCategory}</option>
+                                ))}
+                                <option value="new">Add New Category</option>
+                            </select>
+                            {showNewCategoryInput && (
+                                <input
+                                    type="text"
+                                    value={newCategory}
+                                    onChange={handleNewCategoryChange}
+                                    placeholder="Enter new category"
+                                    className="w-full border mt-2 border-gray-300 px-3 py-2 rounded-md"
+                                    required
+                                />
+                            )}
+                        </div>
+
+                        {/* Expense Amount */}
+                        <div>
+                            <label className="block font-medium mb-1">Expense Amount:</label>
+                            <input
+                                type="number"
+                                name="expenseAmount"
+                                value={formData.expenseAmount}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 px-3 py-2 rounded-md"
+                                min="0"
+                                step="0.01"
+                                placeholder="Enter amount"
+                                required
+                            />
+                        </div>
+
+                        {/* Expense Status */}
+                        <div>
+                            <label className="block font-medium mb-1">Expense Status:</label>
+                            <select
+                                name="expenseStatus"
+                                value={formData.expenseStatus}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 px-3 py-2 rounded-md"
+                                required
+                            >
+                                <option value="">Select Status</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Paid">Paid</option>
+                                <option value="Partial payment">Partial payment</option>
+                            </select>
+                        </div>
+
+                        {/* Note */}
+                        <div>
+                            <label className="block font-medium mb-1">Expense Note (optional):</label>
+                            <textarea
+                                name="expenseNote"
+                                value={formData.expenseNote}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 px-3 py-2 rounded-md"
+                                rows={3}
+                                placeholder="Write a note..."
+                            />
+                        </div>
+
+                        {/* Buttons */}
+                        <div className="flex gap-3 pt-2">
+                            <button type="reset" onClick={handleReset} className="w-full bg-yellow-500 text-white py-2 rounded-md">
                                 Reset
                             </button>
-                            <button
-                                type="submit"
-                                className="w-full bg-[#6E3FF3] text-white p-2 rounded-md hover:bg-[#6E3FF3] transition-colors cursor-pointer"
-                            >
+                            <button type="submit" className="w-full bg-[#6E3FF3] text-white py-2 rounded-md">
                                 Submit
                             </button>
                         </div>
                     </form>
-
                 </div>
             </dialog>
         </div>
