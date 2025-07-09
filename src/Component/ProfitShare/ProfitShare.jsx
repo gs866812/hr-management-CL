@@ -79,7 +79,7 @@ const ProfitShare = () => {
                     dispatch(setRefetch(!refetch));
                     setProfitBalance('');
                     setProfitPercent('');
-                    document.getElementById('shareProfit').close();
+                    document.getElementById('share-profit-modal').close();
                     toast.success('Profit added successfully');
                 } else {
                     toast.error(response.data.message || 'Something went wrong');
@@ -133,15 +133,20 @@ const ProfitShare = () => {
                     {
                         shareHolders &&
                         shareHolders.map((shareHolder, index) => (
-                            <div key={index} className='flex border border-gray-300 rounded-md shadow-lg hover:shadow-xl transition-all duration-300 ' 
+                            <div key={index} className='flex border rounded-md shadow-lg hover:shadow-xl transition-all duration-300 border-gray-300'
                                 onMouseLeave={() => setHoveredIndex(null)}>
                                 <div className='flex flex-col items-center gap-2 p-4' >
                                     <img src={shareHolder?.userImage} alt="" className='w-10 h-10 rounded-full border border-gray-300' />
                                     <h1 className='text-xl font-bold'>{shareHolder?.shareHoldersName}</h1>
                                     <h1 className='font-semibold'>{shareHolder?.mobile}</h1>
                                     <h1 className='text-sm font-semibold'>{shareHolder?.email}</h1>
-                                   <button className='border py-1 px-2 rounded my-2 cursor-pointer'>View details</button>
-                                    
+                                    <button
+                                        className='border py-1 px-2 rounded my-2 cursor-pointer'
+                                        onClick={() => window.open(`/shareholder-details/${shareHolder._id}`, '_blank')}
+                                    >
+                                        View details
+                                    </button>
+
                                 </div>
                             </div>
                         ))
@@ -201,29 +206,37 @@ const ProfitShare = () => {
 
             {/* Modal */}
             <dialog id="share-profit-modal" className="modal">
-                
                 <div className="modal-box">
                     <form method="dialog">
-                        {/* if there is a button in form, it will close the modal */}
                         <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 bg-[#6E3FF3] text-white hover:bg-red-500">✕</button>
                     </form>
                     <h3 className="font-bold text-lg">Share profit</h3>
                     <form onSubmit={handleSubmit} className='space-y-4'>
                         <div>
                             <label className='block font-semibold'>Share holder name:</label>
-                            <input
-                                type="text"
-                                value={shareProfit.shareHoldersName}
-                                readOnly
-                                className='border px-3 py-2 rounded w-full bg-gray-100'
-                            />
+                            <select
+                                required
+                                value={shareProfit?.shareHoldersName || ''}
+                                onChange={(e) => {
+                                    const selected = shareHolders.find(item => item.shareHoldersName === e.target.value);
+                                    setShareProfit(selected || {});
+                                }}
+                                className='!border !border-gray-300 px-3 py-2 rounded w-full'
+                            >
+                                <option value="">Select a shareholder</option>
+                                {shareHolders.map((holder, idx) => (
+                                    <option key={idx} value={holder.shareHoldersName}>
+                                        {holder.shareHoldersName}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         <div>
                             <label className='block font-semibold'>Share holder number:</label>
                             <input
                                 type="text"
-                                value={shareProfit.mobile}
+                                value={shareProfit?.mobile || ''}
                                 readOnly
                                 className='border px-3 py-2 rounded w-full bg-gray-100'
                             />
@@ -233,7 +246,7 @@ const ProfitShare = () => {
                             <label className='block font-semibold'>Share holder email:</label>
                             <input
                                 type="email"
-                                value={shareProfit.email}
+                                value={shareProfit?.email || ''}
                                 readOnly
                                 className='border px-3 py-2 rounded w-full bg-gray-100'
                             />
@@ -249,6 +262,7 @@ const ProfitShare = () => {
                                 className='!border !border-gray-300 px-3 py-2 rounded w-full'
                             />
                         </div>
+
                         <div>
                             <label className='block font-semibold'>
                                 Will get
@@ -258,7 +272,7 @@ const ProfitShare = () => {
                             </label>
                             <input
                                 type="text"
-                                value={profitBalance || 0}
+                                value={numberFormat(profitBalance || 0)}
                                 readOnly
                                 className='!border !border-gray-300 px-3 py-2 rounded w-full'
                             />
@@ -275,7 +289,7 @@ const ProfitShare = () => {
             </dialog>
             {/* Modal */}
 
-           
+
         </div>
     );
 };
