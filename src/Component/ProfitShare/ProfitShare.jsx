@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setRefetch } from '../../redux/refetchSlice';
 import useAxiosSecure from '../../utils/useAxiosSecure';
 import moment from 'moment';
+import { TbTransactionDollar } from "react-icons/tb";
 
 const ProfitShare = () => {
     const { user, totalProfit, totalExpense, totalEarnings, currentUser, mainBalance } = useContext(ContextData);
@@ -116,7 +117,7 @@ const ProfitShare = () => {
     }, [refetch]);
     // ****************************************************************
     const numberFormat = (num) => {
-        return Number(num).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        return Number(num).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
     // ****************************************************************
 
@@ -152,6 +153,42 @@ const ProfitShare = () => {
                         ))
                     }
                 </div>
+            </section>
+            <section>
+                {/* Share holders card */}
+                <div className='flex flex-wrap gap-4 justify-center my-10'>
+                    {
+                        shareHolders &&
+                        shareHolders.map((shareHolder, index) => (
+                            <div key={index} className='flex border border-gray-300 rounded-md hover:text-white hover:bg-[#6E3FF3]' onMouseEnter={() => setHoveredIndex(index)}
+                                onMouseLeave={() => setHoveredIndex(null)}>
+                                <div className='flex flex-col items-center gap-2 p-4' >
+                                    <img src={shareHolder?.userImage} alt="" className='w-10 h-10 rounded-full' />
+                                    <h1 className='text-xl font-bold'>{shareHolder?.shareHoldersName}</h1>
+                                    <h1 className='font-semibold'>{shareHolder?.mobile}</h1>
+                                    <h1 className='text-sm font-semibold'>{shareHolder?.email}</h1>
+                                    {/* button name Share profit */}
+                                    {
+                                        hoveredIndex === index && (
+                                            <button className='mt-2 px-4 py-1 bg-white text-[#6E3FF3] font-semibold rounded cursor-pointer' onClick={() => handleShareProfit(shareHolder)}>
+                                                Share Profit
+                                            </button>
+                                        )
+                                    }
+                                </div>
+                            </div>
+                        ))
+                    }
+                </div>
+            </section>
+
+            <section className='flex justify-end'>
+                <button className="bg-[#6E3FF3] text-white px-4 rounded-md py-2 cursor-pointer" onClick={() => document.getElementById('share-profit-modal').showModal()}>
+                    <span className='flex items-center gap-2'>
+                        <TbTransactionDollar />
+                        Share profit
+                    </span>
+                </button>
             </section>
 
             {/* Shareholders info table */}
@@ -269,6 +306,21 @@ const ProfitShare = () => {
                 </div>
             </dialog>
             {/* Modal */}
+
+            {/* Share profit modal start */}
+            {/* You can open the modal using document.getElementById('ID').showModal() method */}
+
+            <dialog id="share-profit-modal" className="modal">
+                <div className="modal-box">
+                    <form method="dialog">
+                        {/* if there is a button in form, it will close the modal */}
+                        <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                    </form>
+                    <h3 className="font-bold text-lg">Hello!</h3>
+                    <p className="py-4">Press ESC key or click on ✕ button to close</p>
+                </div>
+            </dialog>
+            {/* Share profit modal end */}
         </div>
     );
 };
