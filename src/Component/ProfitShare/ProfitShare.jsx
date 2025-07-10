@@ -2,124 +2,120 @@ import { useContext, useEffect, useState } from 'react';
 import { ContextData } from '../../DataProvider';
 import YearlySummary from './YearlySummary';
 import useAxiosProtect from '../../utils/useAxiosProtect';
-import { toast } from 'react-toastify';
+import useAxiosSecure from '../../utils/useAxiosSecure';
 import { useDispatch, useSelector } from 'react-redux';
 import { setRefetch } from '../../redux/refetchSlice';
-import useAxiosSecure from '../../utils/useAxiosSecure';
-import moment from 'moment';
 import { TbTransactionDollar } from "react-icons/tb";
+import { toast } from 'react-toastify';
+import moment from 'moment';
 
 const ProfitShare = () => {
-    const { user, totalProfit, totalExpense, totalEarnings, currentUser, mainBalance } = useContext(ContextData);
+    const { user, currentUser } = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
     const axiosSecure = useAxiosSecure();
-
+    const dispatch = useDispatch();
+    const refetch = useSelector(state => state.refetch.refetch);
 
     const [shareHolders, setShareHolders] = useState([]);
-    const [hoveredIndex, setHoveredIndex] = useState(null);
-    const [shareProfit, setShareProfit] = useState([]);
-    const [profitPercent, setProfitPercent] = useState('');
-    const [profitBalance, setProfitBalance] = useState('');
     const [shareHolderInfo, setShareHolderInfo] = useState([]);
+    const [availableMonths, setAvailableMonths] = useState([]);
+    const [selectedMonth, setSelectedMonth] = useState('');
+    const [monthlyProfitBalance, setMonthlyProfitBalance] = useState(0);
+    const [profitBalance, setProfitBalance] = useState('');
 
-
-
-    // ****************************************************************
-    const dispatch = useDispatch();
-    const refetch = useSelector((state) => state.refetch.refetch);
-
-    // ****************************************************************
     useEffect(() => {
         const fetchShareHolders = async () => {
             try {
                 const response = await axiosProtect.get('/getShareHolders', {
-                    params: {
-                        userEmail: user?.email,
-                    },
+                    params: { userEmail: user?.email },
                 });
                 setShareHolders(response.data);
             } catch (error) {
-                toast.error('Error fetching data:', error.message);
+                toast.error('Error fetching shareholders');
             }
-
         };
         fetchShareHolders();
     }, [refetch]);
-    // ****************************************************************
-    const handleShareProfit = async (shareHolder) => {
-        const { _id, ...share } = shareHolder;
-        setShareProfit(share);
-        document.getElementById('shareProfit').showModal()
-    };
-    // ****************************************************************
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (profitBalance > mainBalance) {
-            toast.error('No available balance to share profit');
-            return;
-        };
-        const currentTime = moment().format('hh:mm:ss A');
 
-        const dataToSend = {
-            name: shareProfit.shareHoldersName,
-            mobile: shareProfit.mobile,
-            email: shareProfit.email,
-            sharedPercent: parseFloat(profitPercent),
-            totalProfitBalance: parseFloat(totalProfit),
-            userName: currentUser?.userName,
-            sharedProfitBalance: parseFloat(profitBalance),
-            mainBalance,
-            currentTime,
-
-        };
-        const postProfitData = async () => {
+    useEffect(() => {
+        const fetchMonths = async () => {
             try {
-                const response = await axiosSecure.post('/addProfitShareData', dataToSend);
-                if (response.data.insertedId) {
-                    dispatch(setRefetch(!refetch));
-                    setProfitBalance('');
-                    setProfitPercent('');
-                    document.getElementById('share-profit-modal').close();
-                    toast.success('Profit added successfully');
-                } else {
-                    toast.error(response.data.message || 'Something went wrong');
-                }
+                const res = await axiosProtect.get('/getMonthlyProfit', {
+                    params: { userEmail: user?.email },
+                });
+                setAvailableMonths(res.data);
             } catch (error) {
-                toast.error('Failed to add profit sharing', error.message);
+                toast.error('Failed to load monthly profits');
             }
         };
-        postProfitData();
+        fetchMonths();
+    }, []);
 
-    };
-    // ****************************************************************
-    const handleProfitPercent = (e) => {
-        const value = e.target.value;
-        setProfitPercent(value);
-        const singleShare = (parseFloat(totalProfit) * parseFloat(value) / 100);
-        setProfitBalance(singleShare);
-
-    };
-    // ****************************************************************
     useEffect(() => {
         const fetchShareHolderInfo = async () => {
             try {
                 const response = await axiosProtect.get('/getShareholderInfo', {
-                    params: {
-                        userEmail: user?.email,
-                    },
+                    params: { userEmail: user?.email },
                 });
                 setShareHolderInfo(response.data);
             } catch (error) {
-                toast.error('Error fetching data:', error.message);
+                toast.error('Error fetching share info');
             }
         };
         fetchShareHolderInfo();
     }, [refetch]);
-    // ****************************************************************
+
+    const handleMonthChange = (e) => {
+        const value = e.target.value;
+        setSelectedMonth(value);
+        const [month, year] = value.split('-');
+        const match = availableMonths.find(item => item.month === month && item.year === year);
+        setMonthlyProfitBalance(match?.profit || 0);
+    };
+
     const numberFormat = (num) => {
         return Number(num).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
-    // ****************************************************************
+
+    const handleDistributeProfit = async (e) => {
+        e.preventDefault();
+        if (!selectedMonth || !profitBalance) {
+            toast.error('Please fill all required fields');
+            return;
+        }
+
+        const [month, year] = selectedMonth.split('-');
+        const sharedAmount = parseFloat(profitBalance);
+
+        console.log(month, year, sharedAmount, monthlyProfitBalance);
+
+        if (sharedAmount > monthlyProfitBalance) {
+            toast.error('Cannot share more than available monthly profit');
+            return;
+        }
+
+        try {
+            const res = await axiosSecure.post('/addMonthlyProfitDistribution', {
+                month,
+                year,
+                sharedAmount,
+                userName: currentUser?.userName
+            });
+
+            if (res.data.insertedCount) {
+                toast.success('Profit distributed successfully!');
+                dispatch(setRefetch(!refetch));
+                setProfitBalance('');
+                setSelectedMonth('');
+                setMonthlyProfitBalance(0);
+                document.getElementById('share-profit-modal').close();
+            } else {
+                toast.error('Distribution failed');
+            }
+        } catch (error) {
+            toast.error('Error sharing profit');
+        }
+    };
 
     return (
         <div>
@@ -127,35 +123,29 @@ const ProfitShare = () => {
                 <YearlySummary />
             </section>
 
-            <section>
-                {/* Share holders card */}
-                <div className='flex flex-wrap gap-4 justify-center my-10'>
-                    {
-                        shareHolders &&
-                        shareHolders.map((shareHolder, index) => (
-                            <div key={index} className='flex border rounded-md shadow-lg hover:shadow-xl transition-all duration-300 border-gray-300'
-                                onMouseLeave={() => setHoveredIndex(null)}>
-                                <div className='flex flex-col items-center gap-2 p-4' >
-                                    <img src={shareHolder?.userImage} alt="" className='w-10 h-10 rounded-full border border-gray-300' />
-                                    <h1 className='text-xl font-bold'>{shareHolder?.shareHoldersName}</h1>
-                                    <h1 className='font-semibold'>{shareHolder?.mobile}</h1>
-                                    <h1 className='text-sm font-semibold'>{shareHolder?.email}</h1>
-                                    <button
-                                        className='border py-1 px-2 rounded my-2 cursor-pointer'
-                                        onClick={() => window.open(`/shareholder-details/${shareHolder._id}`, '_blank')}
-                                    >
-                                        View details
-                                    </button>
-
-                                </div>
+            <section className='flex flex-wrap gap-4 justify-center my-10'>
+                {
+                    shareHolders.map((holder, i) => (
+                        <div key={i} className='flex border rounded-md shadow-lg border-gray-300'>
+                            <div className='flex flex-col items-center gap-2 p-4'>
+                                <img src={holder?.userImage} alt="" className='w-10 h-10 rounded-full border' />
+                                <h1 className='text-xl font-bold'>{holder?.shareHoldersName}</h1>
+                                <h1 className='font-semibold'>{holder?.mobile}</h1>
+                                <h1 className='text-sm font-semibold'>{holder?.email}</h1>
+                                <button
+                                    className='border py-1 px-2 rounded my-2'
+                                    onClick={() => window.open(`/shareholder-details/${holder._id}`, '_blank')}
+                                >
+                                    View details
+                                </button>
                             </div>
-                        ))
-                    }
-                </div>
+                        </div>
+                    ))
+                }
             </section>
 
             <section className='flex justify-end'>
-                <button className="bg-[#6E3FF3] text-white px-4 rounded-md py-2 cursor-pointer" onClick={() => document.getElementById('share-profit-modal').showModal()}>
+                <button className="bg-[#6E3FF3] text-white px-4 py-2 rounded" onClick={() => document.getElementById('share-profit-modal').showModal()}>
                     <span className='flex items-center gap-2'>
                         <TbTransactionDollar />
                         Share profit
@@ -163,11 +153,10 @@ const ProfitShare = () => {
                 </button>
             </section>
 
-            {/* Shareholders info table */}
+            {/* Table */}
             <section>
                 <div className="overflow-x-auto mt-5 mb-5">
                     <table className="table table-zebra">
-                        {/* head */}
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -181,21 +170,19 @@ const ProfitShare = () => {
                         <tbody>
                             {
                                 shareHolderInfo.length > 0 ? (
-                                    shareHolderInfo.map((info, index) => {
-                                        return (
-                                            <tr key={index}>
-                                                <td>{info.date}</td>
-                                                <td>{info.name}</td>
-                                                <td>{info.mobile}</td>
-                                                <td>{info.sharedPercent}</td>
-                                                <td>{numberFormat(info.sharedProfitBalance)}</td>
-                                                <td>{info.userName}</td>
-                                            </tr>
-                                        );
-                                    })
+                                    shareHolderInfo.map((info, i) => (
+                                        <tr key={i}>
+                                            <td>{moment(info.date).format('DD-MMM-YYYY')}</td>
+                                            <td>{info.name}</td>
+                                            <td>{info.mobile}</td>
+                                            <td>{info.sharedPercent}</td>
+                                            <td>{numberFormat(info.sharedProfitBalance)}</td>
+                                            <td>{info.userName}</td>
+                                        </tr>
+                                    ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="8" className="text-center">No record found</td>
+                                        <td colSpan="6" className="text-center">No record found</td>
                                     </tr>
                                 )
                             }
@@ -210,70 +197,46 @@ const ProfitShare = () => {
                     <form method="dialog">
                         <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 bg-[#6E3FF3] text-white hover:bg-red-500">✕</button>
                     </form>
-                    <h3 className="font-bold text-lg">Share profit</h3>
-                    <form onSubmit={handleSubmit} className='space-y-4'>
+                    <h3 className="font-bold text-lg mb-3">Distribute Monthly Profit</h3>
+
+                    <form onSubmit={handleDistributeProfit} className="space-y-4">
+
                         <div>
-                            <label className='block font-semibold'>Share holder name:</label>
+                            <label className='block font-semibold'>Select month:</label>
                             <select
                                 required
-                                value={shareProfit?.shareHoldersName || ''}
-                                onChange={(e) => {
-                                    const selected = shareHolders.find(item => item.shareHoldersName === e.target.value);
-                                    setShareProfit(selected || {});
-                                }}
+                                value={selectedMonth}
+                                onChange={handleMonthChange}
                                 className='!border !border-gray-300 px-3 py-2 rounded w-full'
                             >
-                                <option value="">Select a shareholder</option>
-                                {shareHolders.map((holder, idx) => (
-                                    <option key={idx} value={holder.shareHoldersName}>
-                                        {holder.shareHoldersName}
+                                <option value="">Select month</option>
+                                {availableMonths.map((m, i) => (
+                                    <option key={i} value={`${m.month}-${m.year}`}>
+                                        {m.month} {m.year}
                                     </option>
                                 ))}
                             </select>
                         </div>
 
                         <div>
-                            <label className='block font-semibold'>Share holder number:</label>
+                            <label className='block font-semibold'>Available Profit for selected month:</label>
                             <input
                                 type="text"
-                                value={shareProfit?.mobile || ''}
                                 readOnly
+                                value={numberFormat(monthlyProfitBalance || 0)}
                                 className='border px-3 py-2 rounded w-full bg-gray-100'
                             />
                         </div>
 
                         <div>
-                            <label className='block font-semibold'>Share holder email:</label>
-                            <input
-                                type="email"
-                                value={shareProfit?.email || ''}
-                                readOnly
-                                className='border px-3 py-2 rounded w-full bg-gray-100'
-                            />
-                        </div>
-
-                        <div>
-                            <label className='block font-semibold'>Profit share (%):</label>
+                            <label className='block font-semibold'>Amount to distribute:</label>
                             <input
                                 type="number"
                                 required
-                                value={profitPercent}
-                                onChange={handleProfitPercent}
-                                className='!border !border-gray-300 px-3 py-2 rounded w-full'
-                            />
-                        </div>
-
-                        <div>
-                            <label className='block font-semibold'>
-                                Will get
-                                <span className='text-sm'>
-                                    (Current Balance {numberFormat(mainBalance)} BDT)
-                                </span>:
-                            </label>
-                            <input
-                                type="text"
-                                value={numberFormat(profitBalance || 0)}
-                                readOnly
+                                min={1}
+                                max={monthlyProfitBalance}
+                                value={profitBalance}
+                                onChange={(e) => setProfitBalance(parseFloat(e.target.value))}
                                 className='!border !border-gray-300 px-3 py-2 rounded w-full'
                             />
                         </div>
@@ -287,9 +250,6 @@ const ProfitShare = () => {
                     </form>
                 </div>
             </dialog>
-            {/* Modal */}
-
-
         </div>
     );
 };

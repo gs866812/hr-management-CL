@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import { toast } from 'react-toastify';
+import moment from 'moment';
 
 const ShareholderDetails = () => {
     const { id } = useParams();
@@ -60,18 +61,20 @@ const ShareholderDetails = () => {
                             <th>Shared %</th>
                             <th>Profit Amount</th>
                             <th>Total Profit</th>
+                            <th>Month</th>
                             <th>Main Balance</th>
-                            <th>By</th>
+                            <th>User</th>
                         </tr>
                     </thead>
                     <tbody>
                         {shareholderHistory.map((record, index) => (
                             <tr key={index}>
-                                <td>{record.date}</td>
+                                <td>{moment(record.date).format('DD-MMM-yyyy')}</td>
                                 <td>{record.currentTime}</td>
                                 <td>{record.sharedPercent}%</td>
                                 <td>{numberFormat(record.sharedProfitBalance)}</td>
                                 <td>{numberFormat(record.totalProfitBalance)}</td>
+                                <td>{record.month}</td>
                                 <td>{numberFormat(record.mainBalance)}</td>
                                 <td>{record.userName}</td>
                             </tr>
