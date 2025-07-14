@@ -57,12 +57,12 @@ const ShareholderDetails = () => {
                     <thead className='bg-gray-200'>
                         <tr>
                             <th>Date</th>
-                            <th>Time</th>
                             <th>Shared %</th>
-                            <th>Profit Amount</th>
+                            <th>
+                                {mobile === '01795616265'? 'Transfer Amount' : 'Profit Amount'}
+                            </th>
                             <th>Total Profit</th>
                             <th>Month</th>
-                            <th>Main Balance</th>
                             <th>User</th>
                         </tr>
                     </thead>
@@ -70,12 +70,15 @@ const ShareholderDetails = () => {
                         {shareholderHistory.map((record, index) => (
                             <tr key={index}>
                                 <td>{moment(record.date).format('DD-MMM-yyyy')}</td>
-                                <td>{record.currentTime}</td>
                                 <td>{record.sharedPercent}%</td>
-                                <td>{numberFormat(record.sharedProfitBalance)}</td>
+                                <td>
+                                    {numberFormat(
+                                        record.sharedProfitBalance ?? record.transferProfitBalance
+                                    )}
+                                </td>
+
                                 <td>{numberFormat(record.totalProfitBalance)}</td>
                                 <td>{record.month}</td>
-                                <td>{numberFormat(record.mainBalance)}</td>
                                 <td>{record.userName}</td>
                             </tr>
                         ))}
