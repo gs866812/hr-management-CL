@@ -170,7 +170,7 @@ const ExpenseTable = () => {
     const handlePageClick = (page) => { setCurrentPage(page); };
 
     return (
-        <div className="w-full bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <div className="w-full bg-white rounded-xl shadow-lg border border-gray-100 p-6 ">
 
 
 

@@ -21,7 +21,7 @@ const Root = () => {
 
                 {/* Scrollable Outlet Container */}
                 <div className="w-[80%] h-[calc(100vh-64px)] px-2 my-2">
-                    <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="h-full overflow-y-auto pr-2">
                         <Outlet />
                     </div>
                 </div>
