@@ -12,7 +12,7 @@ import moment from 'moment';
 import { FaMoneyBillTransfer } from 'react-icons/fa6';
 
 const ProfitShare = () => {
-    const { user, currentUser } = useContext(ContextData);
+    const { user, currentUser, unpaidAmount } = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
     const axiosSecure = useAxiosSecure();
     const dispatch = useDispatch();

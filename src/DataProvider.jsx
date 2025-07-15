@@ -38,6 +38,8 @@ const DataProvider = ({ children }) => {
     const [attendanceInfo, setAttendanceInfo] = useState([]);
     const [salaryAndPF, setSalaryAndPF] = useState({});
 
+    const [unpaidAmount, setUnpaidAmount] = useState(0);
+
 
 
     const dispatch = useDispatch();
@@ -48,6 +50,29 @@ const DataProvider = ({ children }) => {
 
 
 
+    // ****************************************************************
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const token = localStorage.getItem('jwtToken');
+            if (user && token) {
+                clearInterval(interval);
+                fetchUnpaid();
+            }
+        }, 200);
+
+        const fetchUnpaid = async () => {
+            try {
+                const response = await axiosProtect.get('/getUnpaidAmount', {
+                    params: { userEmail: user.email },
+                });
+                setUnpaidAmount(response.data.totalUnpaid);
+            } catch (error) {
+                toast.error('Error fetching data');
+            }
+        };
+
+        return () => clearInterval(interval);
+    }, [refetch, user]);
     // ****************************************************************
     useEffect(() => {
         const interval = setInterval(() => {
@@ -483,6 +508,7 @@ const DataProvider = ({ children }) => {
         totalEarnings,
         attendanceInfo,
         salaryAndPF,
+        unpaidAmount,
     };
 
     return <ContextData.Provider value={info}>{children}</ContextData.Provider>;
