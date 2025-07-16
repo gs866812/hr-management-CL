@@ -39,6 +39,7 @@ const ShareholderDetails = () => {
     // Get common info from the first item
     const { name, email, mobile } = shareholderHistory[0];
     const totalShared = shareholderHistory.reduce((sum, item) => sum + item.sharedProfitBalance, 0);
+    const totalTransferred = shareholderHistory.reduce((sum, item) => sum + item.transferProfitBalance, 0);
 
     return (
         <div className='max-w-5xl mx-auto mt-10 p-6 border rounded shadow'>
@@ -49,7 +50,7 @@ const ShareholderDetails = () => {
                 <p><strong>Email:</strong> {email}</p>
                 <p><strong>Mobile:</strong> {mobile}</p>
                 <p><strong>Total Shares:</strong> {shareholderHistory.length}</p>
-                <p><strong>Total Shared Profit:</strong> {numberFormat(totalShared)} BDT</p>
+                <p><strong>Total Shared Profit:</strong> {numberFormat(totalShared || totalTransferred)} BDT</p>
             </div>
 
             <div className="overflow-x-auto">

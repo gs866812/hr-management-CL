@@ -78,7 +78,7 @@ const AddMainBalanceModal = () => {
             <dialog id="addMainBalance" className="modal">
                 <div className="modal-box">
                     <form method="dialog">
-                        <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                        <button className="btn btn-sm btn-circle absolute right-2 top-2 hover:bg-red-500 hover:text-white">✕</button>
                     </form>
 
                     <h3 className="font-bold text-lg">Add Balance</h3>

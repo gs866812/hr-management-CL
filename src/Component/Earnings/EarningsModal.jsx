@@ -117,7 +117,7 @@ const EarningsModal = () => {
                 <div className="modal-box">
                     <form method="dialog">
                         {/* if there is a button in form, it will close the modal */}
-                        <button className="btn btn-sm btn-circle btn-ghost absolute right-0 top-0">✕</button>
+                        <button className="btn btn-sm btn-circle absolute right-1 top-1 hover:bg-red-500 hover:text-white">✕</button>
                     </form>
                     <h3 className="font-bold text-lg">Add new Earnings:</h3>
                     <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
@@ -182,7 +182,7 @@ const EarningsModal = () => {
                             <select name="status" required value={formData.status} onChange={handleChange} className="input input-bordered w-full !border !border-gray-300 mt-1">
                                 <option value="">Select</option>
                                 <option value="Paid">Paid</option>
-                                <option value="Unpaid">Due</option>
+                                <option value="Unpaid">Unpaid</option>
                             </select>
                         </div>
 

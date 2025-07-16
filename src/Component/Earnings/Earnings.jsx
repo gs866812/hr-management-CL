@@ -136,7 +136,10 @@ const Earnings = () => {
                                         <td>{item.convertRate.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                         <td>{item.convertedBdt.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                         <td>{item.status}</td>
-                                        <td><FaRegEdit onClick={() => handleEdit(item._id)} className="cursor-pointer" /></td>
+                                        <td>
+                                            <FaRegEdit  className="cursor-pointer hover:text-red-500" title='Restricted'/>
+                                            {/* onClick={() => handleEdit(item._id)} */}
+                                        </td>
                                     </tr>
                                 ))
                             ) : (

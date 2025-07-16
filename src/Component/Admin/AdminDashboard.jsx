@@ -23,9 +23,9 @@ const AdminDashboard = () => {
                 </button>
             </section>
 
-            <section className='flex justify-start space-x-4'>
-                <div className='w-1/6 rounded-md py-4 flex flex-col items-center shadow-md space-y-1.5 border !border-gray-300'>
-                    <h2 className='text-xl'>Balance</h2>
+            <section className='flex justify-center space-x-2'>
+                <div className='w-1/6 rounded-md py-4 flex flex-col items-center shadow-md space-y-1.5 border !border-yellow-300 bg-yellow-400 font-semibold'>
+                    <h2 className='text-xl'>Total Balance</h2>
                     <p>
                         {
                             mainBalance &&
@@ -33,12 +33,22 @@ const AdminDashboard = () => {
                         }
                     </p>
                 </div>
-                <div className='w-1/6 rounded-md py-4 flex flex-col items-center shadow-md space-y-1.5 border !border-gray-300'>
+                <div className='w-1/6 rounded-md py-4 flex flex-col items-center shadow-md space-y-1.5 border !border-red-300 bg-red-400 text-white font-semibold'>
                     <h2 className='text-xl'>Un-paid</h2>
                     <p>
                         {
                             unpaidAmount &&
                             parseFloat(unpaidAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        }
+                    </p>
+                </div>
+
+                <div className='w-1/6 rounded-md py-4 flex flex-col items-center shadow-md space-y-1.5 border !border-green-300 text-white bg-green-400 font-semibold'>
+                    <h2 className='text-xl'>Current Balance</h2>
+                    <p>
+                        {
+                            unpaidAmount &&
+                            parseFloat(mainBalance - unpaidAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                         }
                     </p>
                 </div>

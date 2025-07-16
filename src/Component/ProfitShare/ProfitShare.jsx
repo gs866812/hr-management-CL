@@ -98,7 +98,6 @@ const ProfitShare = () => {
         const [month, year] = selectedMonth.split('-');
         const sharedAmount = parseFloat(profitBalance);
 
-        console.log(month, year, sharedAmount, monthlyProfitBalance);
 
         if (sharedAmount > monthlyProfitBalance) {
             toast.error('Cannot share more than available monthly profit');
