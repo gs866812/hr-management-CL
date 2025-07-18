@@ -4,7 +4,7 @@ import AddMainBalanceModal from './AddMainBalanceModal';
 import { ContextData } from '../../DataProvider';
 
 const AdminDashboard = () => {
-    const { user, userName, currentUser, mainBalance, unpaidAmount  } = useContext(ContextData);
+    const { user, userName, currentUser, mainBalance, unpaidAmount, totalExpense, sharedProfit  } = useContext(ContextData);
 
     // ****************************************************************
     const handleAddBalance = () => {
@@ -25,7 +25,7 @@ const AdminDashboard = () => {
 
             <section className='flex justify-center space-x-2'>
                 <div className='w-1/6 rounded-md py-4 flex flex-col items-center shadow-md space-y-1.5 border !border-yellow-300 bg-yellow-400 font-semibold'>
-                    <h2 className='text-xl'>Total Balance</h2>
+                    <h2 className='text-xl'>Total Revenue</h2>
                     <p>
                         {
                             mainBalance &&
@@ -33,7 +33,16 @@ const AdminDashboard = () => {
                         }
                     </p>
                 </div>
-                <div className='w-1/6 rounded-md py-4 flex flex-col items-center shadow-md space-y-1.5 border !border-red-300 bg-red-400 text-white font-semibold'>
+                <div className='w-1/6 rounded-md py-4 flex flex-col items-center shadow-md space-y-1.5 border !border-blue-300 bg-blue-400 font-semibold'>
+                    <h2 className='text-xl'>Total Expense</h2>
+                    <p>
+                        {
+                            totalExpense &&
+                            parseFloat(totalExpense).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        }
+                    </p>
+                </div>
+                <div className='w-1/6 rounded-md py-4 flex flex-col items-center shadow-md space-y-1.5 border !border-red-300 bg-red-400  font-semibold'>
                     <h2 className='text-xl'>Un-paid</h2>
                     <p>
                         {
@@ -42,13 +51,22 @@ const AdminDashboard = () => {
                         }
                     </p>
                 </div>
+                <div className='w-1/6 rounded-md py-4 flex flex-col items-center shadow-md space-y-1.5 border !border-red-300 bg-purple-500  font-semibold'>
+                    <h2 className='text-xl'>Shared Amount</h2>
+                    <p>
+                        {
+                            sharedProfit &&
+                            parseFloat(sharedProfit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        }
+                    </p>
+                </div>
 
-                <div className='w-1/6 rounded-md py-4 flex flex-col items-center shadow-md space-y-1.5 border !border-green-300 text-white bg-green-400 font-semibold'>
+                <div className='w-1/6 rounded-md py-4 flex flex-col items-center shadow-md space-y-1.5 border !border-green-500  bg-green-500 font-semibold'>
                     <h2 className='text-xl'>Current Balance</h2>
                     <p>
                         {
                             unpaidAmount &&
-                            parseFloat(mainBalance - unpaidAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                            parseFloat(mainBalance - unpaidAmount - totalExpense).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                         }
                     </p>
                 </div>

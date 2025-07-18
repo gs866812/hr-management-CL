@@ -39,6 +39,7 @@ const DataProvider = ({ children }) => {
     const [salaryAndPF, setSalaryAndPF] = useState({});
 
     const [unpaidAmount, setUnpaidAmount] = useState(0);
+    const [sharedProfit, setSharedProfit] = useState(0);
 
 
 
@@ -217,6 +218,30 @@ const DataProvider = ({ children }) => {
                 setTotalExpense(response.data.totalExpense);
                 setTotalEarnings(response.data.totalEarnings);
                 setTotalProfit(response.data.profit);
+            } catch (error) {
+                toast.error('Error fetching data');
+            }
+        };
+
+        return () => clearInterval(interval);
+    }, [refetch, user]);
+    // ****************************************************************
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const token = localStorage.getItem('jwtToken');
+            if (user && token) {
+                clearInterval(interval);
+                fetchSharedProfit();
+            }
+        }, 200);
+
+        const fetchSharedProfit = async () => {
+            try {
+                const response = await axiosProtect.get('/getSharedProfit', {
+                    params: { userEmail: user.email },
+                });
+                setSharedProfit(response.data.totalProfitShared);
+
             } catch (error) {
                 toast.error('Error fetching data');
             }
@@ -509,6 +534,7 @@ const DataProvider = ({ children }) => {
         attendanceInfo,
         salaryAndPF,
         unpaidAmount,
+        sharedProfit,
     };
 
     return <ContextData.Provider value={info}>{children}</ContextData.Provider>;
