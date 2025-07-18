@@ -66,7 +66,7 @@ const AdminDashboard = () => {
                     <p>
                         {
                             unpaidAmount &&
-                            parseFloat(mainBalance - unpaidAmount - totalExpense).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                            parseFloat(mainBalance - unpaidAmount - totalExpense - sharedProfit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                         }
                     </p>
                 </div>
