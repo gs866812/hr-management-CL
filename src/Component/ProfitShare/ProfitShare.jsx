@@ -60,7 +60,7 @@ const ProfitShare = () => {
             }
         };
         fetchMonths();
-    }, []);
+    }, [refetch]);
 
     useEffect(() => {
         const fetchShareHolderInfo = async () => {
