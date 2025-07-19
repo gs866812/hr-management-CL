@@ -411,7 +411,7 @@ const ProfitShare = () => {
                         </div>
 
                         <div>
-                            <label className='block font-semibold'>Available Profit for selected month:</label>
+                            <label className='block font-semibold'>Available Profit for selected month: {`Total: (${monthlyProfitBalance})`}</label>
                             <input
                                 type="text"
                                 readOnly
