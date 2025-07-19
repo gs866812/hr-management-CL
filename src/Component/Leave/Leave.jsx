@@ -8,18 +8,19 @@ const Leave = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onSubmit = async (data) => {
-    setIsSubmitting(true);
-    try {
-      const response = await axios.post('/api/leave', data);
-      if (response.status === 201) {
-        setSubmissionStatus({ success: true, message: 'Leave application submitted successfully!' });
-        reset();
-      }
-    } catch (error) {
-      setSubmissionStatus({ success: false, message: error.response?.data?.message || 'Failed to submit leave application' });
-    } finally {
-      setIsSubmitting(false);
-    }
+    console.log(data);
+    // setIsSubmitting(true);
+    // try {
+    //   const response = await axios.post('/api/leave', data);
+    //   if (response.status === 201) {
+    //     setSubmissionStatus({ success: true, message: 'Leave application submitted successfully!' });
+    //     reset();
+    //   }
+    // } catch (error) {
+    //   setSubmissionStatus({ success: false, message: error.response?.data?.message || 'Failed to submit leave application' });
+    // } finally {
+    //   setIsSubmitting(false);
+    // }
   };
 
   // Calculate days between dates

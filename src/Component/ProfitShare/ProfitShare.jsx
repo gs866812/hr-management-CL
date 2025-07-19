@@ -12,7 +12,7 @@ import moment from 'moment';
 import { FaMoneyBillTransfer } from 'react-icons/fa6';
 
 const ProfitShare = () => {
-    const { user, currentUser, unpaidAmount } = useContext(ContextData);
+    const { user, currentUser, mainBalance, unpaidAmount, totalExpense, sharedProfit } = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
     const axiosSecure = useAxiosSecure();
     const dispatch = useDispatch();
@@ -23,6 +23,7 @@ const ProfitShare = () => {
     const [availableMonths, setAvailableMonths] = useState([]);
     const [selectedMonth, setSelectedMonth] = useState('');
     const [monthlyProfitBalance, setMonthlyProfitBalance] = useState(0);
+    const [monthlyRemainingProfitBalance, setMonthlyRemainingProfitBalance] = useState(0);
     const [profitBalance, setProfitBalance] = useState('');
 
     const [newShareholder, setNewShareholder] = useState({
@@ -31,6 +32,12 @@ const ProfitShare = () => {
         email: '',
         userName: ''
     });
+
+    const totalSharedAmount = shareHolderInfo.reduce(
+        (acc, info) => acc + (info.sharedProfitBalance || 0) + (info.transferProfitBalance || 0),
+        0
+    );
+
 
 
 
@@ -82,6 +89,7 @@ const ProfitShare = () => {
         const [month, year] = value.split('-');
         const match = availableMonths.find(item => item.month === month && item.year === year);
         setMonthlyProfitBalance(match?.profit || 0);
+        setMonthlyRemainingProfitBalance(match?.remaining || 0);
     };
 
     const numberFormat = (num) => {
@@ -99,7 +107,7 @@ const ProfitShare = () => {
         const sharedAmount = parseFloat(profitBalance);
 
 
-        if (sharedAmount > monthlyProfitBalance) {
+        if (sharedAmount > monthlyRemainingProfitBalance) {
             toast.error('Cannot share more than available monthly profit');
             return;
         }
@@ -118,6 +126,7 @@ const ProfitShare = () => {
                 setProfitBalance('');
                 setSelectedMonth('');
                 setMonthlyProfitBalance(0);
+                setMonthlyRemainingProfitBalance(0);
                 document.getElementById('share-profit-modal').close();
             } else {
                 toast.error('Distribution failed');
@@ -187,7 +196,7 @@ const ProfitShare = () => {
         const transferAmount = parseFloat(profitBalance);
 
 
-        if (transferAmount > monthlyProfitBalance) {
+        if (transferAmount > monthlyRemainingProfitBalance) {
             toast.error('Cannot transfer more than available monthly profit');
             return;
         }
@@ -206,6 +215,7 @@ const ProfitShare = () => {
                 setProfitBalance('');
                 setSelectedMonth('');
                 setMonthlyProfitBalance(0);
+                setMonthlyRemainingProfitBalance(0);
                 document.getElementById('transfer-profit-balance').close();
             } else {
                 toast.error('Transfer failed');
@@ -244,27 +254,31 @@ const ProfitShare = () => {
                 }
             </section>
 
-            <section className='flex justify-end gap-2'>
-                <button className="!border-[#6E3FF3] border-[1px] px-4 py-1 rounded text-[#6E3FF3] hover:bg-[#6E3FF3] hover:text-white" onClick={() => document.getElementById('add-shareholder-modal').showModal()}>
-                    <span className='flex items-center gap-2'>
-                        <IoMdPersonAdd />
-                        Add shareholder
-                    </span>
-                </button>
+            <section className='flex justify-between items-center gap-2'>
+                <h2 className='font-bold text-xl'>Total shared amount: {totalSharedAmount}</h2>
 
-                <button className="!border-[#6E3FF3] border-[1px] px-4 py-1 rounded text-[#6E3FF3] hover:bg-[#6E3FF3] hover:text-white" onClick={() => document.getElementById('transfer-profit-balance').showModal()}>
-                    <span className='flex items-center gap-2'>
-                        <FaMoneyBillTransfer />
-                        Transfer balance
-                    </span>
-                </button>
+                <div className='flex gap-2'>
+                    <button className="!border-[#6E3FF3] border-[1px] px-4 py-2 rounded text-[#6E3FF3] hover:bg-[#6E3FF3] hover:text-white" onClick={() => document.getElementById('add-shareholder-modal').showModal()}>
+                        <span className='flex items-center gap-2'>
+                            <IoMdPersonAdd />
+                            Add shareholder
+                        </span>
+                    </button>
 
-                <button className="bg-[#6E3FF3] text-white px-4 py-2 rounded" onClick={() => document.getElementById('share-profit-modal').showModal()}>
-                    <span className='flex items-center gap-2'>
-                        <TbTransactionDollar />
-                        Share profit
-                    </span>
-                </button>
+                    <button className="!border-[#6E3FF3] border-[1px] px-4 py-2 rounded text-[#6E3FF3] hover:bg-[#6E3FF3] hover:text-white" onClick={() => document.getElementById('transfer-profit-balance').showModal()}>
+                        <span className='flex items-center gap-2'>
+                            <FaMoneyBillTransfer />
+                            Transfer balance
+                        </span>
+                    </button>
+
+                    <button className="bg-[#6E3FF3] text-white px-4 py-2 rounded" onClick={() => document.getElementById('share-profit-modal').showModal()}>
+                        <span className='flex items-center gap-2'>
+                            <TbTransactionDollar />
+                            Share profit
+                        </span>
+                    </button>
+                </div>
             </section>
 
             {/* Table */}
@@ -277,7 +291,7 @@ const ProfitShare = () => {
                                 <th>Name</th>
                                 <th>Mobile</th>
                                 <th>Share(%)</th>
-                                <th>Profit/Transfer Balance</th>
+                                <th>Share/Transfer Balance</th>
                                 <th>User</th>
                             </tr>
                         </thead>
@@ -338,11 +352,11 @@ const ProfitShare = () => {
                         </div>
 
                         <div>
-                            <label className='block font-semibold'>Available Profit for selected month:</label>
+                            <label className='block font-semibold'>Available Profit for selected month: {`Total: (${monthlyProfitBalance})`}</label>
                             <input
                                 type="text"
                                 readOnly
-                                value={numberFormat(monthlyProfitBalance || 0)}
+                                value={numberFormat(monthlyRemainingProfitBalance || 0)}
                                 className='border px-3 py-2 rounded w-full bg-gray-100'
                             />
                         </div>
@@ -353,7 +367,7 @@ const ProfitShare = () => {
                                 type="number"
                                 required
                                 min={1}
-                                max={monthlyProfitBalance}
+                                max={monthlyRemainingProfitBalance}
                                 value={profitBalance}
                                 onChange={(e) => setProfitBalance(parseFloat(e.target.value))}
                                 className='!border !border-gray-300 px-3 py-2 rounded w-full'
@@ -401,7 +415,7 @@ const ProfitShare = () => {
                             <input
                                 type="text"
                                 readOnly
-                                value={numberFormat(monthlyProfitBalance || 0)}
+                                value={numberFormat(monthlyRemainingProfitBalance || 0)}
                                 className='border px-3 py-2 rounded w-full bg-gray-100'
                             />
                         </div>
@@ -412,7 +426,7 @@ const ProfitShare = () => {
                                 type="number"
                                 required
                                 min={1}
-                                max={monthlyProfitBalance}
+                                max={monthlyRemainingProfitBalance}
                                 value={profitBalance}
                                 onChange={(e) => setProfitBalance(parseFloat(e.target.value))}
                                 className='!border !border-gray-300 px-3 py-2 rounded w-full'

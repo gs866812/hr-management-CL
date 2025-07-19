@@ -22,7 +22,7 @@ import {
 } from 'recharts';
 
 const Analytics = () => {
-    const { user, searchOption, setTotalEarnings } = useContext(ContextData);
+    const { user, searchOption, setTotalEarnings, monthlyProfit, unpaidAmount, sharedProfit } = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
     const [expenseList, setExpenseList] = useState([]);
     const [earnings, setEarnings] = useState([]);
@@ -383,6 +383,55 @@ const Analytics = () => {
                     </ResponsiveContainer>
                 </div>
             </div>
+
+            <section>
+                <div className="overflow-x-auto">
+                    <table className="table table-zebra">
+                        {/* head */}
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Earning</th>
+                                <th>Expense</th>
+                                <th>Profit</th>
+                                <th>Shared Profit</th>
+                                <th>Remaining Profit</th>
+                                <th>Un-paid</th>
+                                <th>Year</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {
+                                monthlyProfit.length > 0 ? (
+                                    monthlyProfit.map((info, i) => (
+                                        <tr key={i}>
+                                            <td>{info.month}</td>
+                                            <td>{info.earnings ? formatNumber(info.earnings) : '0.00'}</td>
+                                            <td>{info.expense ? formatNumber(info.expense) : '0.00'}</td>
+                                            <td>{info.profit ? formatNumber(info.profit) : '0.00'}</td>
+                                            <td>
+                                                {Array.isArray(info.shared) && info.shared.length > 0
+                                                    ? formatNumber(
+                                                        info.shared.reduce((total, s) => total + (s.amount || 0), 0)
+                                                    )
+                                                    : '0.00'}
+                                            </td>
+
+                                            <td>{info.remaining ? formatNumber(info.remaining) : '0.00'}</td>
+                                            <td>{info.unpaid ? formatNumber(info.unpaid) : '0.00'}</td>
+                                            <td>{info.year}</td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="6" className="text-center">No record found</td>
+                                    </tr>
+                                )
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </div>
     );
 };

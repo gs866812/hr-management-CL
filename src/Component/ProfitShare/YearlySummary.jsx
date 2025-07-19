@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Bar, CartesianGrid, Cell, ComposedChart, LabelList, Legend, Line, Pie, PieChart, ResponsiveContainer, Sector, Tooltip, XAxis, YAxis } from 'recharts';
 
 const YearlySummary = () => {
-    const { user, searchOption, setTotalEarnings } = useContext(ContextData);
+    const { user, searchOption, setTotalEarnings, mainBalance, unpaidAmount, totalExpense, sharedProfit } = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
     const [expenseList, setExpenseList] = useState([]);
     const [earnings, setEarnings] = useState([]);
@@ -80,7 +80,7 @@ const YearlySummary = () => {
 
     // Format number to have 2 decimal places
     const formatNumber = (num) => {
-        return Number(num).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        return Number(num).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 
     // Process data for the charts
@@ -277,23 +277,43 @@ const YearlySummary = () => {
             <div className='bg-gray-100 rounded-md p-2 shadow'>
                 <h3 className="text-xl font-bold mt-2">Yearly Summary</h3>
                 <div className='flex items-center'>
-                    <div className='w-1/2 flex gap-2'>
-                        <div className="bg-white rounded-md p-4">
-                            <h4 className="text-xl font-semibold text-purple-800 mb-2">Revenue</h4>
-                            <p className="font-bold text-purple-600">{formatNumber(yearlyTotals.earnings)} BDT</p>
+                    <div className='w-1/2 flex flex-col gap-3'>
+                        <div className='flex gap-2'>
+                            <div className="bg-white rounded-md p-4">
+                                <h4 className="text-xl font-semibold text-purple-800 mb-2">Revenue</h4>
+                                <p className="font-bold text-purple-600">{formatNumber(yearlyTotals.earnings)} BDT</p>
+                            </div>
+                            <div className="bg-white rounded-md p-4">
+                                <h4 className="text-xl font-semibold text-orange-800 mb-2">Expense</h4>
+                                <p className=" font-bold text-orange-600">{formatNumber(yearlyTotals.expense)} BDT</p>
+                            </div>
+
+                            <div className={`${yearlyTotals.profit >= 0 ? 'bg-green-100 border-green-200' : 'bg-red-100 border-red-200'} rounded-lg p-4 shadow border`}>
+                                <h4 className={`text-xl font-semibold mt-2 ${yearlyTotals.profit >= 0 ? 'text-green-800' : 'text-red-800'}`}>Profit</h4>
+                                <p className={`font-bold ${yearlyTotals.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNumber(yearlyTotals.profit)} BDT</p>
+                            </div>
                         </div>
-                        <div className="bg-white rounded-md p-4">
-                            <h4 className="text-xl font-semibold text-orange-800 mb-2">Expense</h4>
-                            <p className=" font-bold text-orange-600">{formatNumber(yearlyTotals.expense)} BDT</p>
-                        </div>
 
+                        <div className='flex gap-2'>
+                            <div className="bg-white rounded-md p-4">
+                                <h4 className="text-xl font-semibold text-purple-800 mb-2">Un-paid</h4>
+                                <p className="font-bold text-purple-600">{formatNumber(unpaidAmount)} BDT</p>
+                            </div>
+                            <div className="bg-white rounded-md p-4">
+                                <h4 className="text-xl font-semibold text-orange-800 mb-2">Shared</h4>
+                                <p className=" font-bold text-orange-600">{formatNumber(sharedProfit)} BDT</p>
+                            </div>
 
-
-                        <div className={`${yearlyTotals.profit >= 0 ? 'bg-green-100 border-green-200' : 'bg-red-100 border-red-200'} rounded-lg p-4 shadow border`}>
-                            <h4 className={`text-xl font-semibold mt-2 ${yearlyTotals.profit >= 0 ? 'text-green-800' : 'text-red-800'}`}>Profit</h4>
-                            <p className={`font-bold ${yearlyTotals.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNumber(yearlyTotals.profit)} BDT</p>
+                            <div className={`rounded-lg p-4 shadow `}>
+                                <h4 className={`text-xl font-semibold mt-2 text-green-800`}>Available</h4>
+                                <p className={`font-bold text-green-600`}>{formatNumber(yearlyTotals.profit - unpaidAmount - sharedProfit)} BDT</p>
+                            </div>
                         </div>
                     </div>
+
+                    {/*  */}
+
+                    {/*  */}
                     <div className='w-1/2 h-52'>
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>

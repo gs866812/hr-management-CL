@@ -4,7 +4,7 @@ import AddMainBalanceModal from './AddMainBalanceModal';
 import { ContextData } from '../../DataProvider';
 
 const AdminDashboard = () => {
-    const { user, userName, currentUser, mainBalance, unpaidAmount, totalExpense, sharedProfit  } = useContext(ContextData);
+    const { user, userName, currentUser, mainBalance, unpaidAmount, totalExpense, sharedProfit } = useContext(ContextData);
 
     // ****************************************************************
     const handleAddBalance = () => {
@@ -42,6 +42,15 @@ const AdminDashboard = () => {
                         }
                     </p>
                 </div>
+                <div className='w-1/6 rounded-md py-4 flex flex-col items-center shadow-md space-y-1.5 border !border-gray-400 bg-gray-400 font-semibold'>
+                    <h2 className='text-xl'>Total Profit</h2>
+                    <p>
+                        {
+                            mainBalance && totalExpense &&
+                            parseFloat(mainBalance - totalExpense).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        }
+                    </p>
+                </div>
                 <div className='w-1/6 rounded-md py-4 flex flex-col items-center shadow-md space-y-1.5 border !border-red-300 bg-red-400  font-semibold'>
                     <h2 className='text-xl'>Un-paid</h2>
                     <p>
@@ -70,6 +79,9 @@ const AdminDashboard = () => {
                         }
                     </p>
                 </div>
+            </section>
+            <section className='flex justify-center space-x-2'>
+
             </section>
 
             {/* ******************************************** */}
