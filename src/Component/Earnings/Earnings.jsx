@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { FaPlus, FaRegEdit } from 'react-icons/fa';
+import { CiEdit } from "react-icons/ci";
 import EarningsModal from './EarningsModal';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import { ContextData } from '../../DataProvider';
@@ -7,6 +8,10 @@ import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import { BsChevronDoubleLeft, BsChevronDoubleRight } from "react-icons/bs";
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
+import useAxiosSecure from '../../utils/useAxiosSecure';
+import { setRefetch } from '../../redux/refetchSlice';
+import { useDispatch, useSelector } from 'react-redux';
 
 const Earnings = () => {
     const { user } = useContext(ContextData);
@@ -21,31 +26,38 @@ const Earnings = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
 
+    const axiosSecure = useAxiosSecure();
+
+
+    const dispatch = useDispatch();
+    const refetch = useSelector((state) => state.refetch.refetch);
+
     useEffect(() => {
+        const fetchEarnings = async () => {
+            try {
+                const res = await axiosProtect.get('/getEarnings', {
+                    params: {
+                        userEmail: user?.email,
+                        page: currentPage,
+                        size: itemsPerPage,
+                        search: searchEarnings,
+                        month: selectedMonth
+                    }
+                });
+
+                setEarnings(res.data.result || []);
+                setTotalCount(res.data.count || 0);
+                setTotalSummary(res.data.totalSummary || {});
+            } catch (err) {
+                toast.error('Failed to fetch earnings');
+            }
+        };
+
         fetchEarnings();
-    }, [user?.email, currentPage, itemsPerPage, searchEarnings, selectedMonth]);
+    }, [user?.email, currentPage, itemsPerPage, searchEarnings, selectedMonth, refetch]);
 
-    const fetchEarnings = async () => {
-        try {
-            const res = await axiosProtect.get('/getEarnings', {
-                params: {
-                    userEmail: user?.email,
-                    page: currentPage,
-                    size: itemsPerPage,
-                    search: searchEarnings,
-                    month: selectedMonth
-                }
-            });
 
-            setEarnings(res.data.result || []);
-            setTotalCount(res.data.count || 0);
-            setTotalSummary(res.data.totalSummary || {});
-        } catch (err) {
-            toast.error('Failed to fetch earnings');
-        }
-    };
-
-    const handleEdit = (id) => navigate(`/earnings/editEarnings/${id}`);
+    // const handleEdit = (id) => navigate(`/earnings/editEarnings/${id}`);
 
     const renderPageNumbers = () => {
         const pageNumbers = [];
@@ -72,10 +84,61 @@ const Earnings = () => {
         return pageNumbers;
     };
 
+    // **********************************************************************
+    const handleUnpaid = (item) => {
+        console.log(item);
+        Swal.fire({
+            title: "Are you sure?",
+            text: `You want to mark this earning as paid? Amount: ${item?.convertedBdt}`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes!"
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const fullDate = item?.date;
+                    const parsedDate = moment(fullDate, "DD.MM.YYYY");
+
+                    const res = await axiosSecure.put(`/changeEarningStatus/${item._id}`, {
+                        amount: item?.convertedBdt,
+                        year: parsedDate.format("YYYY"),
+                        month: item?.month,
+                    });
+
+                    if (res.data.modifiedCount > 0) {
+                        dispatch(setRefetch(!refetch));
+                        Swal.fire({
+                            title: "Paid!",
+                            text: "Successfully marked as paid.",
+                            icon: "success"
+                        });
+                    } else {
+                        Swal.fire({
+                            title: "No Change!",
+                            text: "Nothing was updated.",
+                            icon: "info"
+                        });
+                    }
+                } catch (error) {
+                    console.error("❌ Update failed:", error);
+                    Swal.fire({
+                        title: "Error!",
+                        text: "Failed to update the earning status.",
+                        icon: "error"
+                    });
+                }
+            }
+        });
+    };
+
+
+    // **********************************************************************
     return (
         <div className="mt-2 pb-2">
             <section className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">Earnings List</h2>
+                <h2 className="text-xl font-semibold text-gray-800">Earnings List </h2>
                 <div className="flex gap-2 flex-wrap">
                     <input
                         className="border border-gray-300 rounded px-2 py-1"
@@ -135,9 +198,14 @@ const Earnings = () => {
                                         <td>{item.totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                         <td>{item.convertRate.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                         <td>{item.convertedBdt.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                        <td>{item.status}</td>
+                                        <td className='flex'>
+                                            {item.status}
+                                            {item.status === 'Unpaid' && (
+                                                <CiEdit onClick={() => handleUnpaid(item)} className="cursor-pointer hover:text-yellow-500 ml-2" title='Edit' />
+                                            )}
+                                        </td>
                                         <td>
-                                            <FaRegEdit  className="cursor-pointer hover:text-red-500" title='Restricted'/>
+                                            <FaRegEdit className="cursor-pointer hover:text-red-500" title='Restricted' />
                                             {/* onClick={() => handleEdit(item._id)} */}
                                         </td>
                                     </tr>

@@ -238,7 +238,8 @@ const ExpenseTable = () => {
                                     <td>{exp.expenseStatus}</td>
                                     <td>{exp.expenseNote}</td>
                                     <td>{exp.userName}</td>
-                                    <td><FaRegEdit className='cursor-pointer' onClick={() => handleEditExpense(exp._id)} /></td>
+                                    <td><FaRegEdit/></td>
+                                    {/* <td><FaRegEdit className='cursor-pointer' onClick={() => handleEditExpense(exp._id)} /></td> */}
                                 </tr>
                             ))
                         ) : (
