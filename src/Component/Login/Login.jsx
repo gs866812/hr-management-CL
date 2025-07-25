@@ -42,7 +42,7 @@ const Login = () => {
 
             // Call backend to generate JWT
             const res = await axios.post(
-                'http://localhost:5000/jwt',
+                `${import.meta.env.VITE_BASE_URL}/jwt`,
                 emailData
             );
             if (res.data.token) {

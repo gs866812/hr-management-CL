@@ -3,7 +3,7 @@ import { useContext, useEffect } from 'react';
 import { ContextData } from '../DataProvider';
 
 const axiosProtect = axios.create({
-    baseURL: 'http://localhost:5000',
+    baseURL: `${import.meta.env.VITE_BASE_URL}`,
 });
 
 const useAxiosProtect = () => {
