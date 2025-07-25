@@ -2,6 +2,9 @@ import React, { useContext, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { ContextData } from '../../DataProvider';
+import moment from 'moment';
+import useAxiosSecure from '../../utils/useAxiosSecure';
+import { toast } from 'react-toastify';
 
 const Leave = () => {
   const { user, employeeList } = useContext(ContextData);
@@ -16,43 +19,82 @@ const Leave = () => {
 
   const [submissionStatus, setSubmissionStatus] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [leaveDates, setLeaveDates] = useState([]); // ✅ leave dates state
 
   const currentEmployee = employeeList.find(emp => emp.email === user?.email);
+
+  const axiosSecure = useAxiosSecure();
 
   useEffect(() => {
     if (currentEmployee) {
       setValue('employeeName', currentEmployee?.fullName);
       setValue('employeeId', currentEmployee.eid);
-      setValue('department', currentEmployee.department || 'IT');
+      setValue('department', currentEmployee.department || 'Webbriks');
       setValue('position', currentEmployee?.designation);
     }
   }, [currentEmployee, setValue]);
 
-  const onSubmit = async (data) => {
-    console.log(data);
-    // setIsSubmitting(true);
-    // try {
-    //   const response = await axios.post('/api/leave', data);
-    //   if (response.status === 201) {
-    //     setSubmissionStatus({ success: true, message: 'Leave application submitted successfully!' });
-    //     reset();
-    //   }
-    // } catch (error) {
-    //   setSubmissionStatus({
-    //     success: false,
-    //     message: error.response?.data?.message || 'Failed to submit leave application'
-    //   });
-    // } finally {
-    //   setIsSubmitting(false);
-    // }
-  };
-
   const startDate = watch('startDate');
   const endDate = watch('endDate');
-  const totalDays =
-    startDate && endDate
-      ? Math.round((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1
-      : 0;
+
+  // ✅ Helper: Get leave dates excluding Sundays
+  const getLeaveDates = (start, end) => {
+    const startDt = moment(start);
+    const endDt = moment(end);
+    const dateList = [];
+
+    while (startDt <= endDt) {
+      if (startDt.day() !== 0) { // 0 = Sunday
+        dateList.push(startDt.format('DD-MMM-YYYY'));
+      }
+      startDt.add(1, 'days');
+    }
+
+    return dateList;
+  };
+
+
+  // ✅ Watch for date change and update leaveDates
+  useEffect(() => {
+    if (startDate && endDate) {
+      const list = getLeaveDates(startDate, endDate);
+      setLeaveDates(list);
+    } else {
+      setLeaveDates([]);
+    }
+  }, [startDate, endDate]);
+
+  const onSubmit = async (data) => {
+    const updatedData = {
+      ...data,
+      startDate: moment(data.startDate).format('DD-MMM-YYYY'),
+      endDate: moment(data.endDate).format('DD-MMM-YYYY'),
+      leaveDates,
+      totalDays: leaveDates.length,
+      appliedDate: moment().format('DD-MMM-YYYY'),
+      email: user?.email,
+      status: 'Pending',
+    };
+
+    // console.log(updatedData);
+    setIsSubmitting(true);
+    try {
+      const response = await axiosSecure.post('/appliedLeave', updatedData);
+      if (response.data.message === 'success') {
+        toast.success('Leave request submitted successfully');
+        console.log(response.data);
+        reset();
+      }else{
+        toast.error(response.data.message);
+      }
+    } catch (error) {
+      toast.error('Failed to submit leave application. Please try again later.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const totalDays = leaveDates.length;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -69,6 +111,8 @@ const Leave = () => {
 
       <form onSubmit={handleSubmit(onSubmit)} className="bg-white shadow-md rounded-lg p-6">
         {/* Basic Information */}
+        {/* ... (no change in basic info section) */}
+
         <div className="mb-8 pb-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-[#6E3FF3] mb-4">Basic Information</h2>
 
@@ -136,6 +180,9 @@ const Leave = () => {
           <h2 className="text-xl font-semibold text-[#6E3FF3] mb-4">Leave Details</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Leave Type, Contact Number, Dates */}
+            {/* ... unchanged inputs ... */}
+
             <div>
               <label htmlFor="leaveType" className="block text-sm font-medium text-gray-700 mb-1">
                 Leave Type <span className="text-red-500">*</span>
@@ -203,7 +250,7 @@ const Leave = () => {
 
             <div>
               <label htmlFor="totalDays" className="block text-sm font-medium text-gray-700 mb-1">
-                Total Days
+                Total Days (excluding Sundays)
               </label>
               <input
                 id="totalDays"
@@ -216,6 +263,19 @@ const Leave = () => {
             </div>
           </div>
 
+          {/* ✅ Show leaveDates list */}
+          {leaveDates.length > 0 && (
+            <div className="mt-4 text-sm text-gray-700">
+              <strong>Leave Dates (excluding Sundays):</strong>
+              <ul className="list-disc ml-5 mt-1">
+                {leaveDates.map(date => (
+                  <li key={date}>{date}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Reason and Handover */}
           <div className="mt-6">
             <label htmlFor="reason" className="block text-sm font-medium text-gray-700 mb-1">
               Reason for Leave <span className="text-red-500">*</span>

@@ -326,7 +326,7 @@ const DataProvider = ({ children }) => {
             if (token) {
                 try {
                     const response = await axios.post(
-                        'https://webbriks.backendsafe.com/validate-token',
+                        'http://localhost:5000/validate-token',
                         null,
                         { headers: { Authorization: `Bearer ${token}` } }
                     );
@@ -378,7 +378,7 @@ const DataProvider = ({ children }) => {
                     try {
                         const emailData = { email: firebaseUser.email };
                         const res = await axios.post(
-                            'https://webbriks.backendsafe.com/jwt',
+                            'http://localhost:5000/jwt',
                             emailData
                         );
 
@@ -389,7 +389,7 @@ const DataProvider = ({ children }) => {
                             // Fetch user data with new token
                             try {
                                 const userRes = await axios.get(
-                                    'https://webbriks.backendsafe.com/users',
+                                    'http://localhost:5000/users',
                                     { headers: { Authorization: `Bearer ${res.data.token}` } }
                                 );
                                 const userData = userRes.data.find(u => u.email === firebaseUser.email);

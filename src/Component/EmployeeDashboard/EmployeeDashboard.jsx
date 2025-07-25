@@ -8,6 +8,7 @@ import { ContextData } from '../../DataProvider';
 import moment from 'moment-timezone';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
+import useAxiosSecure from '../../utils/useAxiosSecure';
 
 // Mock data
 const attendanceData = [
@@ -43,7 +44,7 @@ const notifications = [
 ];
 
 const EmployeeDashboard = () => {
-    const axiosSecure = useAxiosProtect();
+    const axiosSecure = useAxiosSecure();
     const axiosProtect = useAxiosProtect();
 
     const { user, attendanceInfo, salaryAndPF } = useContext(ContextData);
@@ -652,7 +653,7 @@ const EmployeeDashboard = () => {
 
                         <div className="bg-gray-50 p-3 rounded-lg">
                             <div className="text-xs text-gray-500 mb-1">Total PF Balance</div>
-                            <div className="font-medium text-green-600">BDT: {Number(salaryAndPF?.pfContribution).toLocaleString(undefined, {minimumIntegerDigits:2, maximumFractionDigits:2})}</div>
+                            <div className="font-medium text-green-600">BDT: {Number(salaryAndPF?.pfContribution || 0).toLocaleString(undefined, {minimumIntegerDigits:2, maximumFractionDigits:2})}</div>
                         </div>
                     </div>
 
