@@ -387,7 +387,7 @@ const ProfitShare = () => {
             <dialog id="transfer-profit-balance" className="modal">
                 <div className="modal-box">
                     <form method="dialog">
-                        <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 bg-[#6E3FF3] text-white hover:bg-red-500">✕</button>
+                        <button className="btn btn-sm btn-circle btn-ghost absolute bg-[#6E3FF3] text-white hover:bg-red-500 right-0 top-0">✕</button>
                     </form>
                     <h3 className="font-bold text-lg mb-3">Transfer Monthly Profit</h3>
 

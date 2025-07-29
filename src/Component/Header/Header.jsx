@@ -3,7 +3,7 @@ import { FaAngleDown } from 'react-icons/fa';
 import { IoNotificationsOutline } from 'react-icons/io5';
 import { TbMessageDots } from 'react-icons/tb';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Links, useNavigate } from 'react-router-dom';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import { ContextData } from '../../DataProvider';
 import logo from '/main_logo.png';
@@ -52,7 +52,7 @@ const Header = () => {
         fetchAdminNotification();
 
     }, [user.email, refetch]);
-    // ************************************************************
+    // **************************************************************
 
     return (
         <div className='mx-auto'>
@@ -66,7 +66,41 @@ const Header = () => {
                     <span><TbMessageDots className='text-2xl' /></span>
                     <div className='relative'>
                         {
-                            currentUser.role === 'Admin' || currentUser.role === 'Developer' || currentUser.role === 'HR-ADMIN' ?
+                            currentUser?.role === 'Admin' || currentUser?.role === 'Developer' || currentUser?.role === 'HR-ADMIN' ?
+                                <div className="dropdown dropdown-end">
+                                    {/* <div tabIndex={0} role="button" className="btn m-1">Click ⬇️</div> */}
+                                    <div tabIndex={0} className='absolute -right-1 -top-1 text-[10px] font-semibold bg-green-500 text-white rounded-full w-[15px] h-[15px] flex items-center justify-center cursor-default'>
+                                        {notification.length > 0 ? notification.length : 0}
+                                    </div>
+                                    <IoNotificationsOutline tabIndex={0} role="button" className='text-2xl' />
+                                    <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm">
+                                        {
+                                            notification.length > 0 ?
+                                                notification.map((item, index) => (
+                                                    <li key={index}>
+                                                        <Link to={item.link} className='flex items-center gap-2 hover:bg-gray-100 p-2 rounded-md'>
+                                                            <span className='text-[12px] font-bold'>{item.notification}</span>
+                                                        </Link>
+                                                    </li>
+                                                ))
+                                                :
+                                                <li className='text-center'>No Notifications</li>
+                                        }
+                                    </ul>
+                                </div>
+                                :
+                                <div>
+                                    <div className='absolute -right-1 -top-1 text-[10px] font-semibold bg-green-500 text-white rounded-full w-[15px] h-[15px] flex items-center justify-center'>
+                                        0
+                                    </div>
+                                    <IoNotificationsOutline className='text-2xl' />
+                                </div>
+
+                        }
+
+
+                        {/* {
+                            currentUser?.role === 'Admin' || currentUser?.role === 'Developer' || currentUser?.role === 'HR-ADMIN' ?
                                 <div className='absolute -right-1 -top-1 text-[10px] font-semibold bg-green-500 text-white rounded-full w-[15px] h-[15px] flex items-center justify-center cursor-default'>
                                     {notification.length > 0 ? notification.length : 0}
                                 </div>
@@ -74,8 +108,8 @@ const Header = () => {
                                 <div className='absolute -right-1 -top-1 text-[10px] font-semibold bg-green-500 text-white rounded-full w-[15px] h-[15px] flex items-center justify-center'>
                                     0
                                 </div>
-                        }
-                        <IoNotificationsOutline className='text-2xl' />
+                        } */}
+                        {/* <IoNotificationsOutline className='text-2xl' /> */}
                     </div>
                     {/*************************message and notifications end*******************************/}
 

@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { BsCurrencyDollar } from 'react-icons/bs';
 import { CiInboxIn } from 'react-icons/ci';
 import { FaAngleDown, FaAngleUp } from 'react-icons/fa';
-import { FaSackDollar } from "react-icons/fa6";
+import { FaHandHoldingDollar, FaSackDollar } from "react-icons/fa6";
 import { IoAnalyticsSharp, IoSettingsOutline } from 'react-icons/io5';
 import { LuCalendarClock, LuUsers } from 'react-icons/lu';
 import { MdOutlineDashboard } from 'react-icons/md';
@@ -161,11 +161,25 @@ const Navbar = () => {
                             : 'hover:bg-[#6E3FF3] hover:text-white'
                         } `}
                 >
-                    <BsCurrencyDollar />
+                    <FaHandHoldingDollar />
                     <span>Earnings</span>
                 </Link>
             )}
 
+            {/*************************************************************/}
+            {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN') && (
+                <Link
+                    to="/payroll"
+                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start
+                    ${location.pathname === '/payroll'
+                            ? 'bg-[#6E3FF3] text-white'
+                            : 'hover:bg-[#6E3FF3] hover:text-white'
+                        } `}
+                >
+                    <BsCurrencyDollar />
+                    <span>Payroll</span>
+                </Link>
+            )}
             {/*************************************************************/}
             {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN') && (
                 <Link

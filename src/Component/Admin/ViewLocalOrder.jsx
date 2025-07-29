@@ -298,7 +298,7 @@ const ViewLocalOrder = () => {
                                 <h2 className='font-semibold text-xl'>Time left to deliver</h2>
 
                                 {/*  */}
-                                {(localOrder && (currentUser.role === 'Admin' || currentUser.role === 'Developer')) && (
+                                {(localOrder && (currentUser?.role === 'Admin' || currentUser?.role === 'Developer')) && (
                                     <Countdown
                                         date={moment(localOrder.orderDeadLine).valueOf()}
                                         renderer={({ days, hours, minutes, seconds, completed }) => {

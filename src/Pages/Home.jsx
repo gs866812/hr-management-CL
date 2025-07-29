@@ -35,7 +35,7 @@ const Home = () => {
 
 
 
-    const ComponentToRender = roleComponentMap[currentUser.role] || EmployeeDashboard;
+    const ComponentToRender = roleComponentMap[currentUser?.role] || EmployeeDashboard;
 
     return <ComponentToRender />;
 };
