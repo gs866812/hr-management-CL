@@ -12,7 +12,6 @@ import OrderManagement from './Pages/OrderManagement';
 import ViewLocalOrder from './Component/Admin/ViewLocalOrder';
 import NoticeBoard from './Component/NoticeBoard/NoticeBoard';
 import Clients from './Component/ClientList/Clients';
-import Leave from './Component/Leave/Leave';
 import EmployeeSignUp from './Component/EmployeeList/EmployeeSignUp';
 import Earnings from './Component/Earnings/Earnings';
 import ProtectedRole from './Component/Protected/ProtectedRole';
@@ -27,6 +26,8 @@ import ProfitShare from './Component/ProfitShare/ProfitShare';
 import ProtectedEmployee from './Component/Protected/ProtectedEmployee';
 import ShareholderDetails from './Component/ProfitShare/ShareholderDetails';
 import Payroll from './Component/Payroll/Payroll';
+import LeaveApplication from './Component/Leave/LeaveApplication';
+import AppliedLeave from './Component/Leave/AppliedLeave';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
@@ -54,9 +55,10 @@ export const router = createBrowserRouter([
             { path: '/orders', element: <OrderManagement /> },
             { path: '/employeeList', element: <ProtectedEmployee><EmployeeList /></ProtectedEmployee> },
             { path: '/clients', element: <ProtectedRole><Clients /></ProtectedRole> },
-            { path: '/leave', element: <Leave /> },
+            { path: '/leaveApplication', element: <LeaveApplication /> },
             { path: '/earnings', element: <ProtectedRole><Earnings /></ProtectedRole> },
             { path: '/payroll', element: <ProtectedRole><Payroll /></ProtectedRole> },
+            { path: '/payroll/appliedLeave', element: <ProtectedRole><AppliedLeave /></ProtectedRole> },
             { path: '/employeeList/morning-shift', element: <MorningShift /> },
             { path: '/profit-share', element: <ProtectHr><ProfitShare /></ProtectHr> },
             { path: '/shareholder-details/:id', element: <ProtectHr><ShareholderDetails /></ProtectHr> },

@@ -6,7 +6,7 @@ import moment from 'moment';
 import useAxiosSecure from '../../utils/useAxiosSecure';
 import { toast } from 'react-toastify';
 
-const Leave = () => {
+const LeaveApplication = () => {
   const { user, employeeList } = useContext(ContextData);
   const {
     register,
@@ -370,4 +370,4 @@ const Leave = () => {
   );
 };
 
-export default Leave;
+export default LeaveApplication;

@@ -211,63 +211,63 @@ const OrderTable = () => {
                                 currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN' ||
                                 currentUser?.role === 'Developer' && <th> Order Price</th>
                             }
-                        <th>Deadline</th>
-                        <th>Status</th>
-                        <th>User</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {
-                        localOrder.length > 0 ? (
-                            localOrder.map((order, index) => {
-                                return (
-                                    <tr key={index}>
-                                        <td>{moment(order.date).format('DD-MMM-YYYY')}</td>
-                                        <td>{order.clientID}</td>
-                                        <td>{order.orderName}</td>
-                                        <td>{Number(order.orderQTY).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-                                        {
-                                            currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN' ||
-                                            currentUser?.role === 'Developer'
-                                            && <td>{Number(order.orderPrice).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-                                        }
-                                        <td>
-                                            {order?.orderDeadLine && (
-                                                <Countdown
-                                                    date={moment(order.orderDeadLine).valueOf()} // Convert to timestamp
-                                                    renderer={({ days, hours, minutes, seconds }) => (
-                                                        <span>
-                                                            {String(days).padStart(2, "0")} days{" "}
-                                                            {String(hours).padStart(2, "0")} h{" "}
-                                                            {String(minutes).padStart(2, "0")} min{" "}
-                                                            {String(seconds).padStart(2, "0")} sec
-                                                        </span>
-                                                    )}
-                                                />
-                                            )}
-                                        </td>
+                            <th>Deadline</th>
+                            <th>Status</th>
+                            <th>User</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {
+                            localOrder.length > 0 ? (
+                                localOrder.map((order, index) => {
+                                    return (
+                                        <tr key={index}>
+                                            <td>{moment(order.date).format('DD-MMM-YYYY')}</td>
+                                            <td>{order.clientID}</td>
+                                            <td>{order.orderName}</td>
+                                            <td>{Number(order.orderQTY).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                            {
+                                                currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN' ||
+                                                currentUser?.role === 'Developer'
+                                                && <td>{Number(order.orderPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                            }
+                                            <td>
+                                                {order?.orderDeadLine && (
+                                                    <Countdown
+                                                        date={moment(order.orderDeadLine).valueOf()} // Convert to timestamp
+                                                        renderer={({ days, hours, minutes, seconds }) => (
+                                                            <span>
+                                                                {String(days).padStart(2, "0")} days{" "}
+                                                                {String(hours).padStart(2, "0")} h{" "}
+                                                                {String(minutes).padStart(2, "0")} min{" "}
+                                                                {String(seconds).padStart(2, "0")} sec
+                                                            </span>
+                                                        )}
+                                                    />
+                                                )}
+                                            </td>
 
 
-                                        <td>{order.orderStatus}</td>
-                                        <td>{order.userName}</td>
-                                        <td className='w-[5%]'>
-                                            <div className='flex justify-center'>
-                                                <IoEyeOutline className='text-xl cursor-pointer hover:text-[#6E3FF3]' onClick={() => handleViewOrder(order?._id)} />
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })
-                        ) : (
-                            <tr>
-                                <td colSpan="8" className="text-center">No order found</td>
-                            </tr>
-                        )
-                    }
-                </tbody>
-            </table>
-        </div>
+                                            <td>{order.orderStatus}</td>
+                                            <td>{order.userName}</td>
+                                            <td className='w-[5%]'>
+                                                <div className='flex justify-center'>
+                                                    <IoEyeOutline className='text-xl cursor-pointer hover:text-[#6E3FF3]' onClick={() => handleViewOrder(order?._id)} />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            ) : (
+                                <tr>
+                                    <td colSpan="8" className="text-center">No order found</td>
+                                </tr>
+                            )
+                        }
+                    </tbody>
+                </table>
+            </div>
 
             {/* <div className="flex items-center justify-between mt-6 py-4 border">
                 <div className="text-sm text-gray-600">
@@ -294,63 +294,63 @@ const OrderTable = () => {
                     </button>
                 </div>
             </div> */}
-    <div className="text-center">
-        {/*********************************pagination***********************************************************/}
-        {orderCount > 10 && (
-            <div className="mt-5 flex justify-between items-center">
-                <div>
-                    <p> Showing {(currentPage * itemsPerPage) - itemsPerPage + 1} -
-                        {currentPage * itemsPerPage > orderCount ? orderCount : currentPage * itemsPerPage} of {orderCount} entries
-                    </p>
-                </div>
+            <div className="text-center">
+                {/*********************************pagination***********************************************************/}
+                {orderCount > 10 && (
+                    <div className="mt-5 flex justify-between items-center">
+                        <div>
+                            <p> Showing {(currentPage * itemsPerPage) - itemsPerPage + 1} -
+                                {currentPage * itemsPerPage > orderCount ? orderCount : currentPage * itemsPerPage} of {orderCount} entries
+                            </p>
+                        </div>
 
-                <div className='flex items-center justify-items-center gap-1'>
-                    <button
-                        onClick={handlePrevPage}
-                        className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md  ${currentPage !== 1 ? 'hover:bg-yellow-600 cursor-pointer' : ''}`}
-                        disabled={currentPage === 1}
-                    >
-                        <BsChevronDoubleLeft /> {/* prev button */}
-                    </button>
-                    {renderPageNumbers().map((page, index) => (
-                        <button
-                            key={index}
-                            onClick={() => typeof page === "number" && handlePageClick(page)}
-                            className={`py-1 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600 cursor-pointer ${currentPage === page ? "!bg-yellow-600" : ""
-                                }`}
-                            disabled={typeof page !== "number"}
-                        >
-                            {page}
-                        </button>
-                    ))}
-                    <button
-                        onClick={handleNextPage}
-                        className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md  ${currentPage !== numberOfPages ? 'hover:bg-yellow-600 cursor-pointer' : ''}`}
-                        disabled={currentPage === numberOfPages}
-                    >
-                        <BsChevronDoubleRight />  {/* next button */}
-                    </button>
+                        <div className='flex items-center justify-items-center gap-1'>
+                            <button
+                                onClick={handlePrevPage}
+                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md  ${currentPage !== 1 ? 'hover:bg-yellow-600 cursor-pointer' : ''}`}
+                                disabled={currentPage === 1}
+                            >
+                                <BsChevronDoubleLeft /> {/* prev button */}
+                            </button>
+                            {renderPageNumbers().map((page, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => typeof page === "number" && handlePageClick(page)}
+                                    className={`py-1 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600 cursor-pointer ${currentPage === page ? "!bg-yellow-600" : ""
+                                        }`}
+                                    disabled={typeof page !== "number"}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+                            <button
+                                onClick={handleNextPage}
+                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md  ${currentPage !== numberOfPages ? 'hover:bg-yellow-600 cursor-pointer' : ''}`}
+                                disabled={currentPage === numberOfPages}
+                            >
+                                <BsChevronDoubleRight />  {/* next button */}
+                            </button>
 
-                    <select
-                        value={itemsPerPage}
-                        onChange={handleItemsPerPage}
-                        name=""
-                        id=""
-                        className="select select-sm py-1 px-1 rounded-md bg-[#6E3FF3] text-white outline-none hover:bg-yellow-600"
-                    >
-                        <option value="10">10</option>
-                        <option value="20">20</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
-                </div>
+                            <select
+                                value={itemsPerPage}
+                                onChange={handleItemsPerPage}
+                                name=""
+                                id=""
+                                className="select select-sm py-1 px-1 rounded-md bg-[#6E3FF3] text-white outline-none hover:bg-yellow-600"
+                            >
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                )}
+
 
             </div>
-
-        )}
-
-
-    </div>
         </div >
     );
 };

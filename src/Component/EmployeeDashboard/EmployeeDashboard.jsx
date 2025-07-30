@@ -9,6 +9,7 @@ import moment from 'moment-timezone';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 import useAxiosSecure from '../../utils/useAxiosSecure';
+import { Link, useNavigate } from 'react-router-dom';
 
 // Mock data
 const attendanceData = [
@@ -80,6 +81,7 @@ const EmployeeDashboard = () => {
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
+    const navigate = useNavigate();
 
 
 
@@ -392,7 +394,12 @@ const EmployeeDashboard = () => {
     const monthlyPF = parseFloat((salaryAndPF?.salary * 5) / 100) || 0; // Assuming pfContribution is the monthly PF contribution
 
     // *************************************************************************************************
-;    return (
+    const handleLeaveApplication = () => {
+        navigate('/leaveApplication');
+        // window.open('/leaveApplication', '_blank');
+    };
+    // *************************************************************************************************
+   return (
         <div className="p-6">
             {/* Time Tracking */}
             <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -581,7 +588,7 @@ const EmployeeDashboard = () => {
                         ))}
                     </div>
 
-                    <button className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">
+                    <button onClick={handleLeaveApplication} className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">
                         Apply for Leave
                     </button>
                 </div>

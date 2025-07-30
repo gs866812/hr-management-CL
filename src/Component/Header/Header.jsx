@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { FaAngleDown } from 'react-icons/fa';
 import { IoNotificationsOutline } from 'react-icons/io5';
 import { TbMessageDots } from 'react-icons/tb';
@@ -8,13 +8,16 @@ import useAxiosProtect from '../../utils/useAxiosProtect';
 import { ContextData } from '../../DataProvider';
 import logo from '/main_logo.png';
 import { toast } from 'react-toastify';
+import useAxiosSecure from '../../utils/useAxiosSecure';
+import { setRefetch } from '../../redux/refetchSlice';
 
 
 const Header = () => {
     const { logOut, user, employee, currentUser } = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
+    const axiosSecure = useAxiosSecure();
     // ************************************************************
-    const [notification, setNotification] = React.useState([]);
+    const [notification, setNotification] = useState([]);
 
     // ************************************************************
 
@@ -53,6 +56,17 @@ const Header = () => {
 
     }, [user.email, refetch]);
     // **************************************************************
+    const handleMarkAsRead = async (id) => {
+        try {
+            const response = await axiosSecure.put(`/markAsRead/${id}`);
+            if (response.data.modifiedCount > 0) {
+                dispatch(setRefetch(!refetch));
+            }
+        } catch (error) {
+            toast.error('Error marking notification as read:', error);
+        }
+    };
+    // **************************************************************
 
     return (
         <div className='mx-auto'>
@@ -70,7 +84,8 @@ const Header = () => {
                                 <div className="dropdown dropdown-end">
                                     {/* <div tabIndex={0} role="button" className="btn m-1">Click ⬇️</div> */}
                                     <div tabIndex={0} className='absolute -right-1 -top-1 text-[10px] font-semibold bg-green-500 text-white rounded-full w-[15px] h-[15px] flex items-center justify-center cursor-default'>
-                                        {notification.length > 0 ? notification.length : 0}
+                                        {/* {notification.length > 0 ? notification.length : 0} */}
+                                        {notification.filter(item => !item.isRead).length > 0 ? notification.filter(item => !item.isRead).length : 0}
                                     </div>
                                     <IoNotificationsOutline tabIndex={0} role="button" className='text-2xl' />
                                     <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm">
@@ -78,8 +93,8 @@ const Header = () => {
                                             notification.length > 0 ?
                                                 notification.map((item, index) => (
                                                     <li key={index}>
-                                                        <Link to={item.link} className='flex items-center gap-2 hover:bg-gray-100 p-2 rounded-md'>
-                                                            <span className='text-[12px] font-bold'>{item.notification}</span>
+                                                        <Link to={item.link} className='flex items-center gap-2 hover:bg-gray-100 p-2 rounded-md' onClick={() => handleMarkAsRead(item._id)}>
+                                                            <span className={`text-[12px] ${item.isRead? '' : 'font-bold'}`}>{item.notification}</span>
                                                         </Link>
                                                     </li>
                                                 ))

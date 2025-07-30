@@ -232,17 +232,7 @@ const Navbar = () => {
                 <span>Setting</span>
             </Link>
             {/* ********************************************************* */}
-            <Link
-                to="/leave"
-                className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/leave'
-                    ? 'bg-[#6E3FF3] text-white'
-                    : 'hover:bg-[#6E3FF3] hover:text-white'
-                    }`}
-            >
-                <LuCalendarClock />
-                <span>Leave</span>
-            </Link>
-            {/* ********************************************************* */}
+           
         </div>
     );
 };
