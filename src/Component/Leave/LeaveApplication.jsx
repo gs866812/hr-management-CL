@@ -1,10 +1,11 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import axios from 'axios';
 import { ContextData } from '../../DataProvider';
 import moment from 'moment';
 import useAxiosSecure from '../../utils/useAxiosSecure';
 import { toast } from 'react-toastify';
+import { useDispatch, useSelector } from 'react-redux';
+import { setRefetch } from '../../redux/refetchSlice';
 
 const LeaveApplication = () => {
   const { user, employeeList } = useContext(ContextData);
@@ -24,6 +25,8 @@ const LeaveApplication = () => {
   const currentEmployee = employeeList.find(emp => emp.email === user?.email);
 
   const axiosSecure = useAxiosSecure();
+  const dispatch = useDispatch();
+  const refetch = useSelector((state) => state.refetch.refetch);
 
   useEffect(() => {
     if (currentEmployee) {
@@ -76,15 +79,16 @@ const LeaveApplication = () => {
       status: 'Pending',
     };
 
+
     // console.log(updatedData);
     setIsSubmitting(true);
     try {
       const response = await axiosSecure.post('/appliedLeave', updatedData);
       if (response.data.message === 'success') {
+        dispatch(setRefetch(!refetch));
         toast.success('Leave request submitted successfully');
-        console.log(response.data);
         reset();
-      }else{
+      } else {
         toast.error(response.data.message);
       }
     } catch (error) {
@@ -193,8 +197,8 @@ const LeaveApplication = () => {
                 className={`w-full px-3 py-2 border ${errors.leaveType ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm`}
               >
                 <option value="">Select Leave Type</option>
-                <option value="casual">Casual Leave</option>
-                <option value="sick">Sick Leave</option>
+                <option value="Casual">Casual Leave</option>
+                {/* <option value="Sick">Sick Leave</option> */}
               </select>
               {errors.leaveType && <p className="mt-1 text-sm text-red-600">{errors.leaveType.message}</p>}
             </div>

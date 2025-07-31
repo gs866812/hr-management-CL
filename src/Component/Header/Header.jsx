@@ -18,6 +18,7 @@ const Header = () => {
     const axiosSecure = useAxiosSecure();
     // ************************************************************
     const [notification, setNotification] = useState([]);
+    const [employeeNotification, setEmployeeNotification] = useState([]);
 
     // ************************************************************
 
@@ -56,9 +57,40 @@ const Header = () => {
 
     }, [user.email, refetch]);
     // **************************************************************
+    useEffect(() => {
+        const fetchEmployeeNotification = async () => {
+            try {
+                const response = await axiosProtect.get('/getEmployeeNotification', {
+                    params: {
+                        userEmail: user?.email,
+                    },
+                });
+                setEmployeeNotification(response.data);
+
+            } catch (error) {
+                toast.error('Error fetching data:', error.message);
+            }
+        };
+
+
+        fetchEmployeeNotification();
+
+    }, [user.email, refetch]);
+    // **************************************************************
     const handleMarkAsRead = async (id) => {
         try {
             const response = await axiosSecure.put(`/markAsRead/${id}`);
+            if (response.data.modifiedCount > 0) {
+                dispatch(setRefetch(!refetch));
+            }
+        } catch (error) {
+            toast.error('Error marking notification as read:', error);
+        }
+    };
+    // **************************************************************
+    const handleEmployeeNotificationMarkAsRead = async (id) => {
+        try {
+            const response = await axiosSecure.put(`/employeeNotificationMarkAsRead/${id}`);
             if (response.data.modifiedCount > 0) {
                 dispatch(setRefetch(!refetch));
             }
@@ -94,7 +126,7 @@ const Header = () => {
                                                 notification.map((item, index) => (
                                                     <li key={index}>
                                                         <Link to={item.link} className='flex items-center gap-2 hover:bg-gray-100 p-2 rounded-md' onClick={() => handleMarkAsRead(item._id)}>
-                                                            <span className={`text-[12px] ${item.isRead? '' : 'font-bold'}`}>{item.notification}</span>
+                                                            <span className={`text-[12px] ${item.isRead ? '' : 'font-bold'}`}>{item.notification}</span>
                                                         </Link>
                                                     </li>
                                                 ))
@@ -104,11 +136,26 @@ const Header = () => {
                                     </ul>
                                 </div>
                                 :
-                                <div>
-                                    <div className='absolute -right-1 -top-1 text-[10px] font-semibold bg-green-500 text-white rounded-full w-[15px] h-[15px] flex items-center justify-center'>
-                                        0
+                                <div className="dropdown dropdown-end">
+                                    {/*Employee notification */}
+                                    <div tabIndex={0} className='absolute -right-1 -top-1 text-[10px] font-semibold bg-green-500 text-white rounded-full w-[15px] h-[15px] flex items-center justify-center cursor-default'>
+                                        {employeeNotification.filter(item => !item.isRead).length > 0 ? employeeNotification.filter(item => !item.isRead).length : 0}
                                     </div>
-                                    <IoNotificationsOutline className='text-2xl' />
+                                    <IoNotificationsOutline tabIndex={0} role="button" className='text-2xl' />
+                                    <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm">
+                                        {
+                                            employeeNotification.length > 0 ?
+                                                employeeNotification.map((item, index) => (
+                                                    <li key={index}>
+                                                        <Link to={item.link} className='flex items-center gap-2 hover:bg-gray-100 p-2 rounded-md' onClick={() => handleEmployeeNotificationMarkAsRead(item._id)}>
+                                                            <span className={`text-[12px] ${item.isRead ? '' : 'font-bold'}`}>{item.notification}</span>
+                                                        </Link>
+                                                    </li>
+                                                ))
+                                                :
+                                                <li className='text-center'>No Notifications</li>
+                                        }
+                                    </ul>
                                 </div>
 
                         }

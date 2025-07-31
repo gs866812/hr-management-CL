@@ -44,17 +44,8 @@ const Navbar = () => {
                 <MdOutlineDashboard />
                 <span>Dashboard</span>
             </Link>
-            {/* **********************************************************/}
-            <Link
-                to="/notice-Board"
-                className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/noticeBoard'
-                    ? 'bg-[#6E3FF3] text-white'
-                    : 'hover:bg-[#6E3FF3] hover:text-white'
-                    }`}
-            >
-                <PiClipboardText />
-                <span>Notice Board</span>
-            </Link>
+
+
             {/* ************************************************* ********************/}
             {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN' || currentUser?.role === 'teamLeader') && (
                 <Link
@@ -143,7 +134,7 @@ const Navbar = () => {
             {/*************************************************************/}
             <Link
                 to="/orders"
-                className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/order-management'
+                className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/orders'
                     ? 'bg-[#6E3FF3] text-white'
                     : 'hover:bg-[#6E3FF3] hover:text-white'
                     }`}
@@ -222,17 +213,17 @@ const Navbar = () => {
             )}
             {/* ********************************************************* */}
             <Link
-                to="/settings"
-                className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/settings'
+                to="/notice-Board"
+                className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/noticeBoard'
                     ? 'bg-[#6E3FF3] text-white'
                     : 'hover:bg-[#6E3FF3] hover:text-white'
                     }`}
             >
-                <IoSettingsOutline />
-                <span>Setting</span>
+                <PiClipboardText />
+                <span>Notice Board</span>
             </Link>
             {/* ********************************************************* */}
-           
+
         </div>
     );
 };
