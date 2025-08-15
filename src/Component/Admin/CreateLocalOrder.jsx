@@ -185,6 +185,7 @@ const CreateLocalOrder = () => {
                 <div>
                     <h3 className="text-lg font-semibold mb-4 border-b pb-2">Order Timing</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Order Date */}
                         <div>
                             <label className="block font-semibold mb-1">Order Date</label>
                             <DatePicker
@@ -202,6 +203,8 @@ const CreateLocalOrder = () => {
                                 required
                             />
                         </div>
+
+                        {/* Deadline */}
                         <div>
                             <label className="block font-semibold mb-1">Deadline</label>
                             <DatePicker
@@ -223,6 +226,7 @@ const CreateLocalOrder = () => {
                 <div>
                     <h3 className="text-lg font-semibold mb-4 border-b pb-2">Order Details</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Client ID */}
                         <div>
                             <label className="block font-semibold">Client ID</label>
                             <select
@@ -238,6 +242,8 @@ const CreateLocalOrder = () => {
                                 ))}
                             </select>
                         </div>
+
+                        {/* Order Name */}
                         <div>
                             <label className="block font-semibold">Order Name</label>
                             <input
@@ -250,6 +256,7 @@ const CreateLocalOrder = () => {
                         </div>
                     </div>
 
+                    {/* Quantity, Price, Total */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                         <div>
                             <label className="block font-semibold">Order QTY</label>
@@ -283,6 +290,7 @@ const CreateLocalOrder = () => {
                         </div>
                     </div>
 
+                    {/* Instructions */}
                     <div className="mt-4">
                         <label className="block font-semibold">Instructions</label>
                         <textarea
@@ -297,91 +305,45 @@ const CreateLocalOrder = () => {
                 {/* Section: Services */}
                 <div>
                     <h3 className="text-lg font-semibold mb-4 border-b pb-2">Services & Return Format</h3>
+
+                    {/* Services */}
                     <div className="mb-4">
                         <label className="block font-semibold mb-1">Select Services</label>
                         <select
+                            value=""
                             onChange={handleServiceChange}
                             className="w-full !border !border-gray-300 p-2 rounded"
                         >
-                            <option value="Select services">Select services</option>
-                            {/* Services */}
-                            <div className="mb-4">
-                                <label className="block font-semibold mb-1">Select Services</label>
-                                <select
-                                    value="" // default empty so user can pick each time
-                                    onChange={handleServiceChange}
-                                    className="w-full !border !border-gray-300 p-2 rounded"
-                                >
-                                    <option value="">Select services</option>
-                                    <option value="Clipping path">Clipping path</option>
-                                    <option value="Multi clipping path">Multi clipping path</option>
-                                    <option value="Transparent background">Transparent background</option>
-                                    <option value="White background">White background</option>
-                                    <option value="Color background">Color background</option>
-                                    <option value="Hair masking">Hair masking</option>
-                                    <option value="Single Selection">Single Selection</option>
-                                    <option value="Multi Selection">Multi Selection</option>
-                                    <option value="Drop shadow">Drop shadow</option>
-                                    <option value="Natural shadow">Natural shadow</option>
-                                    <option value="Reflection shadow">Reflection shadow</option>
-                                    <option value="Image manipulation">Image manipulation</option>
-                                    <option value="Neck join">Neck join</option>
-                                    <option value="Ghost mannequin effect">Ghost mannequin effect</option>
-                                    <option value="Basic retouching">Basic retouching</option>
-                                    <option value="High-end retouching">High-end retouching</option>
-                                    <option value="Jewelry retouching">Jewelry retouching</option>
-                                    <option value="Skin retouching">Skin retouching</option>
-                                    <option value="Color change">Color change</option>
-                                    <option value="Color correction">Color correction</option>
-                                    <option value="Image resizing">Image resizing</option>
-                                    <option value="Raster to vector">Raster to vector</option>
-                                    <option value="Lighting adjustment">Lighting adjustment</option>
-                                    <option value="White balance">White balance</option>
-                                    <option value="BG and skin">BG and skin</option>
-                                    <option value="custom">Other (write your own)</option>
-                                </select>
-
-                                {/* Selected services list */}
-                                <div className="flex flex-wrap mt-2 gap-2">
-                                    {services.map((service, idx) => (
-                                        <span
-                                            key={idx}
-                                            className="bg-blue-600 text-white text-sm px-2 py-1 rounded-full flex items-center gap-1"
-                                        >
-                                            {service}
-                                            <button
-                                                type="button"
-                                                onClick={() => handleServiceRemove(service)}
-                                                className="ml-1 text-white bg-red-500 rounded-full px-1"
-                                            >x</button>
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Return File Format */}
-                            <div>
-                                <label className="block font-semibold mb-1">Returned File Format</label>
-                                <select
-                                    value={returnFile}
-                                    onChange={(e) => setReturnFile(e.target.value)}
-                                    className="w-full !border !border-gray-300 p-2 rounded"
-                                >
-                                    <option value="Original Format and BG">Original Format and BG</option>
-                                    <option value="JPG - White BG">JPG - White BG</option>
-                                    <option value="PNG - Transparent">PNG - Transparent</option>
-                                    <option value="PSD - Layer Mask">PSD - Layer Mask</option>
-                                    <option value="PSD - Layered File">PSD - Layered File</option>
-                                    <option value="PSD - Original BG">PSD - Original BG</option>
-                                    <option value="TIFF - Original BG">TIFF - Original BG</option>
-                                    <option value="TIFF - Transparent BG">TIFF - Transparent BG</option>
-                                    <option value="PSF Pages">PSF Pages</option>
-                                    <option value="PSB - Layered file">PSB - Layered file</option>
-                                    <option value="PDF">PDF</option>
-                                </select>
-                            </div>
-
+                            <option value="">Select services</option>
+                            <option value="Clipping path">Clipping path</option>
+                            <option value="Multi clipping path">Multi clipping path</option>
+                            <option value="Transparent background">Transparent background</option>
+                            <option value="White background">White background</option>
+                            <option value="Color background">Color background</option>
+                            <option value="Hair masking">Hair masking</option>
+                            <option value="Single Selection">Single Selection</option>
+                            <option value="Multi Selection">Multi Selection</option>
+                            <option value="Drop shadow">Drop shadow</option>
+                            <option value="Natural shadow">Natural shadow</option>
+                            <option value="Reflection shadow">Reflection shadow</option>
+                            <option value="Image manipulation">Image manipulation</option>
+                            <option value="Neck join">Neck join</option>
+                            <option value="Ghost mannequin effect">Ghost mannequin effect</option>
+                            <option value="Basic retouching">Basic retouching</option>
+                            <option value="High-end retouching">High-end retouching</option>
+                            <option value="Jewelry retouching">Jewelry retouching</option>
+                            <option value="Skin retouching">Skin retouching</option>
+                            <option value="Color change">Color change</option>
+                            <option value="Color correction">Color correction</option>
+                            <option value="Image resizing">Image resizing</option>
+                            <option value="Raster to vector">Raster to vector</option>
+                            <option value="Lighting adjustment">Lighting adjustment</option>
+                            <option value="White balance">White balance</option>
+                            <option value="BG and skin">BG and skin</option>
+                            <option value="custom">Other (write your own)</option>
                         </select>
+
+                        {/* Selected services list */}
                         <div className="flex flex-wrap mt-2 gap-2">
                             {services.map((service, idx) => (
                                 <span
@@ -399,6 +361,7 @@ const CreateLocalOrder = () => {
                         </div>
                     </div>
 
+                    {/* Return File Format */}
                     <div>
                         <label className="block font-semibold mb-1">Returned File Format</label>
                         <select
@@ -406,7 +369,17 @@ const CreateLocalOrder = () => {
                             onChange={(e) => setReturnFile(e.target.value)}
                             className="w-full !border !border-gray-300 p-2 rounded"
                         >
-                            {/* options here */}
+                            <option value="Original Format and BG">Original Format and BG</option>
+                            <option value="JPG - White BG">JPG - White BG</option>
+                            <option value="PNG - Transparent">PNG - Transparent</option>
+                            <option value="PSD - Layer Mask">PSD - Layer Mask</option>
+                            <option value="PSD - Layered File">PSD - Layered File</option>
+                            <option value="PSD - Original BG">PSD - Original BG</option>
+                            <option value="TIFF - Original BG">TIFF - Original BG</option>
+                            <option value="TIFF - Transparent BG">TIFF - Transparent BG</option>
+                            <option value="PSF Pages">PSF Pages</option>
+                            <option value="PSB - Layered file">PSB - Layered file</option>
+                            <option value="PDF">PDF</option>
                         </select>
                     </div>
                 </div>
@@ -428,6 +401,7 @@ const CreateLocalOrder = () => {
                     </button>
                 </div>
             </form>
+
 
 
 
