@@ -64,12 +64,16 @@ const CreateLocalOrder = () => {
         fetchClientID();
     }, [refetch]);
 
-    // Total price calculation
+    // Auto calculate imagePrice
     useEffect(() => {
         const qty = parseInt(orderQuantity);
-        const price = parseFloat(imagePrice);
-        setTotalPrice((qty && price) ? qty * price : 0);
-    }, [orderQuantity, imagePrice]);
+        const total = parseFloat(totalPrice);
+        if (qty > 0 && total > 0) {
+            setImagePrice(total / qty);
+        } else {
+            setImagePrice(0);
+        }
+    }, [orderQuantity, totalPrice]);
 
     // Handlers
     const handleChange = (e) => {
@@ -131,6 +135,7 @@ const CreateLocalOrder = () => {
         setFormData({});
         setOrderQuantity(0);
         setImagePrice(0);
+        setTotalPrice(0);
         setDeadline(null);
         setServices([]);
         setColorChangeInstruction('');
@@ -159,7 +164,6 @@ const CreateLocalOrder = () => {
             orderDeadLine: newDeadline,
             orderStatus: "Pending"
         };
-
 
         try {
             const response = await axiosSecure.post('/createLocalOrder', updateOrder);
@@ -269,21 +273,21 @@ const CreateLocalOrder = () => {
                             />
                         </div>
                         <div>
-                            <label className="block font-semibold">Price per Image ($)</label>
+                            <label className="block font-semibold">Total Price ($)</label>
                             <input
                                 type="number"
                                 step="0.01"
-                                value={imagePrice}
-                                onChange={(e) => setImagePrice(e.target.value)}
+                                value={totalPrice}
+                                onChange={(e) => setTotalPrice(e.target.value)}
                                 className="w-full !border !border-gray-300 p-2 rounded"
                                 required
                             />
                         </div>
                         <div>
-                            <label className="block font-semibold">Total Price ($)</label>
+                            <label className="block font-semibold">Price per Image ($)</label>
                             <input
                                 type="text"
-                                value={totalPrice}
+                                value={imagePrice}
                                 readOnly
                                 className="w-full !border !border-gray-300 p-2 rounded bg-gray-100"
                             />
@@ -402,14 +406,10 @@ const CreateLocalOrder = () => {
                 </div>
             </form>
 
-
-
-
             {/* Color Change Modal */}
             <dialog id="colorChange" className="modal">
                 <div className="modal-box">
                     <form method="dialog">
-                        {/* if there is a button in form, it will close the modal */}
                         <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onClick={() => handleServiceRemove('Color change')}>✕</button>
                     </form>
                     <h3 className="text-lg font-bold">Color Change Instructions</h3>
@@ -424,7 +424,6 @@ const CreateLocalOrder = () => {
             <dialog id="imageResizing" className="modal">
                 <div className="modal-box">
                     <form method="dialog">
-                        {/* if there is a button in form, it will close the modal */}
                         <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onClick={() => handleServiceRemove('Image resizing')}>✕</button>
                     </form>
                     <h3 className="text-lg font-bold">Image Resize Instructions</h3>
@@ -440,7 +439,6 @@ const CreateLocalOrder = () => {
                 <div className="modal-box">
                     <h3 className="text-lg font-bold">Add Custom Service</h3>
                     <form method="dialog">
-                        {/* if there is a button in form, it will close the modal */}
                         <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onClick={() => setCustomService('')}>✕</button>
                     </form>
                     <form onSubmit={handleCustomServiceSubmit} className="mt-4">
