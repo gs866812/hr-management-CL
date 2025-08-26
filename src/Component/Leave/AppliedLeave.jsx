@@ -6,153 +6,163 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { setRefetch } from '../../redux/refetchSlice';
 
+// Icons
+import { FiCheck, FiEye, FiX } from 'react-icons/fi';
+
 const AppliedLeave = () => {
+  const { user } = useContext(ContextData);
+  const axiosProtect = useAxiosProtect();
+  const axiosSecure = useAxiosSecure();
 
-    const { user, currentUser } = useContext(ContextData);
-    const axiosProtect = useAxiosProtect();
-    const axiosSecure = useAxiosSecure();
+  const [appliedLeaveApplication, setAppliedLeaveApplication] = useState([]);
+  const dispatch = useDispatch();
+  const refetch = useSelector((state) => state.refetch.refetch);
 
-    // ********************************************************************************************
-    const [appliedLeaveApplication, setAppliedLeaveApplication] = useState([]);
-    // ********************************************************************************************
-    const dispatch = useDispatch();
-    const refetch = useSelector((state) => state.refetch.refetch);
-    // ********************************************************************************************
-    useEffect(() => {
-        const fetchAppliedLeaveApplication = async () => {
-            try {
-                const response = await axiosProtect.get('/getAppliedLeave', {
-                    params: {
-                        userEmail: user?.email,
-                    },
-                });
+  useEffect(() => {
+    const fetchAppliedLeaveApplication = async () => {
+      try {
+        const response = await axiosProtect.get('/getAppliedLeave', {
+          params: { userEmail: user?.email },
+        });
+        setAppliedLeaveApplication(response.data || []);
+      } catch (error) {
+        toast.error(`Error fetching data: ${error?.message || 'Unknown error'}`);
+      }
+    };
+    if (user?.email) fetchAppliedLeaveApplication();
+  }, [user?.email, refetch, axiosProtect]);
 
-                setAppliedLeaveApplication(response.data);
-
-            } catch (error) {
-                toast.error('Error fetching data:', error.message);
-            }
-        };
-
-
-        fetchAppliedLeaveApplication();
-
-    }, [user.email, refetch]);
-    // *******************************************************************
-    const handleAccept = async (leaveId) => {
-        console.log(leaveId);
-        try {
-            const response = await axiosSecure.put(`/acceptLeave/${leaveId}`);
-
-            if (response.data.modifiedCount > 0) {
-                dispatch(setRefetch(!refetch));
-                console.log(response.data);
-                toast.success('Leave application accepted successfully');
-            } else {
-                toast.error('Failed to accept leave application');
-            }
-        } catch (error) {
-            toast.error('Error accepting leave application:', error.message);
-        }
+  const handleAccept = async (leaveId) => {
+    try {
+      const response = await axiosSecure.put(`/acceptLeave/${leaveId}`);
+      if (response.data?.modifiedCount > 0) {
+        dispatch(setRefetch(!refetch));
+        toast.success('Leave application accepted successfully');
+      } else {
+        toast.error('Failed to accept leave application');
+      }
+    } catch (error) {
+      toast.error(`Error accepting leave application: ${error?.message || 'Unknown error'}`);
     }
-    // *******************************************************************
+  };
 
-    return (
-        <div>
-            <section className='flex gap-4 justify-end text-xl'>
-                <div className='border p-3 rounded font-semibold'>
-                    Total application: {appliedLeaveApplication?.length}
-                </div>
-                <div className='border p-3 rounded font-semibold'>
-                    Approved application: {appliedLeaveApplication.filter(leave => leave.status === 'Approved').length}
-                </div>
-                <div className='border p-3 rounded font-semibold'>
-                    Pending application: {appliedLeaveApplication.filter(leave => leave.status === 'Pending').length}
-                </div>
-            </section>
-
-            <section className='mt-5'>
-                <div className="overflow-x-auto mt-5">
-                    <table className="table table-zebra">
-                        {/* head */}
-                        <thead className='bg-[#6E3FF3] text-white'>
-                            <tr>
-                                <th className='w-[5%]'>Employee ID</th>
-                                <th className='w-[15%]'>Name</th>
-                                <th>Position</th>
-                                <th>Leave type</th>
-                                <th>Start date</th>
-                                <th>End date</th>
-                                <th className='w-[5%]'>Total day's</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {appliedLeaveApplication.length > 0 ? (
-                                appliedLeaveApplication.map((leave, index) => {
-                                    return (
-                                        <tr
-                                            key={index}
-                                            className="relative group"
-                                        >
-                                            {/* Row content faded on hover */}
-                                            <td className={`${leave.status === 'Pending' ? 'group-hover:opacity-30 transition-all duration-200':''} `}>
-                                                {leave.employeeId}
-                                            </td>
-                                            <td className={`${leave.status === 'Pending' ? 'group-hover:opacity-30 transition-all duration-200':''} `}>
-                                                {leave.employeeName}
-                                            </td>
-                                            <td className={`${leave.status === 'Pending' ? 'group-hover:opacity-30 transition-all duration-200':''} `}>
-                                                {leave.position}
-                                            </td>
-                                            <td className={`${leave.status === 'Pending' ? 'group-hover:opacity-30 transition-all duration-200':''} `}>
-                                                {leave.leaveType}
-                                            </td>
-                                            <td className={`${leave.status === 'Pending' ? 'group-hover:opacity-30 transition-all duration-200':''} `}>
-                                                {leave.startDate}
-                                            </td>
-                                            <td className={`${leave.status === 'Pending' ? 'group-hover:opacity-30 transition-all duration-200':''} `}>
-                                                {leave.endDate}
-                                            </td>
-                                            <td className={`${leave.status === 'Pending' ? 'group-hover:opacity-30 transition-all duration-200':''} `}>
-                                                {leave.totalDays}
-                                            </td>
-                                            <td className={`${leave.status === 'Pending' ? 'group-hover:opacity-30 transition-all duration-200':''} `}>
-                                                {leave.status}
-                                            </td>
-
-                                            {
-                                                leave.status === 'Pending' &&
-                                                <td className="absolute inset-0 flex justify-center items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-white bg-opacity-30">
-                                                    <button className="px-2 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600" onClick={() => handleAccept(leave._id)}>
-                                                        Accept
-                                                    </button>
-
-                                                    <button className="px-2 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600">
-                                                        View
-                                                    </button>
-                                                    <button className="px-2 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600">
-                                                        Decline
-                                                    </button>
-                                                </td>
-                                            }
-                                        </tr>
-                                    );
-                                })
-                            ) : (
-                                <tr>
-                                    <td colSpan="8" className="text-center">
-                                        No leave applications found.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-
-                    </table>
-                </div>
-            </section >
-        </div >
+  // Stub for View — you can replace with a modal later
+  const handleView = (leave) => {
+    toast.info(
+      `Leave by ${leave.employeeName} (${leave.leaveType}) — ${leave.startDate} to ${leave.endDate} • ${leave.totalDays} day(s)`
     );
+  };
+
+  // Decline handler — ensure you add a backend route: PUT /declineLeave/:id to set { status: 'Declined' }
+  const handleDecline = async (leaveId) => {
+    try {
+      const response = await axiosSecure.put(`/declineLeave/${leaveId}`);
+      if (response.data?.modifiedCount > 0) {
+        dispatch(setRefetch(!refetch));
+        toast.success('Leave application declined');
+      } else {
+        toast.error('Failed to decline leave application');
+      }
+    } catch (error) {
+      toast.error(`Error declining leave application: ${error?.message || 'Unknown error'}`);
+    }
+  };
+
+  return (
+    <div>
+      <section className="flex gap-4 justify-end text-xl">
+        <div className="border p-3 rounded font-semibold">
+          Total application: {appliedLeaveApplication?.length || 0}
+        </div>
+        <div className="border p-3 rounded font-semibold">
+          Approved application: {appliedLeaveApplication.filter((l) => l.status === 'Approved').length}
+        </div>
+        <div className="border p-3 rounded font-semibold">
+          Pending application: {appliedLeaveApplication.filter((l) => l.status === 'Pending').length}
+        </div>
+      </section>
+
+      <section className="mt-5">
+        <div className="overflow-x-auto mt-5">
+          <table className="table table-zebra text-[14px]">
+            <thead className="bg-[#6E3FF3] text-white">
+              <tr>
+                <th className="w-[5%]">Employee ID</th>
+                <th className="">Name</th>
+                <th className=''>Position</th>
+                <th>Leave type</th>
+                <th>Start date</th>
+                <th>End date</th>
+                <th className="w-[5%]">Day&apos;s</th>
+                <th className="w-[10%]">Action</th> {/* ← New Action column */}
+                <th>Status</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {appliedLeaveApplication.length > 0 ? (
+                appliedLeaveApplication.map((leave) => {
+                  const disabled = leave.status !== 'Pending';
+                  const commonBtn =
+                    'p-2 rounded hover:scale-105 transition transform active:scale-95 focus:outline-none';
+                  const disabledClass = disabled ? 'opacity-40 pointer-events-none' : '';
+
+                  return (
+                    <tr key={leave._id || `${leave.employeeId}-${leave.startDate}`}>
+                      <td>{leave.employeeId}</td>
+                      <td>{leave.employeeName}</td>
+                      <td>{leave.position}</td>
+                      <td>{leave.leaveType}</td>
+                      <td>{leave.startDate}</td>
+                      <td>{leave.endDate}</td>
+                      <td>{leave.totalDays}</td>
+
+                      {/* Action icons */}
+                      <td>
+                        <div className="flex items-center gap-3">
+                          <button
+                            title="Accept"
+                            className={`${commonBtn} bg-green-100 ${disabledClass}`}
+                            onClick={() => handleAccept(leave._id)}
+                          >
+                            <FiCheck size={18} />
+                          </button>
+
+                          <button
+                            title="View"
+                            className={`${commonBtn} bg-blue-100`}
+                            onClick={() => handleView(leave)}
+                          >
+                            <FiEye size={18} />
+                          </button>
+
+                          <button
+                            title="Decline"
+                            className={`${commonBtn} bg-red-100 ${disabledClass}`}
+                            onClick={() => handleDecline(leave._id)}
+                          >
+                            <FiX size={18} />
+                          </button>
+                        </div>
+                      </td>
+
+                      <td>{leave.status}</td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan="9" className="text-center">
+                    No leave applications found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
 };
 
 export default AppliedLeave;
