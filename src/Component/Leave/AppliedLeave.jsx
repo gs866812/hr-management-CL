@@ -122,7 +122,7 @@ const AppliedLeave = () => {
                         <div className="flex items-center gap-3">
                           <button
                             title="Accept"
-                            className={`${commonBtn} bg-green-100 ${disabledClass}`}
+                            className={`${commonBtn} bg-green-100 ${disabledClass} cursor-pointer`}
                             onClick={() => handleAccept(leave._id)}
                           >
                             <FiCheck size={18} />
@@ -130,7 +130,7 @@ const AppliedLeave = () => {
 
                           <button
                             title="View"
-                            className={`${commonBtn} bg-blue-100`}
+                            className={`${commonBtn} bg-blue-100 cursor-pointer`}
                             onClick={() => handleView(leave)}
                           >
                             <FiEye size={18} />
@@ -138,7 +138,7 @@ const AppliedLeave = () => {
 
                           <button
                             title="Decline"
-                            className={`${commonBtn} bg-red-100 ${disabledClass}`}
+                            className={`${commonBtn} bg-red-100 ${disabledClass} cursor-pointer`}
                             onClick={() => handleDecline(leave._id)}
                           >
                             <FiX size={18} />
