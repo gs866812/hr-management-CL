@@ -22,14 +22,18 @@ const CreateLocalOrder = () => {
 
     const [clientID, setClientID] = useState([]);
     const [deadline, setDeadline] = useState(null);
+
+    // --- pricing states ---
     const [orderQuantity, setOrderQuantity] = useState(0);
     const [imagePrice, setImagePrice] = useState(0);
+    const [totalPrice, setTotalPrice] = useState(0);
+    const [lastEdited, setLastEdited] = useState(null); // 'total' | 'ppi' | null
+
     const [services, setServices] = useState([]);
     const [customService, setCustomService] = useState('');
     const [returnFile, setReturnFile] = useState('Original Format and BG');
     const [colorChangeInstruction, setColorChangeInstruction] = useState('');
     const [imageResizeInstruction, setImageResizeInstruction] = useState('');
-    const [totalPrice, setTotalPrice] = useState(0);
 
     const [formData, setFormData] = useState({
         userName: "",
@@ -62,18 +66,76 @@ const CreateLocalOrder = () => {
             }
         };
         fetchClientID();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [refetch]);
 
-    // Auto calculate imagePrice
-    useEffect(() => {
-        const qty = parseInt(orderQuantity);
-        const total = parseFloat(totalPrice);
-        if (qty > 0 && total > 0) {
-            setImagePrice(total / qty);
+    // --- Bi-directional pricing logic ---
+    const toNum = (v) => {
+        const n = parseFloat(v);
+        return Number.isFinite(n) ? n : 0;
+    };
+    const round2 = (n) => Number.isFinite(n) ? Number(n.toFixed(2)) : 0;
+
+    const handleQtyChange = (e) => {
+        const val = e.target.value;
+        setOrderQuantity(val);
+        const qty = toNum(val);
+        if (qty <= 0) return;
+
+        if (lastEdited === 'total') {
+            const tp = toNum(totalPrice);
+            setImagePrice(qty > 0 ? round2(tp / qty) : 0);
+        } else if (lastEdited === 'ppi') {
+            const ppi = toNum(imagePrice);
+            setTotalPrice(round2(ppi * qty));
+        }
+    };
+
+    const handleTotalPriceChange = (e) => {
+        const val = e.target.value;
+        setLastEdited('total');
+        setTotalPrice(val);
+
+        const qty = toNum(orderQuantity);
+        const tp = toNum(val);
+        if (qty > 0) {
+            setImagePrice(round2(tp / qty));
         } else {
             setImagePrice(0);
         }
-    }, [orderQuantity, totalPrice]);
+    };
+
+    const handleImagePriceChange = (e) => {
+        const val = e.target.value;
+        setLastEdited('ppi');
+        setImagePrice(val);
+
+        const qty = toNum(orderQuantity);
+        const ppi = toNum(val);
+        if (qty > 0) {
+            setTotalPrice(round2(ppi * qty));
+        } else {
+            setTotalPrice(0);
+        }
+    };
+
+    // Recalculate when quantity changes via other means (e.g., spinner arrows)
+    useEffect(() => {
+        const qty = toNum(orderQuantity);
+        if (qty <= 0) return;
+        if (lastEdited === 'total') {
+            setImagePrice((prev) => {
+                const tp = toNum(totalPrice);
+                return round2(tp / qty);
+            });
+        } else if (lastEdited === 'ppi') {
+            setTotalPrice((prev) => {
+                const ppi = toNum(imagePrice);
+                return round2(ppi * qty);
+            });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [orderQuantity]);
 
     // Handlers
     const handleChange = (e) => {
@@ -140,12 +202,13 @@ const CreateLocalOrder = () => {
         setServices([]);
         setColorChangeInstruction('');
         setImageResizeInstruction('');
+        setLastEdited(null);
     };
 
     const handleAssignOrder = async (e) => {
         e.preventDefault();
 
-        const deadlineMoment = moment(deadline.date).tz(deadline.timezoneName);
+        const deadlineMoment = moment(deadline?.date).tz(deadline?.timezoneName);
         const newDeadline = deadlineMoment.format('DD-MMM-YYYY HH:mm:ss');
         const selectedOrderDate = formData.date
             ? moment(formData.date, "DD-MMM-YYYY").format("DD-MMM-YYYY HH:mm:ss")
@@ -267,7 +330,8 @@ const CreateLocalOrder = () => {
                             <input
                                 type="number"
                                 value={orderQuantity}
-                                onChange={(e) => setOrderQuantity(e.target.value)}
+                                onChange={handleQtyChange}
+                                min="0"
                                 className="w-full !border !border-gray-300 p-2 rounded"
                                 required
                             />
@@ -278,7 +342,8 @@ const CreateLocalOrder = () => {
                                 type="number"
                                 step="0.01"
                                 value={totalPrice}
-                                onChange={(e) => setTotalPrice(e.target.value)}
+                                onChange={handleTotalPriceChange}
+                                min="0"
                                 className="w-full !border !border-gray-300 p-2 rounded"
                                 required
                             />
@@ -286,10 +351,12 @@ const CreateLocalOrder = () => {
                         <div>
                             <label className="block font-semibold">Price per Image ($)</label>
                             <input
-                                type="text"
+                                type="number"
+                                step="0.01"
                                 value={imagePrice}
-                                readOnly
-                                className="w-full !border !border-gray-300 p-2 rounded bg-gray-100"
+                                onChange={handleImagePriceChange}
+                                min="0"
+                                className="w-full !border !border-gray-300 p-2 rounded"
                             />
                         </div>
                     </div>

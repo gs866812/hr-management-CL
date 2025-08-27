@@ -14,26 +14,23 @@ import DatePicker from 'react-datepicker';
 const ViewLocalOrder = () => {
     const { user, currentUser } = useContext(ContextData);
 
-
     const axiosSecure = useAxiosSecure();
+    const axiosProtect = useAxiosProtect();
 
     const [localOrder, setLocalOrder] = useState({});
     const [isRunning, setIsRunning] = useState(false);
     const [deadline, setDeadline] = useState(null);
 
-
-    // const [totalSeconds, setTotalSeconds] = useState(0);
     const [totalSeconds, setTotalSeconds] = useState(parseInt(localOrder?.lastUpdated) || 0);
-    // const savedTotalSeconds = useRef(parseInt(parseInt(localOrder?.lastUpdated) || 0) || 0); // Store initial saved value
-    const savedTotalSeconds = useRef(parseInt(localOrder?.lastUpdated) || 0); // Store initial saved value
-    // const intervalRef = useRef(null);
-
+    const savedTotalSeconds = useRef(parseInt(localOrder?.lastUpdated) || 0);
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
 
     const { orderId } = useParams();
 
+    const status = localOrder?.orderStatus;
+    const isLocked = !!localOrder?.isLocked;
 
     // ************************************************************************************************
     const handleDeadlineChange = (date) => {
@@ -48,7 +45,6 @@ const ViewLocalOrder = () => {
     const getSelectedDate = () => (deadline ? new Date(deadline.date) : null);
     const filterPastTimes = (time) => moment(time).isSameOrAfter(moment());
     // ************************************************************************************************
-    const axiosProtect = useAxiosProtect();
 
     useEffect(() => {
         const fetchSingleOrder = async () => {
@@ -62,21 +58,19 @@ const ViewLocalOrder = () => {
 
                 if (response.data.completeTime && response.data.lastUpdated) {
                     const savedSeconds = response.data.completeTime;
-                    const lastUpdated = response.data.lastUpdated; // Timestamp from DB
-
-                    // Calculate elapsed time since last update
-                    const currentTime = Math.floor(Date.now() / 1000); // Convert to seconds
+                    const lastUpdated = response.data.lastUpdated; // Timestamp (seconds) from DB
+                    const currentTime = Math.floor(Date.now() / 1000);
                     const elapsedTime = currentTime - lastUpdated;
-
-                    setTotalSeconds(savedSeconds + elapsedTime); // Add elapsed time
+                    setTotalSeconds(savedSeconds + elapsedTime);
                 }
             } catch (error) {
                 toast.error('Error fetching data:', error.message);
             }
         };
         fetchSingleOrder();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [refetch, totalSeconds]);
-    // ************************************************************************************************
+
     // Start timer when allowed
     useEffect(() => {
         let intervalId;
@@ -87,18 +81,16 @@ const ViewLocalOrder = () => {
             }, 1000);
         }
 
-        return () => clearInterval(intervalId); // Clean up interval on unmount or isRunning change
+        return () => clearInterval(intervalId);
     }, [isRunning]);
 
     useEffect(() => {
-        // Only add saved seconds ONCE when component mounts AND timer is not running.
-        // This ensures it's added only when starting or on reload if the timer was off.
         if (!isRunning) {
             setTotalSeconds(prevSeconds => prevSeconds + savedTotalSeconds.current);
-            savedTotalSeconds.current = 0; // Prevent adding it again
+            savedTotalSeconds.current = 0;
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
 
     // ************************************************************************************************
     // Convert seconds to days, hours, minutes, seconds
@@ -111,11 +103,12 @@ const ViewLocalOrder = () => {
         return `${days}d ${hours}h ${minutes}m ${remainingSeconds}s`;
     };
     // ************************************************************************************************
+
     const handleReadyToQC = () => {
+        if (isLocked) return;
         const changeOrderToQC = async () => {
             try {
                 const response = await axiosSecure.put(`/orderStatusQC/${orderId}`);
-
                 if (response.data.modifiedCount > 0) {
                     setIsRunning(false);
                     dispatch(setRefetch(!refetch));
@@ -132,12 +125,36 @@ const ViewLocalOrder = () => {
         }
         changeOrderToQC();
     };
-    // ************************************************************************************************
+
+    // IMPORTANT: Ready to upload should NOT mark Delivered immediately.
+    // It should set orderStatus = "Ready to Upload".
     const handleReadyToUpload = () => {
+        if (isLocked) return;
+        const changeOrderToReadyToUpload = async () => {
+            try {
+                const response = await axiosSecure.put(`/orderStatusReadyToUpload/${orderId}`);
+                if (response.data.modifiedCount > 0) {
+                    setIsRunning(false);
+                    dispatch(setRefetch(!refetch));
+                    Swal.fire({
+                        title: "Order is Ready to upload",
+                        showConfirmButton: false,
+                        icon: "success",
+                        timer: 1000
+                    });
+                }
+            } catch (error) {
+                toast.error(`Error fetching data: ${error.message}`);
+            }
+        };
+        changeOrderToReadyToUpload();
+    };
+
+    const handleDelivered = () => {
+        if (isLocked) return;
         const changeOrderDelivered = async () => {
             try {
                 const response = await axiosSecure.put(`/orderStatusDelivered/${orderId}`);
-
                 if (response.data.modifiedCount > 0) {
                     setIsRunning(false);
                     dispatch(setRefetch(!refetch));
@@ -154,12 +171,34 @@ const ViewLocalOrder = () => {
         }
         changeOrderDelivered();
     };
-    // ************************************************************************************************
+
+    const handleComplete = () => {
+        if (isLocked) return;
+        const changeOrderComplete = async () => {
+            try {
+                const response = await axiosSecure.put(`/orderStatusComplete/${orderId}`);
+                if (response.data.modifiedCount > 0) {
+                    setIsRunning(false);
+                    dispatch(setRefetch(!refetch));
+                    Swal.fire({
+                        title: "Order marked as Completed",
+                        showConfirmButton: false,
+                        icon: "success",
+                        timer: 1000
+                    });
+                }
+            } catch (error) {
+                toast.error(`Error fetching data: ${error.message}`);
+            }
+        }
+        changeOrderComplete();
+    };
+
     const modifyOrder = () => {
+        if (isLocked) return;
         const changeOrderModify = async () => {
             try {
                 const response = await axiosSecure.put(`/modifyOrderToInitial/${orderId}`);
-
                 if (response.data.modifiedCount > 0) {
                     setIsRunning(false);
                     dispatch(setRefetch(!refetch));
@@ -176,9 +215,9 @@ const ViewLocalOrder = () => {
         }
         changeOrderModify();
     };
-    // ************************************************************************************************
 
     const handleStart = () => {
+        if (isLocked) return;
         Swal.fire({
             title: "Are you sure?",
             icon: "warning",
@@ -214,8 +253,9 @@ const ViewLocalOrder = () => {
             }
         });
     };
-    // ************************************************************************************************
+
     const handleHold = () => {
+        if (isLocked) return;
         const changeOrderToHold = async () => {
 
             try {
@@ -241,16 +281,16 @@ const ViewLocalOrder = () => {
         changeOrderToHold();
     };
 
-    // ************************************************************************************************
     const handleDeadlineExtend = async (e) => {
         e.preventDefault();
         const deadlineMoment = moment(deadline.date).tz(deadline.timezoneName);
         const newDeadline = deadlineMoment.format('DD-MMM-YYYY HH:mm:ss');
         try {
-            const response = await axiosSecure.put(`/extendDeadline/${orderId}`, {newDeadline});
+            const response = await axiosSecure.put(`/extendDeadline/${orderId}`, { newDeadline });
 
             if (response.data.modifiedCount > 0) {
-                // Update the order with the new deadline
+                // server resets to Pending + unlocks; refresh UI
+                setIsRunning(false);
                 dispatch(setRefetch(!refetch));
                 toast.success('Deadline extended successfully');
             }
@@ -258,7 +298,8 @@ const ViewLocalOrder = () => {
             toast.error(`Error fetching data: ${error.message}`);
         }
     };
-    // ************************************************************************************************
+
+    const canSeeAdminControls = localOrder && (currentUser?.role === 'Admin' || currentUser?.role === 'Developer');
 
     return (
         <>
@@ -295,14 +336,32 @@ const ViewLocalOrder = () => {
                         {/**************** order info right side **********************/}
                         <div className='w-[30%] border-r'>
                             <section className='shadow-md rounded-md p-4'>
+                                {/* NEW: Top buttons */}
+                                <div className="flex items-center gap-2 mb-3">
+                                    <button
+                                        className={`text-white py-1 px-3 rounded-md ${(!isLocked && status === 'Ready to Upload') ? 'bg-[#6E3FF3] cursor-pointer' : 'bg-gray-400 cursor-not-allowed'}`}
+                                        disabled={isLocked || status !== 'Ready to Upload'}
+                                        onClick={handleDelivered}
+                                    >
+                                        Delivered
+                                    </button>
+
+                                    <button
+                                        className={`text-white py-1 px-3 rounded-md ${(!isLocked && status === 'Delivered') ? 'bg-[#6E3FF3] cursor-pointer' : 'bg-gray-400 cursor-not-allowed'}`}
+                                        disabled={isLocked || status !== 'Delivered'}
+                                        onClick={handleComplete}
+                                    >
+                                        Complete
+                                    </button>
+                                </div>
+
                                 <h2 className='font-semibold text-xl'>Time left to deliver</h2>
 
-                                {/*  */}
-                                {(localOrder && (currentUser?.role === 'Admin' || currentUser?.role === 'Developer')) && (
+                                {(localOrder && canSeeAdminControls) && (
                                     <Countdown
                                         date={moment(localOrder.orderDeadLine).valueOf()}
                                         renderer={({ days, hours, minutes, seconds, completed }) => {
-                                            if (completed) {
+                                            if (completed || isLocked) {
                                                 return (
                                                     <form onSubmit={handleDeadlineExtend} className="flex">
                                                         <DatePicker
@@ -330,8 +389,6 @@ const ViewLocalOrder = () => {
                                         }}
                                     />
                                 )}
-
-                                {/*  */}
 
                                 <div>
                                     {localOrder?.orderDeadLine && (
@@ -378,11 +435,11 @@ const ViewLocalOrder = () => {
                                 <h2>Order QTY: <span className='font-semibold'>{localOrder?.orderQTY}</span></h2>
                                 <h2>
                                     Order Status: <span className={`
-                                    ${localOrder?.orderStatus === "Pending" ? "text-yellow-400" : ""}
-                                    ${localOrder?.orderStatus === "Hold" ? "text-red-500" : ""}
-                                    ${localOrder?.orderStatus === "In-progress" ? "text-green-500" : ""}
-                                `}>
-                                        {localOrder?.orderStatus}
+                  ${localOrder?.orderStatus === "Pending" ? "text-yellow-400" : ""}
+                  ${localOrder?.orderStatus === "Hold" ? "text-red-500" : ""}
+                  ${localOrder?.orderStatus === "In-progress" ? "text-green-500" : ""}
+                `}>
+                                        {localOrder?.orderStatus}{isLocked ? ' (Locked)' : ''}
                                     </span>
                                 </h2>
                                 <h2>Completion time: <span className='font-semibold border px-1 rounded-md'>{formatTime(totalSeconds)}</span></h2>
@@ -396,22 +453,22 @@ const ViewLocalOrder = () => {
                                         <section className={`shadow-md rounded-md p-4 mt-5 border ${days == '00' && hours == '00' && minutes == '00' && seconds == '00' ? 'hidden' : ''}`}>
                                             <div className={`flex items-center gap-2 ${localOrder?.orderStatus === "Delivered" ? "hidden" : ""}`}>
                                                 <button
-                                                    className={`text-white py-1 px-3 rounded-md ${localOrder?.orderStatus !== "Pending" && localOrder?.orderStatus !== "Hold"
-                                                        ? "bg-gray-400 cursor-not-allowed"
-                                                        : "bg-[#6E3FF3] cursor-pointer"
+                                                    className={`text-white py-1 px-3 rounded-md ${(!isLocked && (localOrder?.orderStatus === "Pending" || localOrder?.orderStatus === "Hold"))
+                                                        ? "bg-[#6E3FF3] cursor-pointer"
+                                                        : "bg-gray-400 cursor-not-allowed"
                                                         }`}
                                                     onClick={handleStart}
-                                                    disabled={localOrder?.orderStatus !== "Pending" && localOrder?.orderStatus !== "Hold"}
+                                                    disabled={isLocked || (localOrder?.orderStatus !== "Pending" && localOrder?.orderStatus !== "Hold")}
                                                 >
                                                     Start the order
                                                 </button>
                                                 <button
-                                                    className={`text-white py-1 px-3 rounded-md ${localOrder?.orderStatus == "Hold" || localOrder?.orderStatus == "Pending" || localOrder?.orderStatus == "Delivered" || localOrder?.orderStatus == "Reviewing"
-                                                        ? "bg-gray-400 cursor-not-allowed"
-                                                        : "bg-[#6E3FF3] cursor-pointer"
+                                                    className={`text-white py-1 px-3 rounded-md ${(!isLocked && localOrder?.orderStatus !== "Hold" && localOrder?.orderStatus !== "Pending" && localOrder?.orderStatus !== "Delivered" && localOrder?.orderStatus !== "Reviewing")
+                                                        ? "bg-[#6E3FF3] cursor-pointer"
+                                                        : "bg-gray-400 cursor-not-allowed"
                                                         }`}
                                                     onClick={handleHold}
-                                                    disabled={localOrder?.orderStatus == "Hold" || localOrder?.orderStatus == "Pending"}
+                                                    disabled={isLocked || localOrder?.orderStatus == "Hold" || localOrder?.orderStatus == "Pending"}
                                                 >
                                                     Hold
                                                 </button>
@@ -421,39 +478,41 @@ const ViewLocalOrder = () => {
                                                 {
                                                     localOrder && localOrder?.orderStatus !== "Ready to QC" ?
                                                         <button id='readyToQC' onClick={handleReadyToQC}
-                                                            className={`text-white py-1 px-3 rounded-md ${localOrder?.orderStatus !== "In-progress"
-                                                                ? "bg-gray-400 cursor-not-allowed"
-                                                                : "bg-[#6E3FF3] cursor-pointer"
-                                                                }`}>Ready to QC
+                                                            className={`text-white py-1 px-3 rounded-md ${(!isLocked && localOrder?.orderStatus === "In-progress")
+                                                                ? "bg-[#6E3FF3] cursor-pointer"
+                                                                : "bg-gray-400 cursor-not-allowed"
+                                                                }`}
+                                                            disabled={isLocked || localOrder?.orderStatus !== "In-progress"}
+                                                        >Ready to QC
                                                         </button>
                                                         :
                                                         <button id='readyToUpload' onClick={handleReadyToUpload}
-                                                            className={`text-white py-1 px-3 rounded-md ${localOrder?.orderStatus !== "Ready to QC"
-                                                                ? "bg-gray-400 cursor-not-allowed"
-                                                                : "bg-[#6E3FF3] cursor-pointer"
-                                                                }`}>Ready to upload
+                                                            className={`text-white py-1 px-3 rounded-md ${(!isLocked && localOrder?.orderStatus === "Ready to QC")
+                                                                ? "bg-[#6E3FF3] cursor-pointer"
+                                                                : "bg-gray-400 cursor-not-allowed"
+                                                                }`}
+                                                            disabled={isLocked || localOrder?.orderStatus !== "Ready to QC"}
+                                                        >Ready to upload
                                                         </button>
 
                                                 }
-
-
                                             </div>
                                             {localOrder && localOrder?.orderStatus === "Delivered" ?
                                                 <div className=''>
                                                     <button id='modify' onClick={modifyOrder}
-                                                        className={`text-white py-1 px-3 rounded-md ${localOrder?.orderStatus === "Delivered"
+                                                        className={`text-white py-1 px-3 rounded-md ${(!isLocked && localOrder?.orderStatus === "Delivered")
                                                             ? "bg-[#6E3FF3] cursor-pointer"
                                                             :
                                                             "bg-gray-400 cursor-not-allowed"
-                                                            }`}>Request to modify
+                                                            }`}
+                                                        disabled={isLocked || localOrder?.orderStatus !== "Delivered"}
+                                                    >Request to modify
                                                     </button>
                                                 </div>
                                                 :
                                                 null
 
                                             }
-
-
                                         </section>
                                     )}
                                 />
