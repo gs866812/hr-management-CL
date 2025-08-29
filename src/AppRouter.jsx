@@ -28,6 +28,7 @@ import ShareholderDetails from './Component/ProfitShare/ShareholderDetails';
 import Payroll from './Component/Payroll/Payroll';
 import LeaveApplication from './Component/Leave/LeaveApplication';
 import AppliedLeave from './Component/Leave/AppliedLeave';
+import EmployeeDetails from './Component/Payroll/EmployeeDetails';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
@@ -59,6 +60,7 @@ export const router = createBrowserRouter([
             { path: '/earnings', element: <ProtectedRole><Earnings /></ProtectedRole> },
             { path: '/payroll', element: <ProtectedRole><Payroll /></ProtectedRole> },
             { path: '/payroll/appliedLeave', element: <ProtectedRole><AppliedLeave /></ProtectedRole> },
+            { path: '/payroll/employeeDetails', element: <ProtectedRole><EmployeeDetails /></ProtectedRole> },
             { path: '/employeeList/morning-shift', element: <MorningShift /> },
             { path: '/profit-share', element: <ProtectHr><ProfitShare /></ProtectHr> },
             { path: '/shareholder-details/:id', element: <ProtectHr><ShareholderDetails /></ProtectHr> },
