@@ -1,15 +1,16 @@
 import React, { useContext, useState } from 'react';
 import { BsCurrencyDollar } from 'react-icons/bs';
 import { CiInboxIn } from 'react-icons/ci';
-import { FaAngleDown, FaAngleUp } from 'react-icons/fa';
+import { FaAngleDown, FaAngleUp, FaUsers } from 'react-icons/fa';
 import { FaHandHoldingDollar, FaSackDollar } from "react-icons/fa6";
 import { IoAnalyticsSharp, IoSettingsOutline } from 'react-icons/io5';
 import { LuCalendarClock, LuUsers } from 'react-icons/lu';
-import { MdOutlineDashboard } from 'react-icons/md';
+import { MdOutlineDashboard, MdOutlineShuffle } from 'react-icons/md';
 import { PiClipboardText } from 'react-icons/pi';
 import { RiCurrencyLine, RiUser2Fill } from 'react-icons/ri';
 import { Link, useLocation } from 'react-router-dom';
 import { ContextData } from '../../DataProvider';
+import { HiDocumentDuplicate } from 'react-icons/hi2';
 
 const Navbar = () => {
     const { currentUser } = useContext(ContextData);
@@ -57,10 +58,51 @@ const Navbar = () => {
                     }
                 >
                     <LuUsers />
-                    <span>Employee</span>
+                    <span>Employee List</span>
                 </Link>
             )}
-
+            {/* ************************************************* ********************/}
+            {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN' || currentUser?.role === 'teamLeader') && (
+                <Link
+                    to="/shifting"
+                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/shifting'
+                        ? 'bg-[#6E3FF3] text-white'
+                        : 'hover:bg-[#6E3FF3] hover:text-white'
+                        }`
+                    }
+                >
+                    <MdOutlineShuffle />
+                    <span>Shifting</span>
+                </Link>
+            )}
+            {/*************************************************************/}
+            {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN') && (
+                <Link
+                    to="/employeeDetails"
+                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start
+                    ${location.pathname === '/employeeDetails'
+                            ? 'bg-[#6E3FF3] text-white'
+                            : 'hover:bg-[#6E3FF3] hover:text-white'
+                        } `}
+                >
+                    <FaUsers />
+                    <span>Employee Details</span>
+                </Link>
+            )}
+            {/*************************************************************/}
+            {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN') && (
+                <Link
+                    to="/appliedLeave"
+                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start
+                    ${location.pathname === '/appliedLeave'
+                            ? 'bg-[#6E3FF3] text-white'
+                            : 'hover:bg-[#6E3FF3] hover:text-white'
+                        } `}
+                >
+                    <HiDocumentDuplicate />
+                    <span>Leave Applications</span>
+                </Link>
+            )}
 
             {/* ********************************************************* */}
 
@@ -157,8 +199,9 @@ const Navbar = () => {
                 </Link>
             )}
 
+
             {/*************************************************************/}
-            {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN') && (
+            {/* {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN') && (
                 <Link
                     to="/payroll"
                     className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start
@@ -170,7 +213,7 @@ const Navbar = () => {
                     <BsCurrencyDollar />
                     <span>Payroll</span>
                 </Link>
-            )}
+            )} */}
             {/*************************************************************/}
             {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN') && (
                 <Link
