@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { useLocation, useParams, Link } from "react-router-dom";
 import { ContextData } from "../../DataProvider";
 import useAxiosProtect from "../../utils/useAxiosProtect";
+import { toast } from "react-toastify";
 
 const Field = ({ label, value }) => (
   <div className="flex flex-col">
@@ -10,10 +11,17 @@ const Field = ({ label, value }) => (
   </div>
 );
 
+const PencilIcon = (props) => (
+  <svg viewBox="0 0 20 20" fill="currentColor" className={`w-4 h-4 ${props.className || ""}`}>
+    <path d="M17.414 2.586a2 2 0 00-2.828 0L6.5 10.672V13.5h2.828l8.086-8.086a2 2 0 000-2.828z" />
+    <path d="M4 16h12v2H4a2 2 0 01-2-2V4h2v12z" />
+  </svg>
+);
+
 const EmployeeProfile = () => {
   const axiosProtect = useAxiosProtect();
   const { user } = useContext(ContextData);
-  const { id } = useParams(); // <-- _id from URL
+  const { id } = useParams();
   const location = useLocation();
   const prefetched = location.state?.prefetched;
 
@@ -21,15 +29,22 @@ const EmployeeProfile = () => {
   const [loading, setLoading] = useState(!prefetched);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (prefetched) return; // already have the employee from the list click
+  // designation edit states
+  const [designations, setDesignations] = useState([]);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedDesignation, setSelectedDesignation] = useState("");
 
+  // Load employee (fallback) if opened directly
+  useEffect(() => {
+    if (prefetched) {
+      setEmployee(prefetched);
+      return;
+    }
     let alive = true;
     (async () => {
       try {
         setLoading(true);
         setError("");
-        // Use existing endpoint; fetch list once and find by _id on client
         const { data } = await axiosProtect.get("/getEmployeeList", {
           params: { userEmail: user?.email, search: "" },
         });
@@ -44,11 +59,66 @@ const EmployeeProfile = () => {
         if (alive) setLoading(false);
       }
     })();
-
     return () => { alive = false; };
   }, [id, prefetched, axiosProtect, user?.email]);
 
-  if (loading) return <div className="p-6 text-sm text-gray-600">Loading profile…</div>;
+  // Load designations for dropdown
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const { data } = await axiosProtect.get("/admin/designations", {
+          params: { userEmail: user?.email },
+        });
+        if (!alive) return;
+        setDesignations(Array.isArray(data) ? data : []);
+      } catch {
+        // fallback: minimal list with current designation
+        setDesignations((prev) => {
+          const cur = prefetched?.designation || employee?.designation;
+          const base = ["Admin", "HR-ADMIN", "Team Leader", "Developer"];
+          const s = new Set([...(prev || []), ...(base || []), cur].filter(Boolean));
+          return Array.from(s);
+        });
+      }
+    })();
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [axiosProtect, user?.email, employee?._id]);
+
+  const startEdit = () => {
+    setSelectedDesignation(employee?.designation || "");
+    setEditMode(true);
+  };
+
+  const cancelEdit = () => {
+    setEditMode(false);
+    setSelectedDesignation("");
+  };
+
+  const saveDesignation = async () => {
+    if (!selectedDesignation || selectedDesignation === employee?.designation) {
+      setEditMode(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      await axiosProtect.put(
+        `/admin/employee/${encodeURIComponent(String(employee._id))}/designation`,
+        { newDesignation: selectedDesignation },
+        { params: { userEmail: user?.email } }
+      );
+      // update UI
+      setEmployee((e) => ({ ...e, designation: selectedDesignation }));
+      setEditMode(false);
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Failed to update designation");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading && !employee) return <div className="p-6 text-sm text-gray-600">Loading profile…</div>;
 
   if (error || !employee) {
     return (
@@ -74,7 +144,48 @@ const EmployeeProfile = () => {
         />
         <div className="flex-1">
           <h1 className="text-2xl md:text-3xl font-bold">{employee.fullName}</h1>
-          <div className="text-sm text-gray-500">{employee.designation}</div>
+
+          {/* Designation + edit */}
+          <div className="mt-1 flex items-center gap-2">
+            {!editMode ? (
+              <>
+                <div className="text-sm text-gray-500">{employee.designation}</div>
+                <button
+                  onClick={startEdit}
+                  className="text-gray-500 hover:text-gray-800 rounded p-1 border border-transparent hover:border-gray-200"
+                  title="Edit designation"
+                >
+                  <PencilIcon />
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedDesignation}
+                  onChange={(e) => setSelectedDesignation(e.target.value)}
+                  className="rounded-xl border px-3 py-1.5 text-sm"
+                >
+                  <option value="" disabled>Select designation</option>
+                  {designations.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={saveDesignation}
+                  className="rounded-xl bg-slate-900 text-white px-3 py-1.5 text-sm"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={cancelEdit}
+                  className="rounded-xl border px-3 py-1.5 text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="mt-3 flex flex-wrap gap-3 text-xs">
             <span className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">
               Status: {employee.status || "N/A"}
@@ -128,12 +239,6 @@ const EmployeeProfile = () => {
 
       {/* Actions */}
       <div className="flex items-center gap-3">
-        {/* <button
-          onClick={() => window.print()}
-          className="rounded-xl border px-3 py-2 text-sm font-medium hover:shadow bg-white"
-        >
-          Print
-        </button> */}
         <Link to="/" className="text-sm text-indigo-600 hover:underline">
           Back to dashboard
         </Link>
