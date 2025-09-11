@@ -76,7 +76,7 @@ const EmployeeProfile = () => {
         // fallback: minimal list with current designation
         setDesignations((prev) => {
           const cur = prefetched?.designation || employee?.designation;
-          const base = ["Admin", "HR-ADMIN", "Team Leader", "Developer"];
+          const base = ["Admin", "HR-ADMIN", "Team Leader", "Developer", "Employee"];
           const s = new Set([...(prev || []), ...(base || []), cur].filter(Boolean));
           return Array.from(s);
         });

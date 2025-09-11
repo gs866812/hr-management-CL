@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { BsCurrencyDollar } from 'react-icons/bs';
 import { CiInboxIn } from 'react-icons/ci';
 import { FaAngleDown, FaAngleUp, FaUsers } from 'react-icons/fa';
-import { FaHandHoldingDollar, FaSackDollar } from "react-icons/fa6";
+import { FaClipboardUser, FaHandHoldingDollar, FaSackDollar } from "react-icons/fa6";
 import { IoAnalyticsSharp, IoSettingsOutline } from 'react-icons/io5';
 import { LuCalendarClock, LuUsers } from 'react-icons/lu';
 import { MdOutlineDashboard, MdOutlineShuffle } from 'react-icons/md';
@@ -255,16 +255,32 @@ const Navbar = () => {
                 </Link>
             )}
             {/* ********************************************************* */}
-            <Link
-                to="/notice-Board"
-                className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/noticeBoard'
-                    ? 'bg-[#6E3FF3] text-white'
-                    : 'hover:bg-[#6E3FF3] hover:text-white'
-                    }`}
-            >
-                <PiClipboardText />
-                <span>Notice Board</span>
-            </Link>
+
+            {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN') && (
+                <Link
+                    to="/notice-board-admin"
+                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/notice-Board-admin'
+                        ? 'bg-[#6E3FF3] text-white'
+                        : 'hover:bg-[#6E3FF3] hover:text-white'
+                        }`}
+                >
+                    <FaClipboardUser />
+                    <span>Notice board</span>
+                </Link>
+            )}
+            {/* ********************************************************* */}
+            {(currentUser?.role === 'employee') && (
+                <Link
+                    to="/notice-board-employee"
+                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/notice-board-employee'
+                        ? 'bg-[#6E3FF3] text-white'
+                        : 'hover:bg-[#6E3FF3] hover:text-white'
+                        }`}
+                >
+                    <FaClipboardUser />
+                    <span>Notice board</span>
+                </Link>
+            )}
             {/* ********************************************************* */}
 
         </div>

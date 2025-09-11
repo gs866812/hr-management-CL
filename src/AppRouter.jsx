@@ -10,14 +10,12 @@ import CreateLocalOrder from './Component/Admin/CreateLocalOrder';
 import MyExpense from './Pages/MyExpense';
 import OrderManagement from './Pages/OrderManagement';
 import ViewLocalOrder from './Component/Admin/ViewLocalOrder';
-import NoticeBoard from './Component/NoticeBoard/NoticeBoard';
 import Clients from './Component/ClientList/Clients';
 import EmployeeSignUp from './Component/EmployeeList/EmployeeSignUp';
 import Earnings from './Component/Earnings/Earnings';
 import ProtectedRole from './Component/Protected/ProtectedRole';
 import ResetPassword from './Component/Login/ResetPassword';
 import EmployeeList from './Component/EmployeeList/EmployeeList';
-import MorningShift from './Component/Shifting/MorningShift';
 import Profile from './Component/Common/Profile';
 import Analytics from './Component/Analytics/Analytics';
 import EditEarnings from './Component/Earnings/EditEarnings';
@@ -31,6 +29,8 @@ import AppliedLeave from './Component/Leave/AppliedLeave';
 import EmployeeDetails from './Component/Payroll/EmployeeDetails';
 import Shifting from './Component/EmployeeList/Shifting';
 import EmployeeProfile from './Component/EmployeeList/EmployeeProfile';
+import NoticeBoardAdmin from './Component/NoticeBoard/NoticeBoardAdmin';
+import NoticeBoard from './Component/NoticeBoard/NoticeBoard';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
@@ -45,7 +45,8 @@ export const router = createBrowserRouter([
         errorElement: <NotFound />,
         children: [
             { path: '/', element: <Home /> },
-            { path: '/notice-board', element: <NoticeBoard /> },
+            { path: '/notice-board-admin', element: <NoticeBoardAdmin /> },
+            { path: '/notice-board-employee', element: <NoticeBoard /> },
             { path: '/expense', element: <ProtectedRole><MyExpense /></ProtectedRole> },
             { path: '/employee-registration', element: <ProtectedRole><EmployeeSignUp /></ProtectedRole> },
             { path: '/earnings/editEarnings/:id', element: <EditEarnings /> },
