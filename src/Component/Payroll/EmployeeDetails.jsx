@@ -5,18 +5,19 @@ import "react-datepicker/dist/react-datepicker.css";
 import { ContextData } from "../../DataProvider";
 import useAxiosProtect from "../../utils/useAxiosProtect";
 
-// ---------- helpers ----------
+// ---------- constants & helpers ----------
 const tz = "Asia/Dhaka";
+
 const fmtDate = (d) => moment(d).tz(tz).format("YYYY-MM-DD");
 const niceDate = (d) =>
   moment(d, ["YYYY-MM-DD", "DD-MMM-YYYY"]).tz(tz).format("DD-MMM-YYYY");
+
 const msToHm = (ms) => {
-  const total = Math.max(0, Math.floor(ms / 1000));
+  const total = Math.max(0, Math.floor((ms || 0) / 1000));
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
   return `${h}h ${m}m`;
 };
-const z = (n) => n ?? 0;
 
 const PERIODS = [
   { key: "today", label: "Today" },
@@ -36,7 +37,7 @@ const GROUPS = [
 // parse "1h 20m" → 80 (minutes)
 const lateToMinutes = (v) => {
   if (!v) return 0;
-  if (typeof v === "number") return v; // already minutes
+  if (typeof v === "number") return v;
   if (typeof v === "string") {
     const h = v.match(/(\d+)\s*h/i);
     const m = v.match(/(\d+)\s*m/i);
@@ -55,7 +56,26 @@ const Badge = ({ children, tone = "slate" }) => (
   </span>
 );
 
-// ---------- main component ----------
+// shift window per day
+const shiftWindowForDay = (shiftName, day) => {
+  const d = moment(day).tz(tz).startOf("day");
+  switch ((shiftName || "").toLowerCase()) {
+    case "morning":
+      return { start: d.clone().hour(6), end: d.clone().hour(14) }; // 6am–2pm
+    case "general":
+      return { start: d.clone().hour(10), end: d.clone().hour(18) }; // 10am–6pm
+    case "evening":
+      return { start: d.clone().hour(14), end: d.clone().hour(22) }; // 2pm–10pm
+    default:
+      // unknown shift → assume full day window so they won't be marked absent early
+      return {
+        start: d.clone().hour(0),
+        end: d.clone().hour(23).minute(59).second(59),
+      };
+  }
+};
+
+// ---------- main ----------
 const EmployeeDetails = () => {
   const axiosProtect = useAxiosProtect();
   const { user } = useContext(ContextData);
@@ -65,18 +85,19 @@ const EmployeeDetails = () => {
   const [groupBy, setGroupBy] = useState("daily");
   const [start, setStart] = useState(new Date());
   const [end, setEnd] = useState(new Date());
-  const [employees, setEmployees] = useState([]);
-  const [employeeEmail, setEmployeeEmail] = useState(""); // all by default
+  const [employeeEmail, setEmployeeEmail] = useState("");
   const [search, setSearch] = useState("");
 
   // data
+  const [employees, setEmployees] = useState([]);
+  const [shiftMap, setShiftMap] = useState(new Map()); // email → shiftName
+  const [attendanceRows, setAttendanceRows] = useState([]);
+  const [otAggRows, setOtAggRows] = useState([]);
+  const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [attendanceRows, setAttendanceRows] = useState([]); // list across employees
-  const [otAggRows, setOtAggRows] = useState([]); // grouped OT rows
-  const [leaves, setLeaves] = useState([]); // all leave docs (existing endpoint)
   const [error, setError] = useState("");
 
-  // derived range from presets
+  // period → dates
   useEffect(() => {
     const now = moment().tz(tz);
     if (period === "today") {
@@ -94,41 +115,73 @@ const EmployeeDetails = () => {
     }
   }, [period]);
 
-  // fetch employees (existing)
+  // load employees
   useEffect(() => {
     let alive = true;
+    if (!user?.email) return;
     (async () => {
       try {
         const { data } = await axiosProtect.get("/getEmployeeList", {
-          params: { userEmail: user?.email, search: "" },
+          params: { userEmail: user.email, search: "" },
         });
         if (!alive) return;
         setEmployees(Array.isArray(data) ? data : []);
-      } catch (e) {
-        // fail silently; UI still works
+      } catch {
+        /* swallow */
       }
     })();
-    return () => (alive = false);
+    return () => {
+      alive = false;
+    };
   }, [axiosProtect, user?.email]);
 
-  // fetch leaves (existing; returns all leaves)
+  // load leaves
   useEffect(() => {
     let alive = true;
+    if (!user?.email) return;
     (async () => {
       try {
         const { data } = await axiosProtect.get("/getAppliedLeave", {
-          params: { userEmail: user?.email },
+          params: { userEmail: user.email },
         });
         if (!alive) return;
         setLeaves(Array.isArray(data) ? data : []);
-      } catch (e) {
-        // ignore
+      } catch {
+        /* swallow */
       }
     })();
-    return () => (alive = false);
+    return () => {
+      alive = false;
+    };
   }, [axiosProtect, user?.email]);
 
-  // fetch attendance + OT (admin endpoints to add)
+  // load shift map
+  useEffect(() => {
+    let alive = true;
+    if (!user?.email) return;
+    (async () => {
+      try {
+        const { data } = await axiosProtect.get("/gethShiftedEmployee", {
+          params: { userEmail: user.email },
+        });
+        if (!alive) return;
+        const m = new Map();
+        (Array.isArray(data) ? data : []).forEach((s) => {
+          const k = s.actualEmail || s.email;
+          if (!k) return;
+          m.set(k, s.shiftName);
+        });
+        setShiftMap(m);
+      } catch {
+        /* swallow */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [axiosProtect, user?.email]);
+
+  // fetch attendance + OT
   const fetchData = async () => {
     if (!user?.email) return;
     setLoading(true);
@@ -171,52 +224,19 @@ const EmployeeDetails = () => {
     // eslint-disable-next-line
   }, [period, start, end, groupBy, employeeEmail, search]);
 
-  // map employees by email for quick lookup
+  // maps for quick lookup
   const empMap = useMemo(() => {
     const m = new Map();
     employees.forEach((e) => m.set(e.email, e));
     return m;
   }, [employees]);
 
-  // compute summary
-  const summary = useMemo(() => {
-    const startD = moment(start).tz(tz).startOf("day");
-    const endD = moment(end).tz(tz).endOf("day");
-    const days = [];
-    const cursor = startD.clone();
-    while (cursor.isSameOrBefore(endD)) {
-      days.push(cursor.format("DD-MMM-YYYY"));
-      cursor.add(1, "day");
-    }
-
-    const allEmails = employees.map((e) => e.email);
-    const filteredRows = attendanceRows.filter(
-      (r) =>
-        (!employeeEmail || r.email === employeeEmail) &&
-        (search
-          ? (r.fullName || "")
-              .toLowerCase()
-              .includes(search.toLowerCase()) ||
-            (r.email || "").toLowerCase().includes(search.toLowerCase()) ||
-            String(empMap.get(r.email)?.eid || "")
-              .toLowerCase()
-              .includes(search.toLowerCase())
-          : true)
-    );
-
-    // present by day
-    const presentByDay = new Map();
-    filteredRows.forEach((r) => {
-      const d = niceDate(r.date);
-      if (!presentByDay.has(d)) presentByDay.set(d, new Set());
-      presentByDay.get(d).add(r.email);
-    });
-
-    // leave emails by day (Approved only + overlap)
-    const leaveByDay = new Map();
-    const rangeStart = moment(start).tz(tz).startOf("day").valueOf();
-    const rangeEnd = moment(end).tz(tz).endOf("day").valueOf();
-    leaves
+  // leave sets per day in range
+  const makeLeaveByDay = (startDate, endDate) => {
+    const map = new Map();
+    const rangeStart = moment(startDate).tz(tz).startOf("day").valueOf();
+    const rangeEnd = moment(endDate).tz(tz).endOf("day").valueOf();
+    (leaves || [])
       .filter((l) => l?.status === "Approved")
       .forEach((l) => {
         const from = moment(l?.fromDate).valueOf();
@@ -228,93 +248,136 @@ const EmployeeDetails = () => {
         const c = moment(s).startOf("day");
         const stop = moment(e).startOf("day");
         while (c.isSameOrBefore(stop)) {
-          const dKey = c.tz(tz).format("DD-MMM-YYYY");
-          if (!leaveByDay.has(dKey)) leaveByDay.set(dKey, new Set());
-          leaveByDay.get(dKey).add(l.email);
+          const key = c.tz(tz).format("DD-MMM-YYYY");
+          if (!map.has(key)) map.set(key, new Set());
+          map.get(key).add(l.email);
           c.add(1, "day");
         }
       });
+    return map;
+  };
 
-    // late count
-    const lateCount = filteredRows.reduce(
+  // determine correct status when no check-in yet
+  const statusWithoutCheckin = (employeeEmail, dayMoment, leaveSetForDay) => {
+    if (leaveSetForDay.has(employeeEmail)) return "On Leave";
+
+    const shiftName = shiftMap.get(employeeEmail);
+    const { start: s, end: e } = shiftWindowForDay(shiftName, dayMoment);
+
+    const now = moment().tz(tz);
+    const isToday = dayMoment.isSame(now, "day");
+
+    if (isToday) {
+      if (now.isBefore(s)) return "Not Started"; // e.g., Evening shift in the morning
+      if (now.isSameOrBefore(e)) return "Yet to Check-in";
+      return "Absent"; // after own shift end
+    }
+
+    if (dayMoment.isBefore(now, "day")) return "Absent"; // past day, no CI & not on leave
+    return "Not Started"; // future day
+  };
+
+  // summary counters
+  const summary = useMemo(() => {
+    const startD = moment(start).tz(tz).startOf("day");
+    const endD = moment(end).tz(tz).endOf("day");
+    const days = [];
+    const cursor = startD.clone();
+    while (cursor.isSameOrBefore(endD)) {
+      days.push(cursor.format("DD-MMM-YYYY"));
+      cursor.add(1, "day");
+    }
+
+    const presentByDay = new Map();
+    attendanceRows.forEach((r) => {
+      const d = niceDate(r.date);
+      if (!presentByDay.has(d)) presentByDay.set(d, new Set());
+      presentByDay.get(d).add(r.email);
+    });
+
+    const leaveByDay = makeLeaveByDay(start, end);
+    const allEmails = employees.map((e) => e.email);
+    const late = attendanceRows.reduce(
       (acc, r) => acc + (lateToMinutes(r.lateCheckIn) > 0 ? 1 : 0),
       0
     );
 
-    if (period === "today" || days.length === 1) {
+    // single-day summary uses shift window to avoid early Absents
+    if (days.length === 1) {
       const d = days[0];
+      const dayMoment = moment(d, "DD-MMM-YYYY").tz(tz);
       const presentSet = presentByDay.get(d) || new Set();
       const leaveSet = leaveByDay.get(d) || new Set();
-      const present = presentSet.size;
-      const onLeave = leaveSet.size;
-      const absent = Math.max(0, allEmails.length - present - onLeave);
-      return { present, absent, onLeave, late: lateCount };
+
+      let present = 0,
+        onLeave = 0,
+        absent = 0;
+
+      const now = moment().tz(tz);
+      const isToday = dayMoment.isSame(now, "day");
+
+      allEmails.forEach((email) => {
+        if (presentSet.has(email)) {
+          present += 1;
+          return;
+        }
+        if (leaveSet.has(email)) {
+          onLeave += 1;
+          return;
+        }
+        const { end: e } = shiftWindowForDay(shiftMap.get(email), dayMoment);
+        if (isToday) {
+          if (now.isAfter(e)) absent += 1; // absent only after their shift end
+        } else if (dayMoment.isBefore(now, "day")) {
+          absent += 1; // past day with no CI and no leave
+        }
+      });
+
+      return { present, absent, onLeave, late };
     }
 
-    // range summary (unique)
-    const presentEmails = new Set(filteredRows.map((r) => r.email));
+    // range summary (unique people present at least once)
+    const presentEmails = new Set(attendanceRows.map((r) => r.email));
     const leaveEmails = new Set(
-      leaves.filter((l) => l.status === "Approved").map((l) => l.email)
+      (leaves || [])
+        .filter((l) => l.status === "Approved")
+        .map((l) => l.email)
     );
-
     const present = presentEmails.size;
     const onLeave = Array.from(leaveEmails).filter((em) =>
       allEmails.includes(em)
     ).length;
     const absent = Math.max(0, allEmails.length - present - onLeave);
+    return { present, absent, onLeave, late };
+  }, [attendanceRows, employees, start, end, leaves, shiftMap]);
 
-    return { present, absent, onLeave, late: lateCount };
-  }, [
-    attendanceRows,
-    employees,
-    employeeEmail,
-    leaves,
-    period,
-    start,
-    end,
-    search,
-    empMap,
-  ]);
-
-  // build "today roster" rows (only for single day)
+  // today roster (shift-aware)
   const todayRoster = useMemo(() => {
     const isSingle = moment(start).isSame(end, "day");
     if (!isSingle) return [];
     const dayKey = moment(start).tz(tz).format("DD-MMM-YYYY");
+    const dayMoment = moment(dayKey, "DD-MMM-YYYY").tz(tz);
 
     const presentSet = new Set(
       attendanceRows
         .filter((r) => niceDate(r.date) === dayKey)
         .map((r) => r.email)
     );
-    const leaveSet = new Set(
-      leaves
-        .filter(
-          (l) =>
-            l.status === "Approved" &&
-            moment(dayKey, "DD-MMM-YYYY").isBetween(
-              moment(l.fromDate).startOf("day"),
-              moment(l.toDate).endOf("day"),
-              undefined,
-              "[]"
-            )
-        )
-        .map((l) => l.email)
-    );
+    const leaveByDay = makeLeaveByDay(start, end);
+    const leaveSet = leaveByDay.get(dayKey) || new Set();
 
     return employees
       .filter((e) => !employeeEmail || e.email === employeeEmail)
       .map((e) => {
-        const isPresent = presentSet.has(e.email);
-        const isLeave = leaveSet.has(e.email);
-        const status = isPresent ? "Present" : isLeave ? "On Leave" : "Absent";
-
         const row =
           attendanceRows.find(
             (r) => r.email === e.email && niceDate(r.date) === dayKey
           ) || {};
-
+        const hasCheckin = !!row.checkInTime;
         const lateMinutes = lateToMinutes(row.lateCheckIn);
+        const status = hasCheckin
+          ? "Present"
+          : statusWithoutCheckin(e.email, dayMoment, leaveSet);
 
         return {
           email: e.email,
@@ -322,7 +385,7 @@ const EmployeeDetails = () => {
           fullName: e.fullName,
           designation: e.designation,
           status,
-          lateMinutes, // number
+          lateMinutes,
           work: row.workingHourInSeconds ? msToHm(row.workingHourInSeconds) : "-",
           ot: row.totalOTInSeconds ? msToHm(row.totalOTInSeconds) : "-",
         };
@@ -330,16 +393,14 @@ const EmployeeDetails = () => {
       .filter((r) =>
         search
           ? (r.fullName || "").toLowerCase().includes(search.toLowerCase()) ||
-            (r.email || "").toLowerCase().includes(search.toLowerCase()) ||
-            String(r.eid || "")
-              .toLowerCase()
-              .includes(search.toLowerCase())
+          (r.email || "").toLowerCase().includes(search.toLowerCase()) ||
+          String(r.eid || "").toLowerCase().includes(search.toLowerCase())
           : true
       )
       .sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""));
-  }, [attendanceRows, employees, employeeEmail, leaves, start, end, search]);
+  }, [attendanceRows, employees, employeeEmail, start, end, search, shiftMap]);
 
-  // CSV export
+  // CSV export (detailed attendance table)
   const exportCsv = () => {
     const rows = [
       [
@@ -349,7 +410,7 @@ const EmployeeDetails = () => {
         "EID",
         "Status",
         "Check-In",
-        "Late",
+        "Late (min)",
         "Check-Out",
         "Working",
         "OT",
@@ -359,11 +420,9 @@ const EmployeeDetails = () => {
         r.fullName || empMap.get(r.email)?.fullName || "",
         r.email,
         empMap.get(r.email)?.eid || "",
-        r.status || (r.checkInTime ? "Present" : "Absent"),
+        r.checkInTime ? "Present" : "Absent",
         r.checkInTime ? moment(r.checkInTime).tz(tz).format("hh:mm A") : "",
-        lateToMinutes(r.lateCheckIn) > 0
-          ? `${lateToMinutes(r.lateCheckIn)}m`
-          : "",
+        lateToMinutes(r.lateCheckIn) || "",
         r.checkOutTime ? moment(r.checkOutTime).tz(tz).format("hh:mm A") : "",
         r.workingHourInSeconds ? msToHm(r.workingHourInSeconds) : "",
         r.totalOTInSeconds ? msToHm(r.totalOTInSeconds) : "",
@@ -413,11 +472,10 @@ const EmployeeDetails = () => {
               <button
                 key={p.key}
                 onClick={() => setPeriod(p.key)}
-                className={`px-3 py-2 rounded-xl text-sm border ${
-                  period === p.key
+                className={`px-3 py-2 rounded-xl text-sm border ${period === p.key
                     ? "bg-slate-900 text-white"
                     : "bg-white hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 {p.label}
               </button>
@@ -426,9 +484,8 @@ const EmployeeDetails = () => {
 
           {/* Custom dates */}
           <div
-            className={`flex items-center gap-2 ${
-              period === "custom" ? "" : "opacity-60 pointer-events-none"
-            }`}
+            className={`flex items-center gap-2 ${period === "custom" ? "" : "opacity-60 pointer-events-none"
+              }`}
           >
             <DatePicker
               selected={start}
@@ -478,7 +535,7 @@ const EmployeeDetails = () => {
             </select>
           </div>
 
-          {/* Search (now includes EID) */}
+          {/* Search */}
           <div className="flex items-center gap-2">
             <input
               value={search}
@@ -599,6 +656,10 @@ const EmployeeDetails = () => {
                       {r.status === "Present" && <Badge tone="emerald">Present</Badge>}
                       {r.status === "On Leave" && <Badge tone="amber">On Leave</Badge>}
                       {r.status === "Absent" && <Badge tone="rose">Absent</Badge>}
+                      {r.status === "Not Started" && <Badge tone="slate">Not Started</Badge>}
+                      {r.status === "Yet to Check-in" && (
+                        <Badge tone="orange">Yet to Check-in</Badge>
+                      )}
                     </td>
                     <td className="px-3 py-2">
                       {r.lateMinutes > 0 ? (
@@ -612,22 +673,18 @@ const EmployeeDetails = () => {
                   </tr>
                 ))
               ) : (
-                // Range > 1 day: keep the compact employee summary as before
                 employees
                   .filter((e) => !employeeEmail || e.email === employeeEmail)
                   .map((e) => {
                     const rows = attendanceRows.filter((r) => r.email === e.email);
-                    const presentDays = new Set(
-                      rows.map((r) => niceDate(r.date))
-                    ).size;
-                    const late = rows.filter((r) => lateToMinutes(r.lateCheckIn) > 0)
-                      .length;
+                    const presentDays = new Set(rows.map((r) => niceDate(r.date))).size;
+                    const late = rows.filter((r) => lateToMinutes(r.lateCheckIn) > 0).length;
                     const totalWorkMs = rows.reduce(
-                      (acc, r) => acc + z(r.workingHourInSeconds),
+                      (acc, r) => acc + (r.workingHourInSeconds || 0),
                       0
                     );
                     const totalOtMs = rows.reduce(
-                      (acc, r) => acc + z(r.totalOTInSeconds),
+                      (acc, r) => acc + (r.totalOTInSeconds || 0),
                       0
                     );
                     return (
@@ -650,15 +707,15 @@ const EmployeeDetails = () => {
               )}
               {((isRoster && todayRoster.length === 0) ||
                 (!isRoster && employees.length === 0)) && (
-                <tr>
-                  <td
-                    colSpan={noRowsColSpan}
-                    className="px-3 py-6 text-center text-slate-500"
-                  >
-                    No records
-                  </td>
-                </tr>
-              )}
+                  <tr>
+                    <td
+                      colSpan={noRowsColSpan}
+                      className="px-3 py-6 text-center text-slate-500"
+                    >
+                      No records
+                    </td>
+                  </tr>
+                )}
             </tbody>
           </table>
         </div>
@@ -671,47 +728,30 @@ const EmployeeDetails = () => {
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 sticky top-0 z-10">
               <tr>
-                <th className="px-3 py-2 text-left font-medium text-slate-600">
-                  Date
-                </th>
-                <th className="px-3 py-2 text-left font-medium text-slate-600">
-                  Employee
-                </th>
-                <th className="px-3 py-2 text-left font-medium text-slate-600">
-                  Email
-                </th>
-                <th className="px-3 py-2 text-left font-medium text-slate-600">
-                  Check-In
-                </th>
-                <th className="px-3 py-2 text-left font-medium text-slate-600">
-                  Late
-                </th>
-                <th className="px-3 py-2 text-left font-medium text-slate-600">
-                  Check-Out
-                </th>
-                <th className="px-3 py-2 text-left font-medium text-slate-600">
-                  Working
-                </th>
-                <th className="px-3 py-2 text-left font-medium text-slate-600">
-                  OT
-                </th>
+                <th className="px-3 py-2 text-left font-medium text-slate-600">Date</th>
+                <th className="px-3 py-2 text-left font-medium text-slate-600">Employee</th>
+                <th className="px-3 py-2 text-left font-medium text-slate-600">Email</th>
+                <th className="px-3 py-2 text-left font-medium text-slate-600">Check-In</th>
+                <th className="px-3 py-2 text-left font-medium text-slate-600">Late</th>
+                <th className="px-3 py-2 text-left font-medium text-slate-600">Check-Out</th>
+                <th className="px-3 py-2 text-left font-medium text-slate-600">Working</th>
+                <th className="px-3 py-2 text-left font-medium text-slate-600">OT</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {attendanceRows
                 .filter((r) => !employeeEmail || r.email === employeeEmail)
-                // Search now also checks EID via empMap
                 .filter((r) =>
                   search
                     ? (r.fullName || "")
-                        .toLowerCase()
-                        .includes(search.toLowerCase()) ||
-                      (r.email || "")
-                        .toLowerCase()
-                        .includes(search.toLowerCase()) ||
-                      String(empMap.get(r.email)?.eid || "")
-                        .toLowerCase()
-                        .includes(search.toLowerCase())
+                      .toLowerCase()
+                      .includes(search.toLowerCase()) ||
+                    (r.email || "")
+                      .toLowerCase()
+                      .includes(search.toLowerCase()) ||
+                    String(empMap.get(r.email)?.eid || "")
+                      .toLowerCase()
+                      .includes(search.toLowerCase())
                     : true
                 )
                 .sort(
@@ -751,10 +791,7 @@ const EmployeeDetails = () => {
                 ))}
               {attendanceRows.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="px-3 py-6 text-center text-slate-500"
-                  >
+                  <td colSpan={8} className="px-3 py-6 text-center text-slate-500">
                     No records
                   </td>
                 </tr>
@@ -797,17 +834,12 @@ const EmployeeDetails = () => {
                       {r.fullName || empMap.get(r.email)?.fullName || "—"}
                     </td>
                     <td className="px-3 py-2">{r.email}</td>
-                    <td className="px-3 py-2">
-                      {msToHm(r.totalOTInSeconds || 0)}
-                    </td>
+                    <td className="px-3 py-2">{msToHm(r.totalOTInSeconds || 0)}</td>
                   </tr>
                 ))}
               {otAggRows.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={4}
-                    className="px-3 py-6 text-center text-slate-500"
-                  >
+                  <td colSpan={4} className="px-3 py-6 text-center text-slate-500">
                     No overtime records
                   </td>
                 </tr>
