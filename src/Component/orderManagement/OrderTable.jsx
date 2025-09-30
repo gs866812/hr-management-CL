@@ -2,10 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import {
     Search,
     ChevronDown,
-    ChevronLeft,
-    ChevronRight,
-    Edit2,
-    SlidersHorizontal,
+    Pencil
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import moment from 'moment';
@@ -15,30 +12,24 @@ import { useSelector } from 'react-redux';
 import { IoEyeOutline } from 'react-icons/io5';
 import Countdown from 'react-countdown';
 import { BsChevronDoubleLeft, BsChevronDoubleRight } from 'react-icons/bs';
-
-
+import EditLocalOrderModal from './EditLocalOrderModal';
 
 const OrderTable = () => {
     const axiosProtect = useAxiosProtect();
-
     const { user, currentUser } = useContext(ContextData);
     const refetch = useSelector((state) => state.refetch.refetch);
 
+    const [searchOption, setSearchOption] = useState('');
+    const [isOpen, setIsOpen] = useState(false);
+    const [sortValue, setSortValue] = useState('Date');
 
-    const [searchTerm, setSearchTerm] = useState('');
-    const [sortBy, setSortBy] = useState('date');
+    const [localOrder, setLocalOrder] = useState([]);
+    const [orderCount, setOrderCount] = useState(0);
 
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [orderCount, setOrderCount] = useState(0);
-    const [searchOption, setSearchOption] = useState('');
 
-    const [isOpen, setIsOpen] = useState(false);
-
-
-    const [sortValue, setSortValue] = useState('Date');
-    const [localOrder, setLocalOrder] = useState([]);
-
+    const [editing, setEditing] = useState(null);
 
     const sortValues = [
         'Date',
@@ -51,12 +42,11 @@ const OrderTable = () => {
         'Action',
     ];
 
-
-    // ****************************************************************************************
+    // Fetch list
     useEffect(() => {
         const fetchLocalOrder = async () => {
             try {
-                const response = await axiosProtect.get('/getLocalOrder', {
+                const { data } = await axiosProtect.get('/getLocalOrder', {
                     params: {
                         userEmail: user?.email,
                         page: currentPage,
@@ -64,94 +54,57 @@ const OrderTable = () => {
                         search: searchOption,
                     },
                 });
-                setLocalOrder(response.data.orders);
-                setOrderCount(response.data.count);
+                setLocalOrder(data?.orders || []);
+                setOrderCount(data?.count || 0);
             } catch (error) {
-                toast.error('Error fetching data:', error.message);
+                toast.error(error?.response?.data?.message || 'Failed to load orders');
             }
         };
-        fetchLocalOrder();
-    }, [refetch, currentPage, itemsPerPage, searchOption, axiosProtect]);
+        if (user?.email) fetchLocalOrder();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [refetch, currentPage, itemsPerPage, searchOption, axiosProtect, user?.email]);
 
-
-    // ****************************************************************************************
     const handleViewOrder = (id) => {
-        // navigate(`${id}`);
-        window.open(`/recentOrders/${id}`, "_blank");
+        window.open(`/recentOrders/${id}`, '_blank');
     };
-    // ****************************************************************************************
-    // *************************pagination****************************************************************************
-    const totalItem = orderCount;
-    const numberOfPages = Math.ceil(totalItem / itemsPerPage);
 
-    // ----------------------------------------------------------------
+    // Pagination helpers
+    const numberOfPages = Math.ceil(orderCount / itemsPerPage);
 
     const renderPageNumbers = () => {
-        const pageNumbers = [];
-        const maxPagesToShow = 5;
-        const halfMaxPagesToShow = Math.floor(maxPagesToShow / 2);
+        const pages = [];
         const totalPages = numberOfPages;
+        const maxPagesToShow = 5;
+        const half = Math.floor(maxPagesToShow / 2);
 
         if (totalPages <= maxPagesToShow) {
-            for (let i = 1; i <= totalPages; i++) {
-                pageNumbers.push(i);
-            }
+            for (let i = 1; i <= totalPages; i++) pages.push(i);
+        } else if (currentPage <= half) {
+            for (let i = 1; i <= maxPagesToShow; i++) pages.push(i);
+            pages.push('...', totalPages);
+        } else if (currentPage > totalPages - half) {
+            pages.push(1, '...');
+            for (let i = totalPages - maxPagesToShow + 1; i <= totalPages; i++) pages.push(i);
         } else {
-            if (currentPage <= halfMaxPagesToShow) {
-                for (let i = 1; i <= maxPagesToShow; i++) {
-                    pageNumbers.push(i);
-                }
-                pageNumbers.push("...", totalPages);
-            } else if (currentPage > totalPages - halfMaxPagesToShow) {
-                pageNumbers.push(1, "...");
-                for (let i = totalPages - maxPagesToShow + 1; i <= totalPages; i++) {
-                    pageNumbers.push(i);
-                }
-            } else {
-                pageNumbers.push(1, "...");
-                for (
-                    let i = currentPage - halfMaxPagesToShow;
-                    i <= currentPage + halfMaxPagesToShow;
-                    i++
-                ) {
-                    pageNumbers.push(i);
-                }
-                pageNumbers.push("...", totalPages);
-            }
+            pages.push(1, '...');
+            for (let i = currentPage - half; i <= currentPage + half; i++) pages.push(i);
+            pages.push('...', totalPages);
         }
-
-        return pageNumbers;
+        return pages;
     };
-    // ----------------------------------------------------------------
+
+    const handlePrevPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
+    const handleNextPage = () => currentPage < numberOfPages && setCurrentPage(currentPage + 1);
     const handleItemsPerPage = (e) => {
-        const val = parseInt(e.target.value);
-        setItemsPerPage(val);
+        setItemsPerPage(parseInt(e.target.value, 10));
         setCurrentPage(1);
-    };
-
-    const handlePrevPage = () => {
-        if (currentPage > 1) {
-            setCurrentPage(currentPage - 1);
-        }
-    };
-
-    const handleNextPage = () => {
-        if (currentPage < numberOfPages) {
-            setCurrentPage(currentPage + 1);
-        }
-    };
-
-    const handlePageClick = (page) => {
-        setCurrentPage(page);
     };
 
     return (
         <div className="w-full bg-white rounded-xl shadow-lg border border-gray-100 p-6">
             <div className="flex flex-col gap-6 mb-6">
                 <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-800">
-                        Order List
-                    </h2>
+                    <h2 className="text-xl font-semibold text-gray-800">Order List</h2>
                 </div>
 
                 <div className="flex justify-between items-center gap-4">
@@ -162,7 +115,10 @@ const OrderTable = () => {
                             placeholder="Search order..."
                             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6E3FF3] focus:border-transparent"
                             value={searchOption}
-                            onChange={(e) => setSearchOption(e.target.value)}
+                            onChange={(e) => {
+                                setSearchOption(e.target.value);
+                                setCurrentPage(1);
+                            }}
                         />
                     </div>
 
@@ -171,25 +127,21 @@ const OrderTable = () => {
                             onClick={() => setIsOpen(!isOpen)}
                             className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
                         >
-                            <SlidersHorizontal className="size-4 text-gray-600" />
-                            <span className="text-sm text-gray-600">
-                                {sortValue}
-                            </span>
+                            <span className="text-sm text-gray-600">{sortValue}</span>
                             <ChevronDown className="w-4 h-4" />
                         </button>
-
                         {isOpen && (
                             <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-100 rounded-lg shadow-lg z-10">
-                                {sortValues.map((period) => (
+                                {sortValues.map((item) => (
                                     <button
-                                        key={period}
+                                        key={item}
                                         onClick={() => {
-                                            setSortValue(period);
+                                            setSortValue(item);
                                             setIsOpen(false);
                                         }}
                                         className="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left first:rounded-t-lg last:rounded-b-lg"
                                     >
-                                        {period}
+                                        {item}
                                     </button>
                                 ))}
                             </div>
@@ -200,143 +152,170 @@ const OrderTable = () => {
 
             <div className="overflow-x-auto mt-5">
                 <table className="table table-zebra">
-                    {/* head */}
-                    <thead className='bg-[#6E3FF3] text-white'>
+                    <thead className="bg-[#6E3FF3] text-white">
                         <tr>
-                            <th className='w-[12%]'>Date</th>
+                            <th className="w-[12%]">Date</th>
                             <th>Client ID</th>
                             <th>Order Name</th>
                             <th>Order QTY</th>
-                            {
-                                currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN' ||
-                                currentUser?.role === 'Developer' && <th> Order Price</th>
-                            }
+                            {(currentUser?.role === 'Admin' ||
+                                currentUser?.role === 'HR-ADMIN' ||
+                                currentUser?.role === 'Developer') && <th>Order Price</th>}
                             <th>Deadline</th>
                             <th>Status</th>
                             <th>User</th>
                             <th>Action</th>
                         </tr>
                     </thead>
+
                     <tbody>
-                        {
-                            localOrder.length > 0 ? (
-                                localOrder.map((order, index) => {
-                                    return (
-                                        <tr key={index}>
-                                            <td>{moment(order.date).format('DD-MMM-YYYY')}</td>
-                                            <td>{order.clientID}</td>
-                                            <td>{order.orderName}</td>
-                                            <td>{Number(order.orderQTY).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                            {
-                                                currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN' ||
-                                                currentUser?.role === 'Developer'
-                                                && <td>{Number(order.orderPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                            }
+                        {localOrder?.length ? (
+                            localOrder.map((order) => {
+                                const canSeePrice =
+                                    currentUser?.role === 'Admin' ||
+                                    currentUser?.role === 'HR-ADMIN' ||
+                                    currentUser?.role === 'Developer';
+
+                                return (
+                                    <tr key={order._id}>
+                                        <td>{order?.date ? moment(order.date).format('DD-MMM-YYYY') : '—'}</td>
+                                        <td>{order.clientID}</td>
+                                        <td>{order.orderName}</td>
+                                        <td>
+                                            {Number(order.orderQTY || 0).toLocaleString(undefined, {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            })}
+                                        </td>
+                                        {canSeePrice && (
                                             <td>
-                                                {order?.orderDeadLine && (
-                                                    <Countdown
-                                                        date={moment(order.orderDeadLine).valueOf()} // Convert to timestamp
-                                                        renderer={({ days, hours, minutes, seconds }) => (
-                                                            <span>
-                                                                {String(days).padStart(2, "0")} days{" "}
-                                                                {String(hours).padStart(2, "0")} h{" "}
-                                                                {String(minutes).padStart(2, "0")} min{" "}
-                                                                {String(seconds).padStart(2, "0")} sec
-                                                            </span>
-                                                        )}
-                                                    />
-                                                )}
+                                                {Number(order.orderPrice || 0).toLocaleString(undefined, {
+                                                    minimumFractionDigits: 2,
+                                                    maximumFractionDigits: 2,
+                                                })}
                                             </td>
+                                        )}
+                                        <td>
+                                            {order?.orderDeadLine ? (
+                                                <Countdown
+                                                    date={moment(order.orderDeadLine, 'DD-MMM-YYYY HH:mm:ss').valueOf()}
+                                                    renderer={({ days, hours, minutes, seconds }) => (
+                                                        <span>
+                                                            {String(days).padStart(2, '0')}d{' '}
+                                                            {String(hours).padStart(2, '0')}h{' '}
+                                                            {String(minutes).padStart(2, '0')}m{' '}
+                                                            {String(seconds).padStart(2, '0')}s
+                                                        </span>
+                                                    )}
+                                                />
+                                            ) : (
+                                                '—'
+                                            )}
+                                        </td>
+                                        <td>{order.orderStatus}</td>
+                                        <td>{order.userName}</td>
+                                        <td className="w-[8%]">
+                                            <div className="flex items-center gap-2 justify-center">
+                                                <IoEyeOutline
+                                                    className="text-xl cursor-pointer hover:text-[#6E3FF3]"
+                                                    onClick={() => handleViewOrder(order?._id)}
+                                                    title="View"
+                                                />
 
-
-                                            <td>{order.orderStatus}</td>
-                                            <td>{order.userName}</td>
-                                            <td className='w-[5%]'>
-                                                <div className='flex justify-center'>
-                                                    <IoEyeOutline className='text-xl cursor-pointer hover:text-[#6E3FF3]' onClick={() => handleViewOrder(order?._id)} />
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            ) : (
-                                <tr>
-                                    <td colSpan="8" className="text-center">No order found</td>
-                                </tr>
-                            )
-                        }
+                                                {
+                                                    currentUser?.role === 'Admin' || currentUser?.role === 'Developer' ?
+                                                        <button
+                                                            className="btn btn-sm btn-ghost"
+                                                            title={order?.isLocked ? 'Locked (extend deadline to edit)' : 'Edit order'}
+                                                            onClick={() => {
+                                                                if (
+                                                                    order.isLocked ||
+                                                                    ["Completed", "Delivered"].includes(String(order.orderStatus))
+                                                                ) return;
+                                                                setEditing(order);
+                                                            }}
+                                                            disabled={
+                                                                order.isLocked ||
+                                                                ["Completed", "Delivered"].includes(String(order.orderStatus))
+                                                            }
+                                                        >
+                                                            <Pencil size={16} />
+                                                        </button>: null
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        ) : (
+                            <tr>
+                                <td colSpan="9" className="text-center">
+                                    No order found
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
+
+                {editing && (
+                    <EditLocalOrderModal
+                        open={Boolean(editing)}
+                        order={editing}
+                        onClose={() => setEditing(null)}
+                        onUpdated={() => setEditing(null)} // refetch toggled inside modal
+                    />
+                )}
             </div>
 
-            {/* <div className="flex items-center justify-between mt-6 py-4 border">
-                <div className="text-sm text-gray-600">
-                    Showing 1-10 of 50 entries
-                </div>
-                <div className="flex items-center gap-2">
-                    <button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50">
-                        <ChevronLeft className="size-4 text-gray-600" />
-                    </button>
-                    {[1, 2, 3, 4, 5].map((page) => (
-                        <button
-                            key={page}
-                            className={`px-3 py-1 rounded-lg ${currentPage === page
-                                ? 'bg-[#6E3FF3] text-white'
-                                : 'text-gray-600 hover:bg-gray-50'
-                                }`}
-                            onClick={() => setCurrentPage(page)}
-                        >
-                            {page}
-                        </button>
-                    ))}
-                    <button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50">
-                        <ChevronRight className="size-4 text-gray-600" />
-                    </button>
-                </div>
-            </div> */}
+            {/* Footer / Pagination */}
             <div className="text-center">
-                {/*********************************pagination***********************************************************/}
                 {orderCount > 10 && (
                     <div className="mt-5 flex justify-between items-center">
                         <div>
-                            <p> Showing {(currentPage * itemsPerPage) - itemsPerPage + 1} -
-                                {currentPage * itemsPerPage > orderCount ? orderCount : currentPage * itemsPerPage} of {orderCount} entries
+                            <p>
+                                Showing {(currentPage - 1) * itemsPerPage + 1} -
+                                {Math.min(currentPage * itemsPerPage, orderCount)} of {orderCount} entries
                             </p>
                         </div>
 
-                        <div className='flex items-center justify-items-center gap-1'>
+                        <div className="flex items-center gap-1">
                             <button
                                 onClick={handlePrevPage}
-                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md  ${currentPage !== 1 ? 'hover:bg-yellow-600 cursor-pointer' : ''}`}
+                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md ${currentPage !== 1 ? 'hover:bg-yellow-600 cursor-pointer' : ''
+                                    }`}
                                 disabled={currentPage === 1}
+                                title="Previous"
                             >
-                                <BsChevronDoubleLeft /> {/* prev button */}
+                                <BsChevronDoubleLeft />
                             </button>
-                            {renderPageNumbers().map((page, index) => (
+
+                            {renderPageNumbers().map((page, idx) => (
                                 <button
-                                    key={index}
-                                    onClick={() => typeof page === "number" && handlePageClick(page)}
-                                    className={`py-1 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600 cursor-pointer ${currentPage === page ? "!bg-yellow-600" : ""
+                                    key={`${page}-${idx}`}
+                                    onClick={() => typeof page === 'number' && setCurrentPage(page)}
+                                    className={`py-1 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600 cursor-pointer ${currentPage === page ? '!bg-yellow-600' : ''
                                         }`}
-                                    disabled={typeof page !== "number"}
+                                    disabled={typeof page !== 'number'}
                                 >
                                     {page}
                                 </button>
                             ))}
+
                             <button
                                 onClick={handleNextPage}
-                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md  ${currentPage !== numberOfPages ? 'hover:bg-yellow-600 cursor-pointer' : ''}`}
+                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md ${currentPage !== numberOfPages ? 'hover:bg-yellow-600 cursor-pointer' : ''
+                                    }`}
                                 disabled={currentPage === numberOfPages}
+                                title="Next"
                             >
-                                <BsChevronDoubleRight />  {/* next button */}
+                                <BsChevronDoubleRight />
                             </button>
 
                             <select
                                 value={itemsPerPage}
                                 onChange={handleItemsPerPage}
-                                name=""
-                                id=""
                                 className="select select-sm py-1 px-1 rounded-md bg-[#6E3FF3] text-white outline-none hover:bg-yellow-600"
+                                title="Rows per page"
                             >
                                 <option value="10">10</option>
                                 <option value="20">20</option>
@@ -344,14 +323,10 @@ const OrderTable = () => {
                                 <option value="100">100</option>
                             </select>
                         </div>
-
                     </div>
-
                 )}
-
-
             </div>
-        </div >
+        </div>
     );
 };
 
