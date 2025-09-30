@@ -32,7 +32,7 @@ const AddClientModal = () => {
         };
 
         try {
-            const response = await axiosSecure.put('/addClient', clientData);
+            const response = await axiosSecure.post('/addClient', clientData);
             if (response.data.insertedId) {
                 setClientId('');
                 setCountry('');
