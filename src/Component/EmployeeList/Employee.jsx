@@ -52,6 +52,10 @@ const Employee = () => {
   const [pfBalance, setPfBalance] = useState(0);
   const [monthlyPF, setMonthlyPF] = useState(0);
 
+  // NEW — remaining leave balance
+  const [leaveBalances, setLeaveBalances] = useState([]); // [{name,total,used,remaining}, ...]
+  const totalRemainingLeave = leaveBalances.reduce((s, x) => s + (x?.remaining || 0), 0);
+
   // --- Utils ---
   const toTime = (ts) =>
     ts ? new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "";
@@ -200,7 +204,7 @@ const Employee = () => {
       const att = Array.isArray(aRes.data) ? aRes.data : [];
       setAttendance(att);
 
-      // 2) Leaves
+      // 2) Leaves (applied days in range, to compute leaveDays stat)
       const lRes = await axiosProtect.get("/getAppliedLeave", {
         params: { userEmail: user?.email },
       });
@@ -214,7 +218,6 @@ const Employee = () => {
           r.date ||
           new Date(r.checkInTime || r.checkOutTime || Date.now()).toLocaleDateString("en-CA"),
       }));
-      // sort by date asc then checkInTime asc
       rows.sort((a, b) => {
         if (a.date === b.date) return (a.checkInTime || 0) - (b.checkInTime || 0);
         return a.date < b.date ? -1 : 1;
@@ -239,10 +242,30 @@ const Employee = () => {
     }
   };
 
+  // auto-load on mount / when user ready
   useEffect(() => {
     if (user?.email) handleLoad();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.email]);
+
+  // ----- LOAD REMAINING LEAVE BALANCE -----
+  useEffect(() => {
+    const loadLeaveBalance = async () => {
+      if (!user?.email) return;
+      try {
+        // uses a protected GET (token verified on server)
+        const { data } = await axiosProtect.get('/employee/leave-balance', {
+          params: { userEmail: user.email }
+        });
+        // Expecting: [{name,total,used,remaining}, ...]
+        setLeaveBalances(Array.isArray(data) ? data : []);
+      } catch (e) {
+        // Keep UI resilient if not configured yet
+        setLeaveBalances([]);
+      }
+    };
+    loadLeaveBalance();
+  }, [user?.email, refetch]); // eslint-disable-line
 
   return (
     <div>
@@ -297,7 +320,7 @@ const Employee = () => {
           <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
             <StatCard label="Present days" value={presentDays} accent="bg-green-100 text-green-700" />
             <StatCard label="Late check-ins" value={lateCount} accent="bg-yellow-100 text-yellow-700" />
-            <StatCard label="Leave days" value={leaveDays} accent="bg-blue-100 text-blue-700" />
+            <StatCard label="Leave days (selected range)" value={leaveDays} accent="bg-blue-100 text-blue-700" />
             <StatCard label="No attendance" value={absentDays} accent="bg-red-100 text-red-700" />
             <StatCard label="Total work hrs" value={fmtHrs(totalWorkSeconds)} accent="bg-indigo-100 text-indigo-700" />
             <StatCard label="Total OT hrs" value={fmtHrs(totalOTSeconds)} accent="bg-purple-100 text-purple-700" />
@@ -322,6 +345,37 @@ const Employee = () => {
               <div className="text-lg font-semibold tracking-wider">•••••</div>
               <div className="text-xs text-gray-500 mt-1">View salary from Dashboard (password protected)</div>
             </div>
+          </section>
+
+          {/* NEW — Remaining Leave Balance */}
+          <section className="mb-5">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold">Remaining Leave Balance</h3>
+              <span className="text-sm text-gray-500">Total remaining: <b>{totalRemainingLeave}</b> day(s)</span>
+            </div>
+
+            {leaveBalances?.length ? (
+              <div className="space-y-2">
+                {leaveBalances.map((lv, idx) => {
+                  const pct = lv.total ? Math.min(100, Math.round((lv.used / lv.total) * 100)) : 0;
+                  return (
+                    <div key={idx} className="p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="text-sm font-medium">{lv.name}</div>
+                        <div className="text-xs text-gray-600">
+                          {lv.used}/{lv.total} used • <span className="font-semibold">{lv.remaining}</span> left
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="h-2 rounded-full bg-[#6E3FF3]" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500 border rounded-md p-3">No leave balance found.</div>
+            )}
           </section>
 
           {/* Daily table */}
