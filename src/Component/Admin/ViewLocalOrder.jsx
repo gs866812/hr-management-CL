@@ -339,34 +339,48 @@ const ViewLocalOrder = () => {
                     <div className='w-[30%] border-r'>
                         <section className='shadow-md rounded-md p-4'>
 
-                            {/* Top-right: Cancel / Restore */}
-                            <div className="flex items-center justify-end mb-3">
-                                <button
-                                    onClick={handleCancelToggle}
-                                    className={`text-white py-1 px-3 rounded-md ${isCanceled ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}`}
-                                >
-                                    {isCanceled ? 'Re-store' : 'Cancel'}
-                                </button>
+                            {/* --- Top actions row: Delivered/Complete (left) + Cancel/Restore (right) --- */}
+                            <div className="flex items-center justify-between mb-4">
+                                {/* Left group */}
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        className={`text-white py-1 px-3 rounded-md ${(!isLocked && status === 'Ready to Upload')
+                                            ? 'bg-[#6E3FF3] cursor-pointer'
+                                            : 'bg-gray-400 cursor-not-allowed'
+                                            }`}
+                                        disabled={isLocked || status !== 'Ready to Upload'}
+                                        onClick={handleDelivered}
+                                    >
+                                        Delivered
+                                    </button>
+
+                                    <button
+                                        className={`text-white py-1 px-3 rounded-md ${(!isLocked && status === 'Delivered')
+                                            ? 'bg-[#6E3FF3] cursor-pointer'
+                                            : 'bg-gray-400 cursor-not-allowed'
+                                            }`}
+                                        disabled={isLocked || status !== 'Delivered'}
+                                        onClick={handleComplete}
+                                    >
+                                        Complete
+                                    </button>
+                                </div>
+
+                                {/* Right: Cancel / Re-store */}
+                                {
+                                    currentUser && (currentUser?.role === 'Admin' || currentUser?.role === 'Developer') &&
+                                    <button
+                                        onClick={handleCancelToggle} // <-- keep your existing handler
+                                        className={`py-1 px-3 rounded-md text-white ${localOrder?.orderStatus === 'Cancel'
+                                            ? 'bg-green-600 hover:bg-green-700' // Re-store
+                                            : 'bg-red-600 hover:bg-red-700'     // Cancel
+                                            }`}
+                                    >
+                                        {localOrder?.orderStatus === 'Cancel' ? 'Re-store' : 'Cancel'}
+                                    </button>
+                                }
                             </div>
 
-                            {/* NEW: Delivered and Complete */}
-                            <div className="flex items-center gap-2 mb-3">
-                                <button
-                                    className={`text-white py-1 px-3 rounded-md ${(!isLocked && !isCanceled && status === 'Ready to Upload') ? 'bg-[#6E3FF3] cursor-pointer' : 'bg-gray-400 cursor-not-allowed'}`}
-                                    disabled={isLocked || isCanceled || status !== 'Ready to Upload'}
-                                    onClick={handleDelivered}
-                                >
-                                    Delivered
-                                </button>
-
-                                <button
-                                    className={`text-white py-1 px-3 rounded-md ${(!isLocked && !isCanceled && status === 'Delivered') ? 'bg-[#6E3FF3] cursor-pointer' : 'bg-gray-400 cursor-not-allowed'}`}
-                                    disabled={isLocked || isCanceled || status !== 'Delivered'}
-                                    onClick={handleComplete}
-                                >
-                                    Complete
-                                </button>
-                            </div>
 
                             <h2 className='font-semibold text-xl'>Time left to deliver</h2>
 

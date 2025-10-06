@@ -7,7 +7,7 @@ import { ContextData } from '../DataProvider';
 import { useContext } from 'react';
 
 export default function OrderManagement() {
-    const {user} = useContext(ContextData);
+    const { user, currentUser } = useContext(ContextData);
     const [selectedDate, setSelectedDate] = useState(Date.now);
 
     return (
@@ -18,12 +18,16 @@ export default function OrderManagement() {
                         <h3 className="text-black text-xl font-medium">
                             Check Your all Order activity!
                         </h3>
-
+                        {
+                            currentUser && (currentUser?.role === 'Admin' || currentUser?.role === 'Developer') &&
                             <Link to="/createLocalOrder" className=" px-4 py-2 border-2 border-[#6E3FF3] rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 bg-[#6E3FF3] text-white">
                                 <span className='flex items-center gap-2'>
                                     <FaUpRightFromSquare /> Assign an order
                                 </span>
                             </Link>
+                        }
+
+
 
 
                     </div>
