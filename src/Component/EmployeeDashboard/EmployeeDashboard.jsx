@@ -372,7 +372,7 @@ const EmployeeDashboard = () => {
           {/* Live clock + shift */}
           <div className="flex items-center gap-4">
             <div className="text-center">
-              <div className="text-xs text-gray-500">Current Time</div>
+              <div className="text-xs text-gray-500 mb-2">Current Time</div>
               <div className="flex items-center gap-1 justify-center text-lg font-semibold">
                 <Clock size={18} />
                 <span className="bg-indigo-600 text-white px-2 py-1 rounded">{clock.hh}</span>:
@@ -380,7 +380,7 @@ const EmployeeDashboard = () => {
                 <span className="bg-indigo-600 text-white px-2 py-1 rounded">{clock.ss}</span>
                 <span className="bg-indigo-600 text-white px-2 py-1 rounded">{clock.ap}</span>
               </div>
-              <div className="text-xs text-gray-500 mt-1">Shift: <b>{(shiftedEmployees.find(e => e.email === user?.email)?.shiftName) || 'General'}</b></div>
+              <div className="text-xs text-gray-500 mt-2">Shift: <b>{(shiftedEmployees.find(e => e.email === user?.email)?.shiftName) || 'General'}</b></div>
             </div>
           </div>
         </div>
