@@ -249,23 +249,23 @@ const Employee = () => {
   }, [user?.email]);
 
   // ----- LOAD REMAINING LEAVE BALANCE -----
+
   useEffect(() => {
     const loadLeaveBalance = async () => {
       if (!user?.email) return;
       try {
-        // uses a protected GET (token verified on server)
         const { data } = await axiosProtect.get('/employee/leave-balance', {
           params: { userEmail: user.email }
         });
-        // Expecting: [{name,total,used,remaining}, ...]
+        // data: [{name, remaining}]
         setLeaveBalances(Array.isArray(data) ? data : []);
-      } catch (e) {
-        // Keep UI resilient if not configured yet
+      } catch {
         setLeaveBalances([]);
       }
     };
     loadLeaveBalance();
   }, [user?.email, refetch]); // eslint-disable-line
+
 
   return (
     <div>
@@ -348,35 +348,32 @@ const Employee = () => {
           </section>
 
           {/* NEW — Remaining Leave Balance */}
+          {/* Remaining Leave Balance (remaining-only) */}
           <section className="mb-5">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold">Remaining Leave Balance</h3>
-              <span className="text-sm text-gray-500">Total remaining: <b>{totalRemainingLeave}</b> day(s)</span>
+              <span className="text-sm text-gray-500">
+                Total remaining: <b>{leaveBalances.reduce((s, x) => s + (x?.remaining || 0), 0)}</b> day(s)
+              </span>
             </div>
 
             {leaveBalances?.length ? (
               <div className="space-y-2">
-                {leaveBalances.map((lv, idx) => {
-                  const pct = lv.total ? Math.min(100, Math.round((lv.used / lv.total) * 100)) : 0;
-                  return (
-                    <div key={idx} className="p-3 rounded-md border border-gray-200">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="text-sm font-medium">{lv.name}</div>
-                        <div className="text-xs text-gray-600">
-                          {lv.used}/{lv.total} used • <span className="font-semibold">{lv.remaining}</span> left
-                        </div>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="h-2 rounded-full bg-[#6E3FF3]" style={{ width: `${pct}%` }} />
-                      </div>
+                {leaveBalances.map((lv, idx) => (
+                  <div key={idx} className="p-3 rounded-md border border-gray-200 flex items-center justify-between">
+                    <div className="text-sm font-medium">{lv.name}</div>
+                    <div className="text-sm">
+                      <span className="text-gray-600">Remaining: </span>
+                      <span className="font-semibold">{lv.remaining}</span> day(s)
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="text-sm text-gray-500 border rounded-md p-3">No leave balance found.</div>
             )}
           </section>
+
 
           {/* Daily table */}
           <section>
@@ -492,7 +489,7 @@ const Employee = () => {
                 </span>
               </p>
               <p className='text-sm underline cursor-pointer hover:text-[#6E3FF3] transition-all duration-200 mt-2'
-                 onClick={() => document.getElementById('viewProfile').showModal()}>
+                onClick={() => document.getElementById('viewProfile').showModal()}>
                 View full profile
               </p>
             </div>
