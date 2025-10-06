@@ -21,8 +21,8 @@ const ViewLocalOrder = () => {
     const [isRunning, setIsRunning] = useState(false);
     const [deadline, setDeadline] = useState(null);
 
-    const [totalSeconds, setTotalSeconds] = useState(parseInt(localOrder?.lastUpdated) || 0);
-    const savedTotalSeconds = useRef(parseInt(localOrder?.lastUpdated) || 0);
+    const [totalSeconds, setTotalSeconds] = useState(0);
+    const savedTotalSeconds = useRef(0);
 
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
@@ -31,6 +31,7 @@ const ViewLocalOrder = () => {
 
     const status = localOrder?.orderStatus;
     const isLocked = !!localOrder?.isLocked;
+    const isCanceled = status === 'Cancel';
 
     // ************************************************************************************************
     const handleDeadlineChange = (date) => {
@@ -56,197 +57,162 @@ const ViewLocalOrder = () => {
                 });
                 setLocalOrder(response.data);
 
-                if (response.data.completeTime && response.data.lastUpdated) {
-                    const savedSeconds = response.data.completeTime;
-                    const lastUpdated = response.data.lastUpdated; // Timestamp (seconds) from DB
+                // Reconstruct running time
+                if (response.data?.completeTime && response.data?.lastUpdated) {
+                    const savedSeconds = parseInt(response.data.completeTime) || 0;
+                    const lastUpdated = parseInt(response.data.lastUpdated) || 0; // seconds
                     const currentTime = Math.floor(Date.now() / 1000);
                     const elapsedTime = currentTime - lastUpdated;
-                    setTotalSeconds(savedSeconds + elapsedTime);
+                    setTotalSeconds(savedSeconds + (elapsedTime > 0 ? elapsedTime : 0));
+                } else {
+                    setTotalSeconds(parseInt(response.data?.completeTime) || 0);
                 }
             } catch (error) {
-                toast.error('Error fetching data:', error.message);
+                toast.error(`Error fetching data: ${error.message}`);
             }
         };
         fetchSingleOrder();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [refetch, totalSeconds]);
+    }, [refetch, orderId]);
 
     // Start timer when allowed
     useEffect(() => {
         let intervalId;
-
         if (isRunning) {
             intervalId = setInterval(() => {
                 setTotalSeconds((prevSeconds) => prevSeconds + 1);
             }, 1000);
         }
-
         return () => clearInterval(intervalId);
     }, [isRunning]);
 
     useEffect(() => {
         if (!isRunning) {
-            setTotalSeconds(prevSeconds => prevSeconds + savedTotalSeconds.current);
+            setTotalSeconds((prevSeconds) => prevSeconds + (savedTotalSeconds.current || 0));
             savedTotalSeconds.current = 0;
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // ************************************************************************************************
-    // Convert seconds to days, hours, minutes, seconds
+    // Convert seconds to d/h/m/s
     const formatTime = (seconds) => {
         const days = Math.floor(seconds / (3600 * 24));
         const hours = Math.floor((seconds % (3600 * 24)) / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
         const remainingSeconds = seconds % 60;
-
         return `${days}d ${hours}h ${minutes}m ${remainingSeconds}s`;
     };
     // ************************************************************************************************
 
     const handleReadyToQC = () => {
-        if (isLocked) return;
+        if (isLocked || isCanceled) return;
         const changeOrderToQC = async () => {
             try {
                 const response = await axiosSecure.put(`/orderStatusQC/${orderId}`);
                 if (response.data.modifiedCount > 0) {
                     setIsRunning(false);
                     dispatch(setRefetch(!refetch));
-                    Swal.fire({
-                        title: "Order Ready to QC!",
-                        showConfirmButton: false,
-                        icon: "success",
-                        timer: 1000
-                    });
+                    Swal.fire({ title: 'Order Ready to QC!', showConfirmButton: false, icon: 'success', timer: 1000 });
                 }
             } catch (error) {
-                toast.error(`Error fetching data: ${error.message}`);
+                toast.error(`Error: ${error.message}`);
             }
-        }
+        };
         changeOrderToQC();
     };
 
-    // IMPORTANT: Ready to upload should NOT mark Delivered immediately.
-    // It should set orderStatus = "Ready to Upload".
     const handleReadyToUpload = () => {
-        if (isLocked) return;
+        if (isLocked || isCanceled) return;
         const changeOrderToReadyToUpload = async () => {
             try {
                 const response = await axiosSecure.put(`/orderStatusReadyToUpload/${orderId}`);
                 if (response.data.modifiedCount > 0) {
                     setIsRunning(false);
                     dispatch(setRefetch(!refetch));
-                    Swal.fire({
-                        title: "Order is Ready to upload",
-                        showConfirmButton: false,
-                        icon: "success",
-                        timer: 1000
-                    });
+                    Swal.fire({ title: 'Order is Ready to upload', showConfirmButton: false, icon: 'success', timer: 1000 });
                 }
             } catch (error) {
-                toast.error(`Error fetching data: ${error.message}`);
+                toast.error(`Error: ${error.message}`);
             }
         };
         changeOrderToReadyToUpload();
     };
 
     const handleDelivered = () => {
-        if (isLocked) return;
+        if (isLocked || isCanceled) return;
         const changeOrderDelivered = async () => {
             try {
                 const response = await axiosSecure.put(`/orderStatusDelivered/${orderId}`);
                 if (response.data.modifiedCount > 0) {
                     setIsRunning(false);
                     dispatch(setRefetch(!refetch));
-                    Swal.fire({
-                        title: "Order has been delivered",
-                        showConfirmButton: false,
-                        icon: "success",
-                        timer: 1000
-                    });
+                    Swal.fire({ title: 'Order has been delivered', showConfirmButton: false, icon: 'success', timer: 1000 });
                 }
             } catch (error) {
-                toast.error(`Error fetching data: ${error.message}`);
+                toast.error(`Error: ${error.message}`);
             }
-        }
+        };
         changeOrderDelivered();
     };
 
     const handleComplete = () => {
-        if (isLocked) return;
+        if (isLocked || isCanceled) return;
         const changeOrderComplete = async () => {
             try {
                 const response = await axiosSecure.put(`/orderStatusComplete/${orderId}`);
                 if (response.data.modifiedCount > 0) {
                     setIsRunning(false);
                     dispatch(setRefetch(!refetch));
-                    Swal.fire({
-                        title: "Order marked as Completed",
-                        showConfirmButton: false,
-                        icon: "success",
-                        timer: 1000
-                    });
+                    Swal.fire({ title: 'Order marked as Completed', showConfirmButton: false, icon: 'success', timer: 1000 });
                 }
             } catch (error) {
-                toast.error(`Error fetching data: ${error.message}`);
+                toast.error(`Error: ${error.message}`);
             }
-        }
+        };
         changeOrderComplete();
     };
 
     const modifyOrder = () => {
-        if (isLocked) return;
+        if (isLocked || isCanceled) return;
         const changeOrderModify = async () => {
             try {
                 const response = await axiosSecure.put(`/modifyOrderToInitial/${orderId}`);
                 if (response.data.modifiedCount > 0) {
                     setIsRunning(false);
                     dispatch(setRefetch(!refetch));
-                    Swal.fire({
-                        title: "Order has been modified",
-                        showConfirmButton: false,
-                        icon: "success",
-                        timer: 1000
-                    });
+                    Swal.fire({ title: 'Order has been modified', showConfirmButton: false, icon: 'success', timer: 1000 });
                 }
             } catch (error) {
-                toast.error(`Error fetching data: ${error.message}`);
+                toast.error(`Error: ${error.message}`);
             }
-        }
+        };
         changeOrderModify();
     };
 
     const handleStart = () => {
-        if (isLocked) return;
+        if (isLocked || isCanceled) return;
         Swal.fire({
-            title: "Are you sure?",
-            icon: "warning",
+            title: 'Are you sure?',
+            icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: "#6E3FF3",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes"
+            confirmButtonColor: '#6E3FF3',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes'
         }).then((result) => {
             if (result.isConfirmed) {
                 const changeOrderStatus = async () => {
                     try {
                         const response = await axiosSecure.put(`/orderStatusChange/${orderId}`, {
-                            params: {
-                                userEmail: user?.email,
-                            },
+                            params: { userEmail: user?.email },
                         });
                         if (response.data.modifiedCount > 0) {
                             setIsRunning(true);
                             dispatch(setRefetch(!refetch));
-                            Swal.fire({
-                                title: "Order Started!",
-                                showConfirmButton: false,
-                                icon: "success",
-                                timer: 1000
-                            });
+                            Swal.fire({ title: 'Order Started!', showConfirmButton: false, icon: 'success', timer: 1000 });
                         }
-
                     } catch (error) {
-                        toast.error('Error fetching data:', error.message);
+                        toast.error(`Error: ${error.message}`);
                     }
                 };
                 changeOrderStatus();
@@ -255,27 +221,20 @@ const ViewLocalOrder = () => {
     };
 
     const handleHold = () => {
-        if (isLocked) return;
+        if (isLocked || isCanceled) return;
         const changeOrderToHold = async () => {
-
             try {
                 const response = await axiosSecure.put(`/orderStatusHold/${orderId}`, {
                     completeTime: totalSeconds,
                     lastUpdated: Math.floor(Date.now() / 1000),
                 });
-
                 if (response.data.modifiedCount > 0) {
                     setIsRunning(false);
                     dispatch(setRefetch(!refetch));
-                    Swal.fire({
-                        title: "Order Hold!",
-                        showConfirmButton: false,
-                        icon: "success",
-                        timer: 1000
-                    });
+                    Swal.fire({ title: 'Order Hold!', showConfirmButton: false, icon: 'success', timer: 1000 });
                 }
             } catch (error) {
-                toast.error(`Error fetching data: ${error.message}`);
+                toast.error(`Error: ${error.message}`);
             }
         };
         changeOrderToHold();
@@ -287,15 +246,62 @@ const ViewLocalOrder = () => {
         const newDeadline = deadlineMoment.format('DD-MMM-YYYY HH:mm:ss');
         try {
             const response = await axiosSecure.put(`/extendDeadline/${orderId}`, { newDeadline });
-
             if (response.data.modifiedCount > 0) {
-                // server resets to Pending + unlocks; refresh UI
                 setIsRunning(false);
                 dispatch(setRefetch(!refetch));
                 toast.success('Deadline extended successfully');
             }
         } catch (error) {
-            toast.error(`Error fetching data: ${error.message}`);
+            toast.error(`Error: ${error.message}`);
+        }
+    };
+
+    // NEW: Cancel / Re-store
+    const handleCancelToggle = async () => {
+        if (!isCanceled) {
+            // Cancel flow
+            const result = await Swal.fire({
+                title: 'Cancel this order?',
+                text: 'This will disable all other actions until restored.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#6E3FF3',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, cancel'
+            });
+            if (!result.isConfirmed) return;
+
+            try {
+                const response = await axiosSecure.put(`/orderStatusCancel/${orderId}`);
+                if (response.data.modifiedCount > 0) {
+                    setIsRunning(false);
+                    dispatch(setRefetch(!refetch));
+                    Swal.fire({ title: 'Order canceled', showConfirmButton: false, icon: 'success', timer: 900 });
+                }
+            } catch (error) {
+                toast.error(`Error: ${error.message}`);
+            }
+        } else {
+            // Restore flow
+            const result = await Swal.fire({
+                title: 'Restore this order?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#6E3FF3',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, restore'
+            });
+            if (!result.isConfirmed) return;
+
+            try {
+                const response = await axiosSecure.put(`/orderStatusRestore/${orderId}`);
+                if (response.data.modifiedCount > 0) {
+                    dispatch(setRefetch(!refetch));
+                    Swal.fire({ title: 'Order restored to Pending', showConfirmButton: false, icon: 'success', timer: 900 });
+                }
+            } catch (error) {
+                toast.error(`Error: ${error.message}`);
+            }
         }
     };
 
@@ -303,225 +309,242 @@ const ViewLocalOrder = () => {
 
     return (
         <>
-            {
-                localOrder ?
-                    <div className='w-full gap-5 flex h-[89vh] overflow-y-auto custom-scrollbar'>
+            {localOrder ? (
+                <div className='w-full gap-5 flex h-[89vh] overflow-y-auto custom-scrollbar'>
 
-                        {/********************* * order details left side ************/}
-                        <div className='w-[70%] overflow-y-auto custom-scrollbar'>
-                            <section className='shadow-md rounded-md p-4'>
-                                <h2 className='font-semibold text-xl'> Order details </h2>
-                                <h2 className=''>Order Name: {localOrder?.orderName}</h2>
-                                <h2 className='mt-2'>Services: {
-                                    localOrder?.needServices?.map((service, index) => <span key={index} className='mr-1 font-semibold bg-gray-300 rounded-sm p-1 text-sm'>{service}</span>)
-                                }</h2>
-                                <p className='bg-gray-300 rounded-md p-2 mt-5'>{localOrder?.orderInstructions}</p>
-
-                                <div className='text-sm mt-5 flex justify-between'>
-                                    {
-                                        localOrder?.colorCode &&
-                                        <p>Color change to: {localOrder?.colorCode}</p>
-                                    }
-                                    {
-                                        localOrder?.imageResize &&
-                                        <p>Image resize to: {localOrder?.imageResize}</p>
-                                    }
-
-                                </div>
-                                <h2 className='mt-2'>Return file format: <span>{localOrder?.returnFormat}</span></h2>
-                            </section>
-
-                        </div>
-
-                        {/**************** order info right side **********************/}
-                        <div className='w-[30%] border-r'>
-                            <section className='shadow-md rounded-md p-4'>
-                                {/* NEW: Top buttons */}
-                                <div className="flex items-center gap-2 mb-3">
-                                    <button
-                                        className={`text-white py-1 px-3 rounded-md ${(!isLocked && status === 'Ready to Upload') ? 'bg-[#6E3FF3] cursor-pointer' : 'bg-gray-400 cursor-not-allowed'}`}
-                                        disabled={isLocked || status !== 'Ready to Upload'}
-                                        onClick={handleDelivered}
-                                    >
-                                        Delivered
-                                    </button>
-
-                                    <button
-                                        className={`text-white py-1 px-3 rounded-md ${(!isLocked && status === 'Delivered') ? 'bg-[#6E3FF3] cursor-pointer' : 'bg-gray-400 cursor-not-allowed'}`}
-                                        disabled={isLocked || status !== 'Delivered'}
-                                        onClick={handleComplete}
-                                    >
-                                        Complete
-                                    </button>
-                                </div>
-
-                                <h2 className='font-semibold text-xl'>Time left to deliver</h2>
-
-                                {(localOrder && canSeeAdminControls) && (
-                                    <Countdown
-                                        date={moment(localOrder.orderDeadLine).valueOf()}
-                                        renderer={({ days, hours, minutes, seconds, completed }) => {
-                                            if (completed || isLocked) {
-                                                return (
-                                                    <form onSubmit={handleDeadlineExtend} className="flex">
-                                                        <DatePicker
-                                                            selected={getSelectedDate()}
-                                                            onChange={handleDeadlineChange}
-                                                            showTimeSelect
-                                                            dateFormat="dd.MM.yyyy hh:mm aa"
-                                                            filterTime={filterPastTimes}
-                                                            className="!border !border-gray-300 p-2 rounded-l-md w-full"
-                                                            minDate={new Date()}
-                                                            placeholderText="Extend deadline"
-                                                            required
-                                                        />
-                                                        <button
-                                                            type="submit"
-                                                            className="!border !border-gray-300 p-2 bg-[#6E3FF3] text-white rounded-r-md cursor-pointer"
-                                                        >
-                                                            Extend
-                                                        </button>
-                                                    </form>
-                                                );
-                                            } else {
-                                                return null;
-                                            }
-                                        }}
-                                    />
-                                )}
-
-                                <div>
-                                    {localOrder?.orderDeadLine && (
-                                        <Countdown
-                                            date={moment(localOrder.orderDeadLine).valueOf()} // Convert to timestamp
-                                            renderer={({ days, hours, minutes, seconds }) => (
-                                                // Countdown time of deadline-------------------------------
-                                                <section className='flex gap-3 mt-3'>
-                                                    <div className={`flex flex-col items-center p-1 rounded-md bg-[#6E3FF3] text-white ${days == '00' ? 'bg-red-400' : ''}`}>
-                                                        <h2 className={`font-bold border-b`}>{String(days).padStart(2, "0")}</h2>
-                                                        <h2>Day's</h2>
-                                                    </div>
-                                                    <div className={`flex flex-col items-center p-1 rounded-md bg-[#6E3FF3] text-white ${days == '00' && hours == '00' ? 'bg-red-400' : ''}`}>
-                                                        <h2 className='font-bold border-b'> {String(hours).padStart(2, "0")}</h2>
-                                                        <h2>Hours</h2>
-                                                    </div>
-                                                    <div className={`flex flex-col items-center p-1 rounded-md bg-[#6E3FF3] text-white ${days == '00' && hours == '00' && minutes == '00' ? 'bg-red-400' : ''}`}>
-                                                        <h2 className='font-bold border-b'>{String(minutes).padStart(2, "0")}</h2>
-                                                        <h2>Minutes</h2>
-                                                    </div>
-                                                    <div className={`flex flex-col items-center p-1 rounded-md bg-[#6E3FF3] text-white ${days == '00' && hours == '00' && minutes == '00' && seconds == '00' ? 'bg-red-400' : ''}`}>
-                                                        <h2 className='font-bold border-b'> {String(seconds).padStart(2, "0")}</h2>
-                                                        <h2>Seconds</h2>
-                                                    </div>
-                                                </section>
-                                            )}
-                                        />
-                                    )}
-                                </div>
-                                <p className='text-sm mt-2'>Order place on: {localOrder?.date}</p>
-                            </section>
-                            {/* ------------------------------------------------------------------------ */}
-                            <section className='shadow-md rounded-md p-4 mt-5 space-y-2'>
-                                <h2>
-                                    Client ID:{" "}
-                                    <span className="font-semibold">
-                                        {currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN' || currentUser?.role === 'Developer'
-                                            ? localOrder?.clientID
-                                            : '*****'}
+                    {/* Left: order details */}
+                    <div className='w-[70%] overflow-y-auto custom-scrollbar'>
+                        <section className='shadow-md rounded-md p-4'>
+                            <h2 className='font-semibold text-xl'>Order details</h2>
+                            <h2 className=''>Order Name: {localOrder?.orderName}</h2>
+                            <h2 className='mt-2'>
+                                Services:{' '}
+                                {localOrder?.needServices?.map((service, index) => (
+                                    <span key={index} className='mr-1 font-semibold bg-gray-300 rounded-sm p-1 text-sm'>
+                                        {service}
                                     </span>
-                                </h2>
+                                ))}
+                            </h2>
+                            <p className='bg-gray-300 rounded-md p-2 mt-5'>{localOrder?.orderInstructions}</p>
 
-                                <h2>Order Name: <span className='font-semibold'>{localOrder?.orderName}</span></h2>
-                                <h2>Order QTY: <span className='font-semibold'>{localOrder?.orderQTY}</span></h2>
-                                <h2>
-                                    Order Status: <span className={`
-                  ${localOrder?.orderStatus === "Pending" ? "text-yellow-400" : ""}
-                  ${localOrder?.orderStatus === "Hold" ? "text-red-500" : ""}
-                  ${localOrder?.orderStatus === "In-progress" ? "text-green-500" : ""}
-                `}>
-                                        {localOrder?.orderStatus}{isLocked ? ' (Locked)' : ''}
-                                    </span>
-                                </h2>
-                                <h2>Completion time: <span className='font-semibold border px-1 rounded-md'>{formatTime(totalSeconds)}</span></h2>
-                            </section>
-                            {/* ------------------------------------------------------------------------ */}
-                            {localOrder && (
+                            <div className='text-sm mt-5 flex justify-between'>
+                                {localOrder?.colorCode && <p>Color change to: {localOrder?.colorCode}</p>}
+                                {localOrder?.imageResize && <p>Image resize to: {localOrder?.imageResize}</p>}
+                            </div>
+                            <h2 className='mt-2'>Return file format: <span>{localOrder?.returnFormat}</span></h2>
+                        </section>
+                    </div>
+
+                    {/* Right: workflow */}
+                    <div className='w-[30%] border-r'>
+                        <section className='shadow-md rounded-md p-4'>
+
+                            {/* Top-right: Cancel / Restore */}
+                            <div className="flex items-center justify-end mb-3">
+                                <button
+                                    onClick={handleCancelToggle}
+                                    className={`text-white py-1 px-3 rounded-md ${isCanceled ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}`}
+                                >
+                                    {isCanceled ? 'Re-store' : 'Cancel'}
+                                </button>
+                            </div>
+
+                            {/* NEW: Delivered and Complete */}
+                            <div className="flex items-center gap-2 mb-3">
+                                <button
+                                    className={`text-white py-1 px-3 rounded-md ${(!isLocked && !isCanceled && status === 'Ready to Upload') ? 'bg-[#6E3FF3] cursor-pointer' : 'bg-gray-400 cursor-not-allowed'}`}
+                                    disabled={isLocked || isCanceled || status !== 'Ready to Upload'}
+                                    onClick={handleDelivered}
+                                >
+                                    Delivered
+                                </button>
+
+                                <button
+                                    className={`text-white py-1 px-3 rounded-md ${(!isLocked && !isCanceled && status === 'Delivered') ? 'bg-[#6E3FF3] cursor-pointer' : 'bg-gray-400 cursor-not-allowed'}`}
+                                    disabled={isLocked || isCanceled || status !== 'Delivered'}
+                                    onClick={handleComplete}
+                                >
+                                    Complete
+                                </button>
+                            </div>
+
+                            <h2 className='font-semibold text-xl'>Time left to deliver</h2>
+
+                            {(localOrder && canSeeAdminControls) && (
                                 <Countdown
-                                    date={moment(localOrder.orderDeadLine).valueOf()} // Convert to timestamp
-                                    renderer={({ days, hours, minutes, seconds }) => (
-                                        // Countdown time of deadline-------------------------------
-                                        <section className={`shadow-md rounded-md p-4 mt-5 border ${days == '00' && hours == '00' && minutes == '00' && seconds == '00' ? 'hidden' : ''}`}>
-                                            <div className={`flex items-center gap-2 ${localOrder?.orderStatus === "Delivered" ? "hidden" : ""}`}>
-                                                <button
-                                                    className={`text-white py-1 px-3 rounded-md ${(!isLocked && (localOrder?.orderStatus === "Pending" || localOrder?.orderStatus === "Hold"))
-                                                        ? "bg-[#6E3FF3] cursor-pointer"
-                                                        : "bg-gray-400 cursor-not-allowed"
-                                                        }`}
-                                                    onClick={handleStart}
-                                                    disabled={isLocked || (localOrder?.orderStatus !== "Pending" && localOrder?.orderStatus !== "Hold")}
-                                                >
-                                                    Start the order
-                                                </button>
-                                                <button
-                                                    className={`text-white py-1 px-3 rounded-md ${(!isLocked && localOrder?.orderStatus !== "Hold" && localOrder?.orderStatus !== "Pending" && localOrder?.orderStatus !== "Delivered" && localOrder?.orderStatus !== "Reviewing")
-                                                        ? "bg-[#6E3FF3] cursor-pointer"
-                                                        : "bg-gray-400 cursor-not-allowed"
-                                                        }`}
-                                                    onClick={handleHold}
-                                                    disabled={isLocked || localOrder?.orderStatus == "Hold" || localOrder?.orderStatus == "Pending"}
-                                                >
-                                                    Hold
-                                                </button>
-                                            </div>
-
-                                            <div className={`mt-3 ${localOrder?.orderStatus === "Delivered" ? "hidden" : ""}`}>
-                                                {
-                                                    localOrder && localOrder?.orderStatus !== "Ready to QC" ?
-                                                        <button id='readyToQC' onClick={handleReadyToQC}
-                                                            className={`text-white py-1 px-3 rounded-md ${(!isLocked && localOrder?.orderStatus === "In-progress")
-                                                                ? "bg-[#6E3FF3] cursor-pointer"
-                                                                : "bg-gray-400 cursor-not-allowed"
-                                                                }`}
-                                                            disabled={isLocked || localOrder?.orderStatus !== "In-progress"}
-                                                        >Ready to QC
-                                                        </button>
-                                                        :
-                                                        <button id='readyToUpload' onClick={handleReadyToUpload}
-                                                            className={`text-white py-1 px-3 rounded-md ${(!isLocked && localOrder?.orderStatus === "Ready to QC")
-                                                                ? "bg-[#6E3FF3] cursor-pointer"
-                                                                : "bg-gray-400 cursor-not-allowed"
-                                                                }`}
-                                                            disabled={isLocked || localOrder?.orderStatus !== "Ready to QC"}
-                                                        >Ready to upload
-                                                        </button>
-
-                                                }
-                                            </div>
-                                            {localOrder && localOrder?.orderStatus === "Delivered" ?
-                                                <div className=''>
-                                                    <button id='modify' onClick={modifyOrder}
-                                                        className={`text-white py-1 px-3 rounded-md ${(!isLocked && localOrder?.orderStatus === "Delivered")
-                                                            ? "bg-[#6E3FF3] cursor-pointer"
-                                                            :
-                                                            "bg-gray-400 cursor-not-allowed"
-                                                            }`}
-                                                        disabled={isLocked || localOrder?.orderStatus !== "Delivered"}
-                                                    >Request to modify
+                                    date={moment(localOrder.orderDeadLine).valueOf()}
+                                    renderer={({ days, hours, minutes, seconds, completed }) => {
+                                        if (completed || isLocked || isCanceled) {
+                                            return (
+                                                <form onSubmit={handleDeadlineExtend} className="flex">
+                                                    <DatePicker
+                                                        selected={getSelectedDate()}
+                                                        onChange={handleDeadlineChange}
+                                                        showTimeSelect
+                                                        dateFormat="dd.MM.yyyy hh:mm aa"
+                                                        filterTime={filterPastTimes}
+                                                        className="!border !border-gray-300 p-2 rounded-l-md w-full"
+                                                        minDate={new Date()}
+                                                        placeholderText="Extend deadline"
+                                                        required
+                                                    />
+                                                    <button
+                                                        type="submit"
+                                                        className="!border !border-gray-300 p-2 bg-[#6E3FF3] text-white rounded-r-md cursor-pointer"
+                                                    >
+                                                        Extend
                                                     </button>
-                                                </div>
-                                                :
-                                                null
-
-                                            }
-                                        </section>
-                                    )}
+                                                </form>
+                                            );
+                                        } else {
+                                            return null;
+                                        }
+                                    }}
                                 />
                             )}
-                        </div>
+
+                            <div>
+                                {localOrder?.orderDeadLine && (
+                                    <Countdown
+                                        date={moment(localOrder.orderDeadLine).valueOf()}
+                                        renderer={({ days, hours, minutes, seconds }) => (
+                                            <section className='flex gap-3 mt-3'>
+                                                <div className={`flex flex-col items-center p-1 rounded-md bg-[#6E3FF3] text-white ${days === '00' ? 'bg-red-400' : ''}`}>
+                                                    <h2 className='font-bold border-b'>{String(days).padStart(2, '0')}</h2>
+                                                    <h2>Day's</h2>
+                                                </div>
+                                                <div className={`flex flex-col items-center p-1 rounded-md bg-[#6E3FF3] text-white ${days === '00' && hours === '00' ? 'bg-red-400' : ''}`}>
+                                                    <h2 className='font-bold border-b'>{String(hours).padStart(2, '0')}</h2>
+                                                    <h2>Hours</h2>
+                                                </div>
+                                                <div className={`flex flex-col items-center p-1 rounded-md bg-[#6E3FF3] text-white ${days === '00' && hours === '00' && minutes === '00' ? 'bg-red-400' : ''}`}>
+                                                    <h2 className='font-bold border-b'>{String(minutes).padStart(2, '0')}</h2>
+                                                    <h2>Minutes</h2>
+                                                </div>
+                                                <div className={`flex flex-col items-center p-1 rounded-md bg-[#6E3FF3] text-white ${days === '00' && hours === '00' && minutes === '00' && seconds === '00' ? 'bg-red-400' : ''}`}>
+                                                    <h2 className='font-bold border-b'>{String(seconds).padStart(2, '0')}</h2>
+                                                    <h2>Seconds</h2>
+                                                </div>
+                                            </section>
+                                        )}
+                                    />
+                                )}
+                            </div>
+                            <p className='text-sm mt-2'>Order place on: {localOrder?.date}</p>
+                        </section>
+
+                        {/* ------------------------------------------------------------------------ */}
+                        <section className='shadow-md rounded-md p-4 mt-5 space-y-2'>
+                            <h2>
+                                Client ID:{' '}
+                                <span className="font-semibold">
+                                    {currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN' || currentUser?.role === 'Developer'
+                                        ? localOrder?.clientID
+                                        : '*****'}
+                                </span>
+                            </h2>
+
+                            <h2>Order Name: <span className='font-semibold'>{localOrder?.orderName}</span></h2>
+                            <h2>Order QTY: <span className='font-semibold'>{localOrder?.orderQTY}</span></h2>
+                            <h2>
+                                Order Status:{' '}
+                                <span className={`
+                  ${status === 'Pending' ? 'text-yellow-400' : ''}
+                  ${status === 'Hold' ? 'text-red-500' : ''}
+                  ${status === 'In-progress' ? 'text-green-500' : ''}
+                  ${status === 'Ready to QC' ? 'text-indigo-500' : ''}
+                  ${status === 'Ready to Upload' ? 'text-indigo-700' : ''}
+                  ${status === 'Delivered' ? 'text-blue-600' : ''}
+                  ${status === 'Completed' ? 'text-emerald-600' : ''}
+                  ${status === 'Cancel' ? 'text-gray-500' : ''}
+                `}>
+                                    {status}{isLocked ? ' (Locked)' : ''}
+                                </span>
+                            </h2>
+                            <h2>Completion time: <span className='font-semibold border px-1 rounded-md'>{formatTime(totalSeconds)}</span></h2>
+                        </section>
+
+                        {/* ------------------------------------------------------------------------ */}
+                        {localOrder && (
+                            <Countdown
+                                date={moment(localOrder.orderDeadLine).valueOf()}
+                                renderer={({ days, hours, minutes, seconds }) => (
+                                    <section className={`shadow-md rounded-md p-4 mt-5 border ${days === '00' && hours === '00' && minutes === '00' && seconds === '00' ? 'hidden' : ''}`}>
+                                        <div className={`flex items-center gap-2 ${status === 'Delivered' ? 'hidden' : ''}`}>
+                                            <button
+                                                className={`text-white py-1 px-3 rounded-md ${(!isLocked && !isCanceled && (status === 'Pending' || status === 'Hold'))
+                                                    ? 'bg-[#6E3FF3] cursor-pointer'
+                                                    : 'bg-gray-400 cursor-not-allowed'
+                                                    }`}
+                                                onClick={handleStart}
+                                                disabled={isLocked || isCanceled || (status !== 'Pending' && status !== 'Hold')}
+                                            >
+                                                Start the order
+                                            </button>
+                                            <button
+                                                className={`text-white py-1 px-3 rounded-md ${(!isLocked && !isCanceled && status !== 'Hold' && status !== 'Pending' && status !== 'Delivered' && status !== 'Reviewing')
+                                                    ? 'bg-[#6E3FF3] cursor-pointer'
+                                                    : 'bg-gray-400 cursor-not-allowed'
+                                                    }`}
+                                                onClick={handleHold}
+                                                disabled={isLocked || isCanceled || status === 'Hold' || status === 'Pending'}
+                                            >
+                                                Hold
+                                            </button>
+                                        </div>
+
+                                        <div className={`${status === 'Delivered' ? 'hidden' : 'mt-3'}`}>
+                                            {status !== 'Ready to QC' ? (
+                                                <button
+                                                    id='readyToQC'
+                                                    onClick={handleReadyToQC}
+                                                    className={`text-white py-1 px-3 rounded-md ${(!isLocked && !isCanceled && status === 'In-progress')
+                                                        ? 'bg-[#6E3FF3] cursor-pointer'
+                                                        : 'bg-gray-400 cursor-not-allowed'
+                                                        }`}
+                                                    disabled={isLocked || isCanceled || status !== 'In-progress'}
+                                                >
+                                                    Ready to QC
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    id='readyToUpload'
+                                                    onClick={handleReadyToUpload}
+                                                    className={`text-white py-1 px-3 rounded-md ${(!isLocked && !isCanceled && status === 'Ready to QC')
+                                                        ? 'bg-[#6E3FF3] cursor-pointer'
+                                                        : 'bg-gray-400 cursor-not-allowed'
+                                                        }`}
+                                                    disabled={isLocked || isCanceled || status !== 'Ready to QC'}
+                                                >
+                                                    Ready to upload
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {status === 'Delivered' ? (
+                                            <div>
+                                                <button
+                                                    id='modify'
+                                                    onClick={modifyOrder}
+                                                    className={`text-white py-1 px-3 rounded-md ${(!isLocked && !isCanceled && status === 'Delivered')
+                                                        ? 'bg-[#6E3FF3] cursor-pointer'
+                                                        : 'bg-gray-400 cursor-not-allowed'
+                                                        }`}
+                                                    disabled={isLocked || isCanceled || status !== 'Delivered'}
+                                                >
+                                                    Request to modify
+                                                </button>
+                                            </div>
+                                        ) : null}
+                                    </section>
+                                )}
+                            />
+                        )}
                     </div>
-                    :
-                    <h2>No order found</h2>
-            }
+                </div>
+            ) : (
+                <h2>No order found</h2>
+            )}
         </>
     );
 };

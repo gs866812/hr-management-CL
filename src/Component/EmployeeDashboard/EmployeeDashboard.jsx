@@ -1,822 +1,674 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { Calendar, Clock, FileText, PieChart, DollarSign, Briefcase, Award, Bell, User, Settings, ChevronRight, Info } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
-import useAxiosProtect from '../../utils/useAxiosProtect';
-import { useDispatch, useSelector } from 'react-redux';
-import { setRefetch } from '../../redux/refetchSlice';
-import { ContextData } from '../../DataProvider';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
+import {
+  Clock,
+  ChevronRight,
+  Bell,
+  Info,
+  Briefcase,
+  Phone,
+  Mail,
+  MapPin,
+  CalendarDays,
+  BadgeCheck,
+  TimerReset,
+  Lock,
+  Unlock,
+  KeyRound,
+} from 'lucide-react';
 import moment from 'moment-timezone';
+import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
+import { useNavigate } from 'react-router-dom';
+
+import useAxiosProtect from '../../utils/useAxiosProtect';
 import useAxiosSecure from '../../utils/useAxiosSecure';
-import { Link, useNavigate } from 'react-router-dom';
+import { ContextData } from '../../DataProvider';
+import { setRefetch } from '../../redux/refetchSlice';
 
-// Mock data
-const attendanceData = [
-    { month: 'Jan', present: 21, absent: 1, leave: 1 },
-    { month: 'Feb', present: 19, absent: 0, leave: 0 },
-    { month: 'Mar', present: 22, absent: 0, leave: 1 },
-    { month: 'Apr', present: 20, absent: 1, leave: 0 },
-    { month: 'May', present: 18, absent: 0, leave: 3 },
-    { month: 'Jun', present: 20, absent: 1, leave: 0 },
-];
-
-const leaveData = [
-    { name: 'Casual Leave', used: 5, total: 12 },
-    { name: 'Sick Leave', used: 2, total: 7 },
-    { name: 'Paid Leave', used: 0, total: 15 },
-    { name: 'Optional Holidays', used: 2, total: 3 },
-];
-
-const payrollData = [
-    { month: 'Jan', basic: 50000, hra: 20000, allowances: 15000, deductions: 8000, pf: 6000 },
-    { month: 'Feb', basic: 50000, hra: 20000, allowances: 15000, deductions: 8000, pf: 6000 },
-    { month: 'Mar', basic: 50000, hra: 20000, allowances: 15000, deductions: 8000, pf: 6000 },
-    { month: 'Apr', basic: 55000, hra: 22000, allowances: 16500, deductions: 8800, pf: 6600 },
-    { month: 'May', basic: 55000, hra: 22000, allowances: 16500, deductions: 8800, pf: 6600 },
-    { month: 'Jun', basic: 55000, hra: 22000, allowances: 16500, deductions: 8800, pf: 6600 },
-];
-
-const notifications = [
-    { id: 1, message: "Your leave request has been approved", time: "1 hour ago" },
-    { id: 2, message: "Team meeting at 3:00 PM", time: "3 hours ago" },
-    { id: 3, message: "Monthly performance review next week", time: "1 day ago" },
-    { id: 4, message: "Complete your pending timesheet", time: "2 days ago" }
-];
+const SALARY_UNLOCK_KEY = 'salaryUnlocked:v1'; // session storage key
 
 const EmployeeDashboard = () => {
-    const axiosSecure = useAxiosSecure();
-    const axiosProtect = useAxiosProtect();
+  const axiosProtect = useAxiosProtect(); // GET
+  const axiosSecure = useAxiosSecure();   // POST/PUT/DELETE
 
-    const { user, attendanceInfo, salaryAndPF } = useContext(ContextData);
-    const [checkInInfo, setCheckInfo] = useState({});
-    const [checkOutInfo, setCheckOutInfo] = useState('');
+  const { user, attendanceInfo, salaryAndPF } = useContext(ContextData);
+  const dispatch = useDispatch();
+  const refetch = useSelector((state) => state.refetch.refetch);
+  const navigate = useNavigate();
 
+  // ---------------- UI state ----------------
+  const [clock, setClock] = useState({ hh: '--', mm: '--', ss: '--', ap: '--' });
 
-    const [startOTInfo, setStartOTInfo] = useState({});
-    const [stopOTInfo, setStopOTInfo] = useState({});
+  // Salary lock state
+  const [salaryUnlocked, setSalaryUnlocked] = useState(
+    typeof window !== 'undefined' ? sessionStorage.getItem(SALARY_UNLOCK_KEY) === '1' : false
+  );
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [unlockPin, setUnlockPin] = useState('');
+  const [showChangePinModal, setShowChangePinModal] = useState(false);
+  const [currentPin, setCurrentPin] = useState('');
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
 
-    const [shiftedEmployees, setShiftedEmployees] = useState([]);
+  // ---------------- DB-backed state ----------------
+  const [employee, setEmployee] = useState(null);              // /getEmployee
+  const [checkIn, setCheckIn] = useState(null);                // /getCheckInInfo (today)
+  const [checkOut, setCheckOut] = useState(null);              // /getCheckOutInfo (today)
+  const [otStart, setOtStart] = useState(null);                // /getStartOTInfo (today)
+  const [otStop, setOtStop] = useState(null);                  // /getStopOTTime (today)
+  const [shiftedEmployees, setShiftedEmployees] = useState([]);// /gethShiftedEmployee
+  const [notifications, setNotifications] = useState([]);      // /getEmployeeNotification
 
+  // ---------------- Live clock ----------------
+  useEffect(() => {
+    const t = setInterval(() => {
+      const now = new Date();
+      const parts = now.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const [time, ap] = parts.split(' ');
+      const [hh, mm, ss] = time.split(':');
+      setClock({ hh, mm, ss, ap });
+    }, 1000);
+    return () => clearInterval(t);
+  }, []);
 
+  const todayStr = useMemo(() => moment(new Date()).format('DD-MMM-YYYY'), []);
+  const monthName = moment().format('MMMM');
 
-    const month = moment(new Date()).format("MMMM"); // Get current month in format "MMMM" (e.g., "January", "February", etc.)
-
-    const presentCount = attendanceInfo?.filter(attendance => attendance.email === user?.email && attendance.month === month).length || 0; // Count late check-ins
-    const lateCount = attendanceInfo?.filter(attendance => attendance.lateCheckIn && attendance.email === user?.email && attendance.month === month).length || 0; // Count late check-ins
-
-
-
-
-
-    // **********************************************************
-    const [activeTab, setActiveTab] = useState('dashboard');
-    const [timeParts, setTimeParts] = useState({
-        hours: '',
-        minutes: '',
-        seconds: '',
-        period: '',
-    });
-
-
-    const dispatch = useDispatch();
-    const refetch = useSelector((state) => state.refetch.refetch);
-    const navigate = useNavigate();
-
-
-
-    // ***********************************************************
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const now = new Date();
-            const formatted = now.toLocaleTimeString('en-US', {
-                hour12: true,
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-            });
-
-            const [timePart, period] = formatted.split(' ');
-            const [hours, minutes, seconds] = timePart.split(':');
-
-            setTimeParts({ hours, minutes, seconds, period });
-        }, 1000);
-
-        return () => clearInterval(interval);
-    }, []);
-
-
-    // *******************************************************
-    useEffect(() => {
-        const fetchShiftedEmployee = async () => {
-            try {
-                const response = await axiosProtect.get('/gethShiftedEmployee', {
-                    params: {
-                        userEmail: user?.email,
-                    },
-                });
-                setShiftedEmployees(response.data);
-
-            } catch (error) {
-                toast.error('Error fetching data:', error.message);
-            }
-        };
-        fetchShiftedEmployee();
-    }, [refetch]);
-
-
-    // *******************************************************
-    const handleCheckIn = async () => {
-
-        const date = moment(new Date()).format("DD-MMM-YYYY");
-        const month = moment(new Date()).format("MMMM");
-        const checkInTime = Date.now();
-        const displayTime = moment(checkInTime).format("hh:mm:ss A");
-        const signInTime = moment(user?.metadata.lastSignInTime).format('DD MMM hh:mm:ss A');
-
-
-        const checkInInfo = {
-            date,
-            month,
-            checkInTime,
-            displayTime,
-            signInTime,
-            email: user.email,
-        };
-
-        try {
-            const res = await axiosSecure.post('/employee/checkIn', checkInInfo);
-            dispatch(setRefetch(!refetch));
-            if (res.data.message === 'Check-in successful') {
-                toast.success(res.data.message);
-            } else {
-                toast.warning(res.data.message);
-            }
-        } catch (error) {
-            toast.error('Check-in failed:', error);
-        }
+  // ---------------- Fetch: profile ----------------
+  useEffect(() => {
+    if (!user?.email) return;
+    const run = async () => {
+      try {
+        const res = await axiosProtect.get('/getEmployee', {
+          params: { userEmail: user.email },
+        });
+        setEmployee(res.data || null);
+      } catch {}
     };
-    // *************************************************************************************************
-    useEffect(() => {
-        const fetchInTime = async () => {
-            try {
-                const date = moment(new Date()).format("DD-MMM-YYYY");
-                const response = await axiosProtect.get(`/getCheckInInfo`, {
-                    params: {
-                        userEmail: user?.email,
-                        date,
-                    },
-                });
-                setCheckInfo(response.data);
-            } catch (error) {
-                console.error('Error fetching check-in time:', error);
-            }
-        };
-        fetchInTime();
-    }, [refetch, user.email]);
+    run();
+  }, [axiosProtect, user?.email]);
 
-
-
-    // *************************************************************************************************
-    const handleCheckOut = async () => {
-        const now = moment().tz("Asia/Dhaka");
-
-        // Define shift end times
-        const morningShiftEnd = now.clone().startOf('day').add(14, 'hours').valueOf();  // 2:00 PM
-        const generalShiftEnd = now.clone().startOf('day').add(18, 'hours').valueOf();  // 6:00 PM
-        const eveningShiftEnd = now.clone().startOf('day').add(22, 'hours').valueOf();  // 10:00 PM
-
-        // Find current user's shift name
-        const shiftName = shiftedEmployees?.find(emp => emp.email === user?.email)?.shiftName || 'General';
-
-        const date = moment().format("DD-MMM-YYYY");
-        const month = moment().format("MMMM");
-        const checkOutTime = moment().tz('Asia/Dhaka').valueOf();
-        const displayTime = moment(checkOutTime).format("hh:mm:ss A");
-
-        const checkOutInfo = {
-            date,
-            month,
-            checkOutTime,
-            displayTime,
-            email: user.email,
-        };
-
-        try {
-            const isEarly =
-                (shiftName === 'Morning' && now < morningShiftEnd) ||
-                (shiftName === 'General' && now < generalShiftEnd) ||
-                (shiftName === 'Evening' && now < eveningShiftEnd);
-
-            if (isEarly) {
-                const result = await Swal.fire({
-                    title: "Are you sure?",
-                    text: "You want to check-out before the end of your shift",
-                    icon: "warning",
-                    showCancelButton: true,
-                    confirmButtonColor: "#3085d6",
-                    cancelButtonColor: "#d33",
-                    confirmButtonText: "Yes, check-out!",
-                });
-
-                if (!result.isConfirmed) return;
-            }
-
-            const res = await axiosSecure.post('/employee/checkOut', checkOutInfo);
-            dispatch(setRefetch(!refetch));
-
-            if (res.data?.message === 'Check-out successful') {
-                toast.success(res.data.message);
-            } else {
-                toast.warning(res.data?.message || 'Check-out response unknown');
-            }
-
-        } catch (error) {
-            toast.error('Check-out failed');
-            console.error('Check-out Error:', error);
-        }
+  // ---------------- Fetch: shift list (for current user's shift) ----------------
+  useEffect(() => {
+    if (!user?.email) return;
+    const run = async () => {
+      try {
+        const res = await axiosProtect.get('/gethShiftedEmployee', {
+          params: { userEmail: user.email },
+        });
+        setShiftedEmployees(res.data || []);
+      } catch {}
     };
+    run();
+  }, [axiosProtect, user?.email, refetch]);
 
-
-    // *************************************************************************************************
-    useEffect(() => {
-        const fetchOutTime = async () => {
-            try {
-                const date = moment(new Date()).format("DD-MMM-YYYY");
-                const response = await axiosProtect.get(`/getCheckOutInfo`, {
-                    params: {
-                        userEmail: user?.email,
-                        date,
-                    },
-                });
-                setCheckOutInfo(response.data);
-            } catch (error) {
-                console.error('Error fetching check-out time:', error);
-            }
-        };
-        fetchOutTime();
-    }, [refetch, user.email]);
-    // *************************************************************************************************
-
-    // Calculate work hours
-    const inTime = checkInInfo?.checkInTime; //In time is 1748415033052
-    const outTime = checkOutInfo?.checkOutTime; // Out time is 1748425859974
-    const calculateTime = outTime - inTime;
-
-    const totalSeconds = Math.floor(calculateTime / 1000);
-    const hours = Math.floor(totalSeconds / 3600) || 0;
-    const minutes = Math.floor((totalSeconds % 3600) / 60) || 0;
-    // const seconds = totalSeconds % 60 || 0;
-
-    const workHours = `${hours}h ${minutes}m`;
-
-    // Calculate OT hours
-    const otStartTime = startOTInfo?.startingOverTime; // OT start time is 1750051553907
-    const otStopTime = stopOTInfo?.OTStopTime; // OT stop time is 1750051553907
-    const calculateOTTime = otStopTime - otStartTime;
-    const totalOTSeconds = Math.floor(calculateOTTime / 1000);
-    const otHours = Math.floor(totalOTSeconds / 3600) || 0;
-    const otMinutes = Math.floor((totalOTSeconds % 3600) / 60) || 0;
-    const otTime = `${otHours}h ${otMinutes}m` || '0h 0m'; // Default to '0h 0m' if no OT time is available
-
-
-
-
-    // *************************************************************************************************
-    useEffect(() => {
-        const fetchStartOT = async () => {
-            try {
-                const date = moment(new Date()).format("DD-MMM-YYYY");
-                const response = await axiosProtect.get(`/getStartOTInfo`, {
-                    params: {
-                        userEmail: user?.email,
-                        date,
-                    },
-                });
-                setStartOTInfo(response.data);
-            } catch (error) {
-                console.error('Error fetching OT time:', error);
-            }
-        };
-        fetchStartOT();
-    }, [refetch, user.email]);
-    // *************************************************************************************************
-
-    const handleStartOverTime = async () => {
-        if (checkInInfo?.checkInTime && !checkOutInfo) {
-            return toast.error('You are still on duty.');
-        };
-        const date = moment(new Date()).format("DD-MMM-YYYY");
-        const month = moment(new Date()).format("MMMM");
-        const startingOverTime = Date.now();
-        const displayTime = moment(startingOverTime).format("hh:mm:ss A");
-        const signInTime = moment(user?.metadata.lastSignInTime).format('DD MMM hh:mm:ss A');
-
-        const overTimeInfo = {
-            date,
-            month,
-            startingOverTime,
-            displayTime,
-            signInTime,
-            email: user.email,
-        };
-        try {
-            const res = await axiosSecure.post('/employee/startOverTime', overTimeInfo);
-            dispatch(setRefetch(!refetch));
-            if (res.data.message === 'Over time started') {
-                toast.success(res.data.message);
-            } else {
-                toast.warning(res.data.message);
-            }
-        } catch (error) {
-            toast.error('Overtime start failed:', error);
-        }
-
+  // ---------------- Fetch: notifications ----------------
+  useEffect(() => {
+    if (!user?.email) return;
+    const run = async () => {
+      try {
+        const res = await axiosProtect.get('/getEmployeeNotification', {
+          params: { userEmail: user.email },
+        });
+        setNotifications(res.data || []);
+      } catch {}
     };
-    // *************************************************************************************************
-    // const otTime = moment(startOTInfo?.startingOverTime).add(2, 'hours') //startingOverTime is 1750051553907
+    run();
+  }, [axiosProtect, user?.email, refetch]);
 
-    // const timeFormat = moment(otTime).format('hh:mm: A');
-    // console.log(timeFormat);
-    // *************************************************************************************************
-    const handleStopOverTime = async () => {
+  // ---------------- Fetch: check-in/out and OT states (today) ----------------
+  useEffect(() => {
+    if (!user?.email) return;
 
-        const date = moment(new Date()).format("DD-MMM-YYYY");
-        const month = moment(new Date()).format("MMMM");
-        const OTStopTime = Date.now();
-        const displayTime = moment(OTStopTime).format("hh:mm:ss A");
-
-        const OTStopInfo = {
-            date,
-            month,
-            OTStopTime,
-            displayTime,
-            email: user.email,
-        };
-
-        try {
-            const res = await axiosSecure.post('/employee/stopOverTime', OTStopInfo);
-            dispatch(setRefetch(!refetch));
-            if (res.data.message === 'OT stop successful') {
-                toast.success(res.data.message);
-            } else {
-                toast.warning(res.data.message);
-            }
-
-        } catch (error) {
-            toast.error('OT stop failed:', error);
-        }
-
+    const load = async () => {
+      try {
+        const [ci, co, otS, otE] = await Promise.all([
+          axiosProtect.get('/getCheckInInfo',  { params: { userEmail: user.email, date: todayStr } }),
+          axiosProtect.get('/getCheckOutInfo', { params: { userEmail: user.email, date: todayStr } }),
+          axiosProtect.get('/getStartOTInfo',  { params: { userEmail: user.email, date: todayStr } }),
+          axiosProtect.get('/getStopOTTime',   { params: { userEmail: user.email, date: todayStr } }),
+        ]);
+        setCheckIn(ci.data || null);
+        setCheckOut(co.data || null);
+        setOtStart(otS.data || null);
+        setOtStop(otE.data || null);
+      } catch {}
     };
-    // *************************************************************************************************
-    useEffect(() => {
-        const fetchStopOTTime = async () => {
-            try {
-                const date = moment(new Date()).format("DD-MMM-YYYY");
-                const response = await axiosProtect.get(`/getStopOTTime`, {
-                    params: {
-                        userEmail: user?.email,
-                        date,
-                    },
-                });
+    load();
+  }, [axiosProtect, user?.email, todayStr, refetch]);
 
-                setStopOTInfo(response.data);
-            } catch (error) {
-                console.error('Error fetching stop over time:', error);
-            }
-        };
-        fetchStopOTTime();
-    }, [refetch, user.email]);
+  // ---------------- Quick stats (this month) from ContextData.attendanceInfo ----------------
+  const thisMonthAttendance = useMemo(() => {
+    return (attendanceInfo || []).filter(a => a?.email === user?.email && a?.month === monthName);
+  }, [attendanceInfo, user?.email, monthName]);
 
+  const presentCount = thisMonthAttendance.length || 0;
+  const lateCount = thisMonthAttendance.filter(a => !!a.lateCheckIn).length || 0;
+  const totalOTSecondsThisMonth = thisMonthAttendance.reduce((acc, a) => acc + (Number(a.totalOTInSeconds) || 0), 0);
+  const totalOTH = Math.floor(totalOTSecondsThisMonth / 3600);
+  const totalOTM = Math.floor((totalOTSecondsThisMonth % 3600) / 60);
 
-    // *************************************************************************************************
-    // Monthly PF
-    const monthlyPF = parseFloat((salaryAndPF?.salary * 5) / 100) || 0; // Assuming pfContribution is the monthly PF contribution
+  // ---------------- Today: work & OT ----------------
+  const inTime = checkIn?.checkInTime || 0;
+  const outTime = checkOut?.checkOutTime || 0;
+  const workedMs = outTime && inTime ? (outTime - inTime) : 0;
+  const workedH = Math.floor((workedMs / 1000) / 3600) || 0;
+  const workedM = Math.floor(((workedMs / 1000) % 3600) / 60) || 0;
 
-    // *************************************************************************************************
-    const handleLeaveApplication = () => {
-        navigate('/leaveApplication');
-        // window.open('/leaveApplication', '_blank');
-    };
-    // *************************************************************************************************
-   return (
-        <div className="p-6">
-            {/* Time Tracking */}
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-semibold">Time Tracking</h2>
-                    <div className="flex items-center gap-1">
-                        <span className='bg-[#6E3FF3] text-white px-2 py-1 rounded-md'>{timeParts.hours}</span>
-                        <span className='bg-[#6E3FF3] text-white px-2 py-1 rounded-md'>{timeParts.minutes}</span>
-                        <span className='bg-[#6E3FF3] text-white px-2 py-1 rounded-md'>{timeParts.seconds}</span>
-                        <span className='bg-[#6E3FF3] text-white px-2 py-1 rounded-md'>{timeParts.period}</span>
-                    </div>
-                </div>
+  const otStartMs = otStart?.startingOverTime || 0;
+  const otStopMs = otStop?.OTStopTime || 0;
+  const otMs = (otStartMs && otStopMs) ? (otStopMs - otStartMs) : 0;
+  const otH = Math.floor((otMs / 1000) / 3600) || 0;
+  const otM = Math.floor(((otMs / 1000) % 3600) / 60) || 0;
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <div className="text-xs text-gray-500 mb-1">Check-in Time</div>
-                        <div className="text-lg font-semibold">{checkInInfo?.displayTime || `-- : --`}</div>
-                    </div>
+  // ---------------- Shift name for check-out early confirmation ----------------
+  const myShiftName = useMemo(() => {
+    const byEmail = shiftedEmployees.find(e => e.email === user?.email);
+    return byEmail?.shiftName || 'General';
+  }, [shiftedEmployees, user?.email]);
 
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <div className="text-xs text-gray-500 mb-1">Check-out Time</div>
-                        <div className="text-lg font-semibold">{checkOutInfo?.displayTime || `-- : --`}</div>
-                    </div>
+  // ---------------- Actions ----------------
+  const handleCheckIn = async () => {
+    try {
+      const payload = {
+        date: todayStr,
+        month: moment().format('MMMM'),
+        checkInTime: Date.now(),
+        displayTime: moment().format('hh:mm:ss A'),
+        signInTime: moment(user?.metadata?.lastSignInTime).format('DD MMM hh:mm:ss A'),
+        email: user.email,
+      };
+      const res = await axiosSecure.post('/employee/checkIn', payload);
+      dispatch(setRefetch(!refetch));
+      res.data?.message === 'Check-in successful' ? toast.success(res.data.message) : toast.warning(res.data?.message);
+    } catch {
+      toast.error('Check-in failed');
+    }
+  };
 
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <div className="text-xs text-gray-500 mb-1">Today's Work Hours</div>
-                        <div className="text-lg font-semibold">{workHours}</div>
-                    </div>
+  const handleCheckOut = async () => {
+    try {
+      const now = moment().tz('Asia/Dhaka');
+      const morningShiftEnd = now.clone().startOf('day').add(14, 'hours').valueOf();  // 2:00 PM
+      const generalShiftEnd = now.clone().startOf('day').add(18, 'hours').valueOf();  // 6:00 PM
+      const eveningShiftEnd = now.clone().startOf('day').add(22, 'hours').valueOf();  // 10:00 PM
 
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <div className="text-xs text-gray-500 mb-1">Over Time</div>
-                        <div className="text-lg font-semibold">{otTime}</div>
-                    </div>
-                </div>
+      const isEarly =
+        (myShiftName === 'Morning' && now.valueOf() < morningShiftEnd) ||
+        (myShiftName === 'General' && now.valueOf() < generalShiftEnd) ||
+        (myShiftName === 'Evening' && now.valueOf() < eveningShiftEnd);
 
-                <div className="flex mt-6 gap-4">
-                    {
-                        checkInInfo ?
-                            checkOutInfo ?
-                                null :
-                                <button
-                                    onClick={handleCheckOut}
-                                    className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded btn">
-                                    Check Out
-                                </button>
-                            :
+      if (isEarly) {
+        const result = await Swal.fire({
+          title: 'Are you sure?',
+          text: 'You are going to check out before the end of your shift.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, check-out',
+        });
+        if (!result.isConfirmed) return;
+      }
 
-                            checkOutInfo ?
-                                null
-                                :
-                                <button
-                                    onClick={handleCheckIn}
-                                    className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded btn">
-                                    Check In
-                                </button>
+      const payload = {
+        date: todayStr,
+        month: moment().format('MMMM'),
+        checkOutTime: Date.now(),
+        displayTime: moment().format('hh:mm:ss A'),
+        email: user.email,
+      };
+      const res = await axiosSecure.post('/employee/checkOut', payload);
+      dispatch(setRefetch(!refetch));
+      res.data?.message === 'Check-out successful' ? toast.success(res.data.message) : toast.warning(res.data?.message || 'Check-out response unknown');
+    } catch {
+      toast.error('Check-out failed');
+    }
+  };
 
+  const handleStartOT = async () => {
+    try {
+      if (checkIn?.checkInTime && !checkOut?.checkOutTime) {
+        return toast.error('You are still on duty.');
+      }
+      const payload = {
+        date: todayStr,
+        month: moment().format('MMMM'),
+        startingOverTime: Date.now(),
+        displayTime: moment().format('hh:mm:ss A'),
+        signInTime: moment(user?.metadata?.lastSignInTime).format('DD MMM hh:mm:ss A'),
+        email: user.email,
+      };
+      const res = await axiosSecure.post('/employee/startOverTime', payload);
+      dispatch(setRefetch(!refetch));
+      res.data?.message === 'Over time started' ? toast.success(res.data.message) : toast.warning(res.data?.message);
+    } catch {
+      toast.error('OT start failed');
+    }
+  };
 
-                    }
+  const handleStopOT = async () => {
+    try {
+      const payload = {
+        date: todayStr,
+        month: moment().format('MMMM'),
+        OTStopTime: Date.now(),
+        displayTime: moment().format('hh:mm:ss A'),
+        email: user.email,
+      };
+      const res = await axiosSecure.post('/employee/stopOverTime', payload);
+      dispatch(setRefetch(!refetch));
+      res.data?.message === 'OT stop successful' ? toast.success(res.data.message) : toast.warning(res.data?.message);
+    } catch {
+      toast.error('OT stop failed');
+    }
+  };
 
-                    {
-                        startOTInfo ?
-                            stopOTInfo.OTStopTime ?
-                                null
-                                :
-                                <button
-                                    onClick={handleStopOverTime}
-                                    className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded btn">
-                                    Stop OT
-                                </button>
-                            :
-                            <button
-                                onClick={handleStartOverTime}
-                                className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded btn">
-                                Start OT
-                            </button>
-                    }
-                </div>
+  const goToLeaveApplication = () => navigate('/leaveApplication');
+
+  // ---------------- Salary lock handlers ----------------
+  const openUnlockModal = () => {
+    setUnlockPin('');
+    setShowUnlockModal(true);
+  };
+  const closeUnlockModal = () => setShowUnlockModal(false);
+
+  const submitUnlock = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axiosSecure.post(
+        '/employee/salary-pin/verify',
+        { pin: unlockPin },
+        { params: { userEmail: user.email } }
+      );
+      if (res.data?.success) {
+        setSalaryUnlocked(true);
+        sessionStorage.setItem(SALARY_UNLOCK_KEY, '1'); // unlock for this tab/session
+        toast.success('Salary unlocked for this session');
+        closeUnlockModal();
+      } else {
+        toast.error(res.data?.message || 'Invalid PIN');
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to verify PIN');
+    }
+  };
+
+  const lockSalary = () => {
+    setSalaryUnlocked(false);
+    sessionStorage.removeItem(SALARY_UNLOCK_KEY);
+    toast.info('Salary locked');
+  };
+
+  const openChangePinModal = () => {
+    setCurrentPin('');
+    setNewPin('');
+    setConfirmPin('');
+    setShowChangePinModal(true);
+  };
+  const closeChangePinModal = () => setShowChangePinModal(false);
+
+  const submitChangePin = async (e) => {
+    e.preventDefault();
+    if (!newPin || newPin.length < 4 || newPin.length > 12) {
+      return toast.error('PIN must be 4-12 characters');
+    }
+    if (newPin !== confirmPin) return toast.error('PINs do not match');
+
+    try {
+      const res = await axiosSecure.post(
+        '/employee/salary-pin/set',
+        { currentPin: currentPin || undefined, newPin },
+        { params: { userEmail: user.email } }
+      );
+      if (res.data?.success) {
+        toast.success('PIN saved');
+        closeChangePinModal();
+      } else {
+        toast.error(res.data?.message || 'Failed to save PIN');
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to save PIN');
+    }
+  };
+
+  // ---------------- Helpers ----------------
+  const fmt = (ms) => (ms ? moment(ms).format('hh:mm:ss A') : '—');
+
+  const maskedSalary = '••••';
+  const monthlySalary = Number(salaryAndPF?.salary || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const monthlyPF = Number(((Number(salaryAndPF?.salary || 0) * 5) / 100)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const pfBalance = Number(salaryAndPF?.pfContribution || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header / Profile */}
+      <div className="bg-white rounded-xl shadow border border-gray-100 p-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <img
+              src={employee?.photo || 'https://i.ibb.co/6WfW6mS/user.png'}
+              alt={employee?.fullName || 'profile'}
+              className="w-20 h-20 rounded-xl object-cover border"
+            />
+            <div>
+              <div className="text-xl font-semibold">{employee?.fullName || '--'}</div>
+              <div className="text-sm text-gray-500 flex items-center gap-2">
+                <Briefcase size={16} /> {employee?.designation || '—'}
+                <span className="mx-2">•</span>
+                <BadgeCheck size={16} />
+                <span className={employee?.status === 'Active' ? 'text-green-600' : 'text-red-500'}>
+                  {employee?.status || '—'}
+                </span>
+              </div>
+              <div className="mt-2 text-sm text-gray-600 flex flex-wrap gap-4">
+                <span className="inline-flex items-center gap-1"><Mail size={14} /> {employee?.email || user?.email}</span>
+                {employee?.phoneNumber && <span className="inline-flex items-center gap-1"><Phone size={14} /> {employee.phoneNumber}</span>}
+                {employee?.address && <span className="inline-flex items-center gap-1"><MapPin size={14} /> {employee.address}</span>}
+                {employee?.DOB && <span className="inline-flex items-center gap-1"><CalendarDays size={14} /> DOB: {employee.DOB}</span>}
+              </div>
             </div>
+          </div>
 
-            <section>
-                <h2>Attendance summary of last 7 days</h2>
-                <div className="overflow-x-auto my-5">
-                    <table className="table table-zebra">
-                        {/* head */}
-                        <thead>
-                            <tr className='bg-[#6E3FF3] text-white'>
-                                <th>Date</th>
-                                <th>Check-in time</th>
-                                <th>Check-out time</th>
-                                <th>Working hour</th>
-                                <th>OT hour</th>
-                                <th>Late In</th>
-                                <th>Early out</th>
-                                <th>Remarks</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {/* row 1 */}
-                            {attendanceInfo &&
-                                attendanceInfo?.map((attendance, index) => (
-                                    <tr key={index} className={`${attendance.lateCheckIn ? 'text-red-500' : ''}`}>
-                                        <td>{attendance.date}</td>
-                                        <td>{attendance.checkInTime ? moment(attendance.checkInTime).format('hh:mm:ss A') : 'N/A'}</td>
-                                        <td>{attendance.checkOutTime ? moment(attendance.checkOutTime).format('hh:mm:ss A') : 'N/A'}</td>
-                                        <td>{attendance.workingDisplay || 'N/A'}</td>
-                                        <td>{attendance.
-                                            displayOTHour || '-'}</td>
-                                        <td>
-                                            <div>
-                                                {attendance.lateCheckIn || 'On time'}
-                                                {
-                                                    attendance.lateCheckIn ?
-                                                        <sup className="ml-1 bg-red-500 px-2 py-1 rounded-2xl text-white text-[10px]">
-                                                            late
-                                                        </sup>
-                                                        : null
-                                                }
-                                            </div>
-                                        </td>
-                                        <td> </td>
-                                        <td> </td>
-                                    </tr>
-                                ))}
-
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                {/* Attendance Summary */}
-                <div className="bg-white rounded-lg shadow p-4">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-medium">Attendance Summary</h3>
-                        <button className="text-blue-600 text-sm flex items-center">
-                            This Month <ChevronRight size={16} />
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="text-center p-3 bg-gray-50 rounded-lg">
-                            <div className="text-3xl font-bold text-green-600">{presentCount}</div>
-                            <div className="text-xs text-gray-500 mt-1">Present Days</div>
-                        </div>
-
-                        <div className="text-center p-3 bg-gray-50 rounded-lg">
-                            <div className="text-3xl font-bold text-red-600">1</div>
-                            <div className="text-xs text-gray-500 mt-1">Absent Days</div>
-                        </div>
-
-                        <div className="text-center p-3 bg-gray-50 rounded-lg">
-                            <div className="text-3xl font-bold text-yellow-600">3</div>
-                            <div className="text-xs text-gray-500 mt-1">Leaves Taken</div>
-                        </div>
-
-                        <div className="text-center p-3 bg-gray-50 rounded-lg">
-                            <div className="text-3xl font-bold text-blue-600">{lateCount}</div>
-                            <div className="text-xs text-gray-500 mt-1">Late Check-ins</div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Leave Balance */}
-                <div className="bg-white rounded-lg shadow p-4">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-medium">Leave Balance</h3>
-                        <button className="text-blue-600 text-sm flex items-center">
-                            View Details <ChevronRight size={16} />
-                        </button>
-                    </div>
-
-                    <div className="space-y-3">
-                        {leaveData.map((leave, index) => (
-                            <div key={index} className="flex items-center justify-between">
-                                <div>
-                                    <div className="text-sm font-medium">{leave.name}</div>
-                                    <div className="text-xs text-gray-500">{leave.used} used of {leave.total}</div>
-                                </div>
-                                <div className="w-24 bg-gray-200 rounded-full h-2">
-                                    <div
-                                        className="bg-blue-600 h-2 rounded-full"
-                                        style={{ width: `${(leave.used / leave.total) * 100}%` }}
-                                    ></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <button onClick={handleLeaveApplication} className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">
-                        Apply for Leave
-                    </button>
-                </div>
-
-                {/* Notifications */}
-                <div className="bg-white rounded-lg shadow p-4">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-medium">Notifications</h3>
-                        <button className="text-blue-600 text-sm flex items-center">
-                            View All <ChevronRight size={16} />
-                        </button>
-                    </div>
-
-                    <div className="space-y-3">
-                        {notifications.map((notification) => (
-                            <div key={notification.id} className="border-b border-gray-100 pb-2">
-                                <div className="text-sm">{notification.message}</div>
-                                <div className="text-xs text-gray-500 mt-1">{notification.time}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+          {/* Live clock + shift */}
+          <div className="flex items-center gap-4">
+            <div className="text-center">
+              <div className="text-xs text-gray-500">Current Time</div>
+              <div className="flex items-center gap-1 justify-center text-lg font-semibold">
+                <Clock size={18} />
+                <span className="bg-indigo-600 text-white px-2 py-1 rounded">{clock.hh}</span>:
+                <span className="bg-indigo-600 text-white px-2 py-1 rounded">{clock.mm}</span>:
+                <span className="bg-indigo-600 text-white px-2 py-1 rounded">{clock.ss}</span>
+                <span className="bg-indigo-600 text-white px-2 py-1 rounded">{clock.ap}</span>
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Shift: <b>{(shiftedEmployees.find(e => e.email === user?.email)?.shiftName) || 'General'}</b></div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                {/* Attendance Chart */}
-                <div className="bg-white rounded-lg shadow p-4">
-                    <h3 className="font-medium mb-4">Monthly Attendance</h3>
-                    <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={attendanceData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="month" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="present" fill="#10B981" name="Present" />
-                                <Bar dataKey="absent" fill="#EF4444" name="Absent" />
-                                <Bar dataKey="leave" fill="#F59E0B" name="Leave" />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                {/* Salary & PF */}
-                <div className="bg-white rounded-lg shadow p-4">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-medium">Salary & PF Information</h3>
-                        <button className="text-blue-600 text-sm flex items-center">
-                            View Pay Slips <ChevronRight size={16} />
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                            <div className="text-xs text-gray-500 mb-1">UAN Number</div>
-                            <div className="font-medium">100XXXXXXX123</div>
-                        </div>
-
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                            <div className="text-xs text-gray-500 mb-1">PF Number</div>
-                            <div className="font-medium">PF/ABC/12345</div>
-                        </div>
-
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                            <div className="text-xs text-gray-500 mb-1">Monthly PF Contribution</div>
-                            <div className="font-medium text-green-600">{Number(monthlyPF).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits: 2})}</div>
-                        </div>
-
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                            <div className="text-xs text-gray-500 mb-1">Total PF Balance</div>
-                            <div className="font-medium text-green-600">BDT: {Number(salaryAndPF?.pfContribution || 0).toLocaleString(undefined, {minimumIntegerDigits:2, maximumFractionDigits:2})}</div>
-                        </div>
-                    </div>
-
-                    <div className="h-48 mt-2">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={payrollData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="month" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                <Line type="monotone" dataKey="pf" stroke="#3B82F6" name="PF Contribution" />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-            </div>
-
-            {/* Performance Metrics */}
-            <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-semibold">Performance Metrics</h2>
-                    <div>
-                        <select className="bg-gray-50 border border-gray-200 text-gray-700 py-1 px-3 rounded-md text-sm">
-                            <option>Last Quarter</option>
-                            <option>This Year</option>
-                            <option>Last Year</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                        <div className="text-xs text-gray-500 mb-1">Goal Completion</div>
-                        <div className="text-lg font-semibold text-green-600">92%</div>
-                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                            <div className="bg-green-600 h-2 rounded-full" style={{ width: '92%' }}></div>
-                        </div>
-                    </div>
-
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                        <div className="text-xs text-gray-500 mb-1">Project Deliveries</div>
-                        <div className="text-lg font-semibold">11/12 On Time</div>
-                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                            <div className="bg-blue-600 h-2 rounded-full" style={{ width: '92%' }}></div>
-                        </div>
-                    </div>
-
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                        <div className="text-xs text-gray-500 mb-1">Team Feedback</div>
-                        <div className="text-lg font-semibold text-blue-600">4.8/5.0</div>
-                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                            <div className="bg-blue-600 h-2 rounded-full" style={{ width: '96%' }}></div>
-                        </div>
-                    </div>
-
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                        <div className="text-xs text-gray-500 mb-1">Training Completed</div>
-                        <div className="text-lg font-semibold">3 / 4 Courses</div>
-                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                            <div className="bg-yellow-500 h-2 rounded-full" style={{ width: '75%' }}></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-4 text-sm">
-                    <button className="text-blue-600 font-medium">
-                        View Complete Performance Report
-                    </button>
-                </div>
-            </div>
-
-            {/* Documents & Company Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                <div className="bg-white rounded-lg shadow p-4">
-                    <h3 className="font-medium mb-4">Important Documents</h3>
-
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                            <div className="flex items-center">
-                                <FileText size={16} className="text-blue-600 mr-2" />
-                                <span className="text-sm">Appointment Letter</span>
-                            </div>
-                            <button className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
-                                Download
-                            </button>
-                        </div>
-
-                        <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                            <div className="flex items-center">
-                                <FileText size={16} className="text-blue-600 mr-2" />
-                                <span className="text-sm">Form-16 (2023-24)</span>
-                            </div>
-                            <button className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
-                                Download
-                            </button>
-                        </div>
-
-                        <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                            <div className="flex items-center">
-                                <FileText size={16} className="text-blue-600 mr-2" />
-                                <span className="text-sm">ID Card</span>
-                            </div>
-                            <button className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
-                                Download
-                            </button>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                                <FileText size={16} className="text-blue-600 mr-2" />
-                                <span className="text-sm">Health Insurance Card</span>
-                            </div>
-                            <button className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
-                                Download
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow p-4">
-                    <h3 className="font-medium mb-4">Company Information</h3>
-
-                    <div className="space-y-4">
-                        <div>
-                            <div className="text-xs text-gray-500">Current Pay Cycle</div>
-                            <div className="text-sm font-medium">1st - 30th May, 2025</div>
-                        </div>
-
-                        <div>
-                            <div className="text-xs text-gray-500">Next Pay Date</div>
-                            <div className="text-sm font-medium">1st June, 2025</div>
-                        </div>
-
-                        <div>
-                            <div className="text-xs text-gray-500">HR Contact</div>
-                            <div className="text-sm font-medium">hr@company.com | +1 (555) 123-4567</div>
-                        </div>
-
-                        <div>
-                            <div className="text-xs text-gray-500">Upcoming Holidays</div>
-                            <div className="text-sm font-medium">Memorial Day (May 26, 2025)</div>
-                        </div>
-                    </div>
-
-                    <div className="mt-4 p-3 bg-blue-50 text-sm rounded-lg border border-blue-100 flex items-start">
-                        <Info size={16} className="text-blue-600 mr-2 mt-0.5" />
-                        <div>
-                            <span className="font-medium">Remote Work Policy Update:</span>
-                            <span className="text-gray-600"> Work from home allowed up to 3 days per week with manager approval.</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+          </div>
         </div>
-    );
+      </div>
+
+      {/* Time Tracking */}
+      <div className="bg-white rounded-xl shadow border border-gray-100 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">Time Tracking (Today)</h2>
+          <div className="text-xs text-gray-500">Date: {todayStr}</div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
+            <div className="text-xs text-gray-500 mb-1">Check-in</div>
+            <div className="text-lg font-semibold">{checkIn?.displayTime || '—'}</div>
+          </div>
+          <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
+            <div className="text-xs text-gray-500 mb-1">Check-out</div>
+            <div className="text-lg font-semibold">{checkOut?.displayTime || '—'}</div>
+          </div>
+          <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
+            <div className="text-xs text-gray-500 mb-1">Worked</div>
+            <div className="text-lg font-semibold">{`${workedH}h ${workedM}m`}</div>
+          </div>
+          <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
+            <div className="text-xs text-gray-500 mb-1">Overtime</div>
+            <div className="text-lg font-semibold">{`${otH}h ${otM}m`}</div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3 mt-5">
+          {!checkIn
+            ? (!checkOut && (
+                <button onClick={handleCheckIn} className="btn bg-green-600 hover:bg-green-700 text-white">Check In</button>
+              ))
+            : (!checkOut && (
+                <button onClick={handleCheckOut} className="btn bg-red-600 hover:bg-red-700 text-white">Check Out</button>
+              ))
+          }
+
+          {!otStart
+            ? (
+              <button onClick={handleStartOT} className="btn bg-yellow-600 hover:bg-yellow-700 text-white">Start OT</button>
+            )
+            : (!otStop && (
+              <button onClick={handleStopOT} className="btn bg-red-600 hover:bg-red-700 text-white">Stop OT</button>
+            ))
+          }
+
+          <button onClick={goToLeaveApplication} className="btn bg-indigo-600 hover:bg-indigo-700 text-white">
+            Apply for Leave
+          </button>
+        </div>
+      </div>
+
+      {/* Quick Stats + Salary/PF + Notifications */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Quick Stats */}
+        <div className="bg-white rounded-xl shadow border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-medium">This Month</h3>
+            <span className="text-xs text-gray-500">{monthName}</span>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-gray-50 p-3 rounded-lg text-center border">
+              <div className="text-xs text-gray-500">Present</div>
+              <div className="text-2xl font-bold text-green-600">{presentCount}</div>
+            </div>
+            <div className="bg-gray-50 p-3 rounded-lg text-center border">
+              <div className="text-xs text-gray-500">Late In</div>
+              <div className="text-2xl font-bold text-yellow-600">{lateCount}</div>
+            </div>
+            <div className="bg-gray-50 p-3 rounded-lg text-center border">
+              <div className="text-xs text-gray-500">Total OT</div>
+              <div className="text-2xl font-bold text-indigo-600">
+                {totalOTH}h
+                <span className="text-sm text-gray-500 ml-1">{totalOTM}m</span>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 text-xs text-gray-500 flex items-center gap-1">
+            <TimerReset size={14} /> Updated now
+          </div>
+        </div>
+
+        {/* Salary & PF (Salary locked by PIN) */}
+        <div className="bg-white rounded-xl shadow border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-medium">Salary & PF</h3>
+            <div className="flex items-center gap-2">
+              {!salaryUnlocked ? (
+                <button onClick={openUnlockModal} className="btn btn-sm bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1">
+                  <Unlock size={16} /> Unlock
+                </button>
+              ) : (
+                <button onClick={lockSalary} className="btn btn-sm bg-gray-200 text-gray-700 flex items-center gap-1">
+                  <Lock size={16} /> Lock
+                </button>
+              )}
+              <button onClick={openChangePinModal} className="btn btn-sm bg-yellow-500 hover:bg-yellow-600 text-white flex items-center gap-1">
+                <KeyRound size={16} />PIN
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Salary – masked until unlocked */}
+            <div className="bg-gray-50 p-3 rounded-lg border">
+              <div className="text-xs text-gray-500">Monthly Salary</div>
+              <div className={`font-semibold ${salaryUnlocked ? 'text-green-600' : 'text-gray-700'}`}>
+                {salaryUnlocked ? monthlySalary : maskedSalary}
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-3 rounded-lg border">
+              <div className="text-xs text-gray-500">PF Status</div>
+              <div className="font-semibold">{salaryAndPF?.pfStatus || 'inactive'}</div>
+            </div>
+
+            <div className="bg-gray-50 p-3 rounded-lg border">
+              <div className="text-xs text-gray-500">Monthly PF (5%)</div>
+              <div className="font-semibold text-blue-600">
+                {monthlyPF}
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-3 rounded-lg border">
+              <div className="text-xs text-gray-500">Total PF Balance</div>
+              <div className="font-semibold text-blue-600">
+                {pfBalance}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 p-3 bg-blue-50 text-sm rounded-lg border border-blue-100 flex items-start">
+            <Info size={16} className="text-blue-600 mr-2 mt-0.5" />
+            <div>
+              Your salary is hidden by default on this device. Click <b>Unlock Salary</b> and enter your PIN to view it. It will re-lock when you close this tab.
+            </div>
+          </div>
+        </div>
+
+        {/* Notifications */}
+        <div className="bg-white rounded-xl shadow border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-medium flex items-center gap-2">
+              <Bell size={18} /> Notifications
+            </h3>
+            <span className="text-xs text-gray-500">Recent</span>
+          </div>
+          <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
+            {notifications?.length
+              ? notifications.map((n) => (
+                  <div key={String(n._id)} className="border-b border-gray-100 pb-2">
+                    <div className="text-sm">{n.notification}</div>
+                    <div className="text-xs text-gray-500 mt-1">{n.createdAt ? moment(n.createdAt).fromNow() : ''}</div>
+                  </div>
+                ))
+              : <div className="text-sm text-gray-500">No notifications.</div>}
+          </div>
+        </div>
+      </div>
+
+      {/* Attendance – last 7 days */}
+      <div className="bg-white rounded-xl shadow border border-gray-100 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-medium">Attendance (Last 7 days)</h3>
+          <div className="text-xs text-gray-500">Auto-fetched</div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="table table-zebra">
+            <thead>
+              <tr className="bg-indigo-600 text-white">
+                <th>Date</th>
+                <th>Check-in</th>
+                <th>Check-out</th>
+                <th>Worked</th>
+                <th>OT</th>
+                <th>Late In</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.isArray(attendanceInfo) && attendanceInfo.length ? (
+                attendanceInfo.map((row, idx) => (
+                  <tr key={idx} className={row.lateCheckIn ? 'text-red-600' : ''}>
+                    <td>{row.date || '—'}</td>
+                    <td>{fmt(row.checkInTime)}</td>
+                    <td>{fmt(row.checkOutTime)}</td>
+                    <td>{row.workingDisplay || '—'}</td>
+                    <td>{row.displayOTHour || '—'}</td>
+                    <td>
+                      <div className="flex items-center gap-1">
+                        {row.lateCheckIn || 'On time'}
+                        {row.lateCheckIn && (
+                          <sup className="ml-1 bg-red-500 px-2 py-0.5 rounded-2xl text-white text-[10px]">late</sup>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr><td colSpan="6" className="text-center text-sm text-gray-500">No records.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Company Info / Misc */}
+      <div className="bg-white rounded-xl shadow border border-gray-100 p-6">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-medium">Company & Policy</h3>
+          <button className="text-blue-600 text-sm flex items-center gap-1">
+            View Details <ChevronRight size={16} />
+          </button>
+        </div>
+        <div className="mt-2 p-3 bg-blue-50 text-sm rounded-lg border border-blue-100 flex items-start">
+          <Info size={16} className="text-blue-600 mr-2 mt-0.5" />
+          <div>
+            <span className="font-medium">Data privacy: </span>
+            Never share your salary PIN. Your salary view unlock lasts only while this tab is open.
+          </div>
+        </div>
+      </div>
+
+      {/* Unlock Salary Modal */}
+      {showUnlockModal && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-3">Unlock Salary</h3>
+            <form onSubmit={submitUnlock} className="space-y-3">
+              <input
+                type="password"
+                className="input input-bordered w-full"
+                placeholder="Enter PIN"
+                value={unlockPin}
+                onChange={(e) => setUnlockPin(e.target.value)}
+                autoFocus
+              />
+              <div className="modal-action">
+                <button type="button" className="btn" onClick={closeUnlockModal}>Cancel</button>
+                <button type="submit" className="btn bg-indigo-600 text-white">Unlock</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Set / Change PIN Modal */}
+      {showChangePinModal && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-3">Set / Change Salary PIN</h3>
+            <form onSubmit={submitChangePin} className="space-y-3">
+              <input
+                type="password"
+                className="input input-bordered w-full"
+                placeholder="Current PIN (leave blank if none)"
+                value={currentPin}
+                onChange={(e) => setCurrentPin(e.target.value)}
+              />
+              <input
+                type="password"
+                className="input input-bordered w-full"
+                placeholder="New PIN (4-12 chars)"
+                value={newPin}
+                onChange={(e) => setNewPin(e.target.value)}
+                required
+              />
+              <input
+                type="password"
+                className="input input-bordered w-full"
+                placeholder="Confirm New PIN"
+                value={confirmPin}
+                onChange={(e) => setConfirmPin(e.target.value)}
+                required
+              />
+              <div className="modal-action">
+                <button type="button" className="btn" onClick={closeChangePinModal}>Cancel</button>
+                <button type="submit" className="btn bg-yellow-600 text-white">Save PIN</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default EmployeeDashboard;
