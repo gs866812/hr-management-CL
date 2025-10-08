@@ -56,7 +56,7 @@ const Badge = ({ children, tone = "slate" }) => (
   </span>
 );
 
-// shift window per day
+// shift window per day (use employees’ own shift)
 const shiftWindowForDay = (shiftName, day) => {
   const d = moment(day).tz(tz).startOf("day");
   switch ((shiftName || "").toLowerCase()) {
@@ -65,9 +65,8 @@ const shiftWindowForDay = (shiftName, day) => {
     case "general":
       return { start: d.clone().hour(10), end: d.clone().hour(18) }; // 10am–6pm
     case "evening":
-      return { start: d.clone().hour(14), end: d.clone().hour(22) }; // 2pm–10pm
+      return { start: d.clone().hour(14).minute(5), end: d.clone().hour(22) }; // 2:05pm–10pm
     default:
-      // unknown shift → assume full day window so they won't be marked absent early
       return {
         start: d.clone().hour(0),
         end: d.clone().hour(23).minute(59).second(59),
@@ -94,6 +93,7 @@ const EmployeeDetails = () => {
   const [attendanceRows, setAttendanceRows] = useState([]);
   const [otAggRows, setOtAggRows] = useState([]);
   const [leaves, setLeaves] = useState([]);
+  const [checkinsToday, setCheckinsToday] = useState([]); // <-- NEW
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -126,13 +126,9 @@ const EmployeeDetails = () => {
         });
         if (!alive) return;
         setEmployees(Array.isArray(data) ? data : []);
-      } catch {
-        /* swallow */
-      }
+      } catch {/* ignore */}
     })();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, [axiosProtect, user?.email]);
 
   // load leaves
@@ -146,13 +142,9 @@ const EmployeeDetails = () => {
         });
         if (!alive) return;
         setLeaves(Array.isArray(data) ? data : []);
-      } catch {
-        /* swallow */
-      }
+      } catch {/* ignore */}
     })();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, [axiosProtect, user?.email]);
 
   // load shift map
@@ -172,16 +164,12 @@ const EmployeeDetails = () => {
           m.set(k, s.shiftName);
         });
         setShiftMap(m);
-      } catch {
-        /* swallow */
-      }
+      } catch {/* ignore */}
     })();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, [axiosProtect, user?.email]);
 
-  // fetch attendance + OT
+  // fetch attendance + OT (+today's check-ins)
   const fetchData = async () => {
     if (!user?.email) return;
     setLoading(true);
@@ -210,10 +198,25 @@ const EmployeeDetails = () => {
 
       setAttendanceRows(Array.isArray(att.data) ? att.data : []);
       setOtAggRows(Array.isArray(ot.data) ? ot.data : []);
+
+      // If it's a single-day range, also fetch raw check-ins for that day
+      if (moment(start).isSame(end, "day")) {
+        const { data: checks } = await axiosProtect.get("/admin/checkins/list", {
+          params: {
+            userEmail: user.email,
+            date: fmtDate(start),
+            employeeEmail: employeeEmail || undefined,
+          },
+        });
+        setCheckinsToday(Array.isArray(checks) ? checks : []);
+      } else {
+        setCheckinsToday([]);
+      }
     } catch (e) {
       setError(e?.response?.data?.message || "Failed to load report");
       setAttendanceRows([]);
       setOtAggRows([]);
+      setCheckinsToday([]);
     } finally {
       setLoading(false);
     }
@@ -239,8 +242,9 @@ const EmployeeDetails = () => {
     (leaves || [])
       .filter((l) => l?.status === "Approved")
       .forEach((l) => {
-        const from = moment(l?.fromDate).valueOf();
-        const to = moment(l?.toDate).valueOf();
+        // supports either (fromDate/toDate) or (startDate/endDate/leaveDates)
+        const from = moment(l.fromDate || l.startDate, ["DD-MMM-YYYY","YYYY-MM-DD"]).valueOf();
+        const to   = moment(l.toDate   || l.endDate,   ["DD-MMM-YYYY","YYYY-MM-DD"]).valueOf();
         if (isNaN(from) || isNaN(to)) return;
         const s = Math.max(from, rangeStart);
         const e = Math.min(to, rangeEnd);
@@ -257,125 +261,122 @@ const EmployeeDetails = () => {
     return map;
   };
 
-  // determine correct status when no check-in yet
+  // determine status for a single day when no check-in yet
   const statusWithoutCheckin = (employeeEmail, dayMoment, leaveSetForDay) => {
     if (leaveSetForDay.has(employeeEmail)) return "On Leave";
-
-    const shiftName = shiftMap.get(employeeEmail);
-    const { start: s, end: e } = shiftWindowForDay(shiftName, dayMoment);
-
+    const { start: s, end: e } = shiftWindowForDay(shiftMap.get(employeeEmail), dayMoment);
     const now = moment().tz(tz);
     const isToday = dayMoment.isSame(now, "day");
-
     if (isToday) {
-      if (now.isBefore(s)) return "Not Started"; // e.g., Evening shift in the morning
-      if (now.isSameOrBefore(e)) return "Yet to Check-in";
-      return "Absent"; // after own shift end
+      if (now.isBefore(s)) return "Not Started";      // before own shift
+      if (now.isSameOrBefore(e)) return "Yet to Check-in"; // during own shift
+      return "Absent";                                // after own shift end
     }
-
-    if (dayMoment.isBefore(now, "day")) return "Absent"; // past day, no CI & not on leave
-    return "Not Started"; // future day
+    if (dayMoment.isBefore(now, "day")) return "Absent";
+    return "Not Started";
   };
+
+  // build present set for "today" = union(attendanceRows[day], checkinsToday)
+  const presentSetToday = useMemo(() => {
+    if (!moment(start).isSame(end, "day")) return new Set();
+    const dayKey = moment(start).tz(tz).format("DD-MMM-YYYY");
+    const set = new Set(
+      attendanceRows
+        .filter((r) => niceDate(r.date) === dayKey && r.checkInTime)
+        .map((r) => r.email)
+    );
+    (checkinsToday || []).forEach((c) => {
+      if (c?.email) set.add(c.email);
+    });
+    return set;
+  }, [attendanceRows, checkinsToday, start, end]);
 
   // summary counters
   const summary = useMemo(() => {
+    const isSingle = moment(start).isSame(end, "day");
     const startD = moment(start).tz(tz).startOf("day");
     const endD = moment(end).tz(tz).endOf("day");
-    const days = [];
-    const cursor = startD.clone();
-    while (cursor.isSameOrBefore(endD)) {
-      days.push(cursor.format("DD-MMM-YYYY"));
-      cursor.add(1, "day");
-    }
 
-    const presentByDay = new Map();
-    attendanceRows.forEach((r) => {
-      const d = niceDate(r.date);
-      if (!presentByDay.has(d)) presentByDay.set(d, new Set());
-      presentByDay.get(d).add(r.email);
-    });
-
-    const leaveByDay = makeLeaveByDay(start, end);
     const allEmails = employees.map((e) => e.email);
-    const late = attendanceRows.reduce(
+    const leaveByDay = makeLeaveByDay(start, end);
+
+    // late count: union of attendanceRows + (today’s check-ins that contain lateCheckIn)
+    const lateFromAttendance = attendanceRows.reduce(
       (acc, r) => acc + (lateToMinutes(r.lateCheckIn) > 0 ? 1 : 0),
       0
     );
+    const lateFromCheckins =
+      isSingle
+        ? (checkinsToday || []).filter((c) => lateToMinutes(c?.lateCheckIn) > 0).length
+        : 0;
+    const late = lateFromAttendance + lateFromCheckins;
 
-    // single-day summary uses shift window to avoid early Absents
-    if (days.length === 1) {
-      const d = days[0];
-      const dayMoment = moment(d, "DD-MMM-YYYY").tz(tz);
-      const presentSet = presentByDay.get(d) || new Set();
-      const leaveSet = leaveByDay.get(d) || new Set();
+    if (isSingle) {
+      const dayMoment = startD.clone();
+      const leaveSet = leaveByDay.get(dayMoment.format("DD-MMM-YYYY")) || new Set();
 
-      let present = 0,
-        onLeave = 0,
-        absent = 0;
-
+      let present = 0, onLeave = 0, absent = 0;
       const now = moment().tz(tz);
-      const isToday = dayMoment.isSame(now, "day");
 
       allEmails.forEach((email) => {
-        if (presentSet.has(email)) {
+        if (presentSetToday.has(email)) {
           present += 1;
           return;
         }
         if (leaveSet.has(email)) {
+          // only count as on leave if they didn't check in
           onLeave += 1;
           return;
         }
+        // not checked in & not on leave → only absent AFTER their shift end
         const { end: e } = shiftWindowForDay(shiftMap.get(email), dayMoment);
-        if (isToday) {
-          if (now.isAfter(e)) absent += 1; // absent only after their shift end
-        } else if (dayMoment.isBefore(now, "day")) {
-          absent += 1; // past day with no CI and no leave
-        }
+        if (now.isAfter(e)) absent += 1;
       });
 
       return { present, absent, onLeave, late };
     }
 
-    // range summary (unique people present at least once)
+    // multi-day: unique present emails from attendance
     const presentEmails = new Set(attendanceRows.map((r) => r.email));
     const leaveEmails = new Set(
-      (leaves || [])
-        .filter((l) => l.status === "Approved")
-        .map((l) => l.email)
+      (leaves || []).filter((l) => l.status === "Approved").map((l) => l.email)
     );
     const present = presentEmails.size;
-    const onLeave = Array.from(leaveEmails).filter((em) =>
-      allEmails.includes(em)
-    ).length;
+    const onLeave = Array.from(leaveEmails).filter((em) => allEmails.includes(em)).length;
     const absent = Math.max(0, allEmails.length - present - onLeave);
     return { present, absent, onLeave, late };
-  }, [attendanceRows, employees, start, end, leaves, shiftMap]);
+  }, [attendanceRows, checkinsToday, employees, start, end, leaves, shiftMap, presentSetToday]);
 
-  // today roster (shift-aware)
+  // today roster (shift-aware, uses presentSetToday)
   const todayRoster = useMemo(() => {
     const isSingle = moment(start).isSame(end, "day");
     if (!isSingle) return [];
     const dayKey = moment(start).tz(tz).format("DD-MMM-YYYY");
     const dayMoment = moment(dayKey, "DD-MMM-YYYY").tz(tz);
 
-    const presentSet = new Set(
-      attendanceRows
-        .filter((r) => niceDate(r.date) === dayKey)
-        .map((r) => r.email)
-    );
     const leaveByDay = makeLeaveByDay(start, end);
     const leaveSet = leaveByDay.get(dayKey) || new Set();
 
     return employees
       .filter((e) => !employeeEmail || e.email === employeeEmail)
       .map((e) => {
+        // use attendanceRows to show work/ot if exists, otherwise dashes
         const row =
           attendanceRows.find(
             (r) => r.email === e.email && niceDate(r.date) === dayKey
           ) || {};
-        const hasCheckin = !!row.checkInTime;
-        const lateMinutes = lateToMinutes(row.lateCheckIn);
-        const status = hasCheckin
+        const hasCheckedIn =
+          presentSetToday.has(e.email); // union of attendance + raw check-ins
+
+        const lateMinutes = hasCheckedIn
+          ? (row.lateCheckIn ? lateToMinutes(row.lateCheckIn) : 0) ||
+            // if only in checkInsToday, try that value
+            lateToMinutes(
+              (checkinsToday || []).find((c) => c.email === e.email)?.lateCheckIn
+            )
+          : 0;
+
+        const status = hasCheckedIn
           ? "Present"
           : statusWithoutCheckin(e.email, dayMoment, leaveSet);
 
@@ -393,14 +394,13 @@ const EmployeeDetails = () => {
       .filter((r) =>
         search
           ? (r.fullName || "").toLowerCase().includes(search.toLowerCase()) ||
-          (r.email || "").toLowerCase().includes(search.toLowerCase()) ||
-          String(r.eid || "").toLowerCase().includes(search.toLowerCase())
+            (r.email || "").toLowerCase().includes(search.toLowerCase()) ||
+            String(r.eid || "").toLowerCase().includes(search.toLowerCase())
           : true
       )
       .sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""));
-  }, [attendanceRows, employees, employeeEmail, start, end, search, shiftMap]);
+  }, [attendanceRows, employees, employeeEmail, start, end, search, shiftMap, checkinsToday, presentSetToday]);
 
-  // CSV export (detailed attendance table)
   const exportCsv = () => {
     const rows = [
       [
@@ -472,10 +472,9 @@ const EmployeeDetails = () => {
               <button
                 key={p.key}
                 onClick={() => setPeriod(p.key)}
-                className={`px-3 py-2 rounded-xl text-sm border ${period === p.key
-                    ? "bg-slate-900 text-white"
-                    : "bg-white hover:bg-slate-50"
-                  }`}
+                className={`px-3 py-2 rounded-xl text-sm border ${
+                  period === p.key ? "bg-slate-900 text-white" : "bg-white hover:bg-slate-50"
+                }`}
               >
                 {p.label}
               </button>
@@ -484,8 +483,9 @@ const EmployeeDetails = () => {
 
           {/* Custom dates */}
           <div
-            className={`flex items-center gap-2 ${period === "custom" ? "" : "opacity-60 pointer-events-none"
-              }`}
+            className={`flex items-center gap-2 ${
+              period === "custom" ? "" : "opacity-60 pointer-events-none"
+            }`}
           >
             <DatePicker
               selected={start}
@@ -707,15 +707,15 @@ const EmployeeDetails = () => {
               )}
               {((isRoster && todayRoster.length === 0) ||
                 (!isRoster && employees.length === 0)) && (
-                  <tr>
-                    <td
-                      colSpan={noRowsColSpan}
-                      className="px-3 py-6 text-center text-slate-500"
-                    >
-                      No records
-                    </td>
-                  </tr>
-                )}
+                <tr>
+                  <td
+                    colSpan={noRowsColSpan}
+                    className="px-3 py-6 text-center text-slate-500"
+                  >
+                    No records
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -744,19 +744,17 @@ const EmployeeDetails = () => {
                 .filter((r) =>
                   search
                     ? (r.fullName || "")
-                      .toLowerCase()
-                      .includes(search.toLowerCase()) ||
-                    (r.email || "")
-                      .toLowerCase()
-                      .includes(search.toLowerCase()) ||
-                    String(empMap.get(r.email)?.eid || "")
-                      .toLowerCase()
-                      .includes(search.toLowerCase())
+                        .toLowerCase()
+                        .includes(search.toLowerCase()) ||
+                      (r.email || "")
+                        .toLowerCase()
+                        .includes(search.toLowerCase()) ||
+                      String(empMap.get(r.email)?.eid || "")
+                        .toLowerCase()
+                        .includes(search.toLowerCase())
                     : true
                 )
-                .sort(
-                  (a, b) => moment(a.date).valueOf() - moment(b.date).valueOf()
-                )
+                .sort((a, b) => moment(a.date).valueOf() - moment(b.date).valueOf())
                 .map((r, i) => (
                   <tr key={i} className="hover:bg-slate-50">
                     <td className="px-3 py-2">{niceDate(r.date)}</td>
