@@ -19,7 +19,7 @@ export default function OrderManagement() {
                             Check Your all Order activity!
                         </h3>
                         {
-                            currentUser && (currentUser?.role === 'Admin' || currentUser?.role === 'Developer') &&
+                            currentUser && (currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN' || currentUser?.role === 'Developer') &&
                             <Link to="/createLocalOrder" className=" px-4 py-2 border-2 border-[#6E3FF3] rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 bg-[#6E3FF3] text-white">
                                 <span className='flex items-center gap-2'>
                                     <FaUpRightFromSquare /> Assign an order
