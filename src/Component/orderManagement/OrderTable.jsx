@@ -2,7 +2,8 @@ import React, { useContext, useEffect, useState } from 'react';
 import {
     Search,
     ChevronDown,
-    Pencil
+    Pencil,
+    Trash2,   // ⬅️ NEW
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import moment from 'moment';
@@ -13,6 +14,7 @@ import { IoEyeOutline } from 'react-icons/io5';
 import Countdown from 'react-countdown';
 import { BsChevronDoubleLeft, BsChevronDoubleRight } from 'react-icons/bs';
 import EditLocalOrderModal from './EditLocalOrderModal';
+import Swal from 'sweetalert2';
 
 const OrderTable = () => {
     const axiosProtect = useAxiosProtect();
@@ -67,6 +69,63 @@ const OrderTable = () => {
     const handleViewOrder = (id) => {
         window.open(`/recentOrders/${id}`, '_blank');
     };
+
+    // NEW: delete handler
+    const handleDeleteOrder = async (order) => {
+        const canDelete = currentUser?.role === 'Admin' || currentUser?.role === 'Developer';
+        if (!canDelete) return;
+
+        const blocked =
+            order.isLocked ||
+            ['Completed', 'Delivered'].includes(String(order.orderStatus));
+        if (blocked) {
+            toast.warn('This order is locked or finalized and cannot be deleted.');
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: 'Delete this order?',
+            html: `
+      <div style="text-align:left">
+        <div><b>Order:</b> ${order.orderName || '—'}</div>
+        <div><b>Client ID:</b> ${order.clientID || '—'}</div>
+      </div>
+      <div style="margin-top:8px;color:#a00">This action cannot be undone.</div>
+    `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            focusCancel: true,
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            await axiosProtect.delete(`/orders/${order._id}`, {
+                params: { userEmail: user?.email },
+            });
+
+            setLocalOrder((prev) => prev.filter((o) => o._id !== order._id));
+            setOrderCount((c) => Math.max(0, c - 1));
+
+            await Swal.fire({
+                title: 'Deleted',
+                text: 'The order has been deleted.',
+                icon: 'success',
+                timer: 1400,
+                showConfirmButton: false,
+            });
+        } catch (err) {
+            Swal.fire({
+                title: 'Delete failed',
+                text: err?.response?.data?.message || 'Failed to delete order',
+                icon: 'error',
+            });
+        }
+    };
+
 
     // Pagination helpers
     const numberOfPages = Math.ceil(orderCount / itemsPerPage);
@@ -171,10 +230,14 @@ const OrderTable = () => {
                     <tbody>
                         {localOrder?.length ? (
                             localOrder.map((order) => {
+                                const canAdmin =
+                                    currentUser?.role === 'Admin' || currentUser?.role === 'Developer';
                                 const canSeePrice =
-                                    currentUser?.role === 'Admin' ||
-                                    currentUser?.role === 'HR-ADMIN' ||
-                                    currentUser?.role === 'Developer';
+                                    canAdmin || currentUser?.role === 'HR-ADMIN';
+
+                                const blocked =
+                                    order.isLocked ||
+                                    ['Completed', 'Delivered'].includes(String(order.orderStatus));
 
                                 return (
                                     <tr key={order._id}>
@@ -214,34 +277,46 @@ const OrderTable = () => {
                                         </td>
                                         <td>{order.orderStatus}</td>
                                         <td>{order.userName}</td>
-                                        <td className="w-[8%]">
+                                        <td className="w-[10%]">
                                             <div className="flex items-center gap-2 justify-center">
+                                                {/* View */}
                                                 <IoEyeOutline
                                                     className="text-xl cursor-pointer hover:text-[#6E3FF3]"
                                                     onClick={() => handleViewOrder(order?._id)}
                                                     title="View"
                                                 />
 
-                                                {
-                                                    currentUser?.role === 'Admin' || currentUser?.role === 'Developer' ?
-                                                        <button
-                                                            className="btn btn-sm btn-ghost"
-                                                            title={order?.isLocked ? 'Locked (extend deadline to edit)' : 'Edit order'}
-                                                            onClick={() => {
-                                                                if (
-                                                                    order.isLocked ||
-                                                                    ["Completed", "Delivered"].includes(String(order.orderStatus))
-                                                                ) return;
-                                                                setEditing(order);
-                                                            }}
-                                                            disabled={
-                                                                order.isLocked ||
-                                                                ["Completed", "Delivered"].includes(String(order.orderStatus))
-                                                            }
-                                                        >
-                                                            <Pencil size={16} />
-                                                        </button>: null
-                                                }
+                                                {/* Edit (Admin/Developer; disabled when locked/completed/delivered) */}
+                                                {canAdmin && (
+                                                    <button
+                                                        className="btn btn-sm btn-ghost"
+                                                        title={
+                                                            blocked
+                                                                ? 'Locked / finalized (extend deadline to edit)'
+                                                                : 'Edit order'
+                                                        }
+                                                        onClick={() => {
+                                                            if (blocked) return;
+                                                            setEditing(order);
+                                                        }}
+                                                        disabled={blocked}
+                                                    >
+                                                        <Pencil size={16} />
+                                                    </button>
+                                                )}
+
+                                                {/* Delete (Admin/Developer; disabled when locked/completed/delivered) */}
+                                                {canAdmin && (
+                                                    <button
+                                                        className="btn btn-sm btn-ghost text-red-600"
+                                                        title={blocked ? 'Locked / finalized – cannot delete' : 'Delete order'}
+                                                        onClick={() => !blocked && handleDeleteOrder(order)}
+                                                        disabled={blocked}
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
