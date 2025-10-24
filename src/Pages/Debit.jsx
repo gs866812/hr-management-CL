@@ -1,27 +1,20 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { format, parseISO } from 'date-fns';
-import { FaEdit, FaPlus, FaTrash } from 'react-icons/fa';
-import { IoClose } from 'react-icons/io5';
+import { format } from 'date-fns';
+import { FaTrash } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
+import AddPerson from '../Component/Debit/AddPerson';
+import AddTransaction from '../Component/Debit/AddTransaction';
+import UpdateTransaction from '../Component/Debit/UpdateTransaction';
+import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 
 export default function DebitPage() {
     const [transactions, setTransactions] = useState([]);
-    const [form, setForm] = useState({
-        name: '',
-        phone: '',
-        address: '',
-        amount: '',
-        type: 'borrow',
-        date: format(new Date(), 'yyyy-MM-dd'),
-    });
-    const [editId, setEditId] = useState(null);
     const [search, setSearch] = useState('');
     const [filterDate, setFilterDate] = useState('');
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
-    const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(false);
     const [totalPages, setTotalPages] = useState(1);
     const [totalRecords, setTotalRecords] = useState(0);
@@ -36,7 +29,6 @@ export default function DebitPage() {
 
     const BASE_URL = import.meta.env.VITE_BASE_URL;
 
-    // 🔄 Fetch loans with debouncing for search
     const fetchLoans = async () => {
         try {
             setFetching(true);
@@ -56,8 +48,10 @@ export default function DebitPage() {
             );
             const data = await res.json();
 
-            if (!res.ok)
-                throw new Error(data.message || 'Failed to fetch loans');
+            if (!res.ok) {
+                toast.error(data.message || 'Failed to fetch loans');
+                return;
+            }
 
             const items = data.data?.loans || [];
             const filteredStats = data.data?.filteredStats || {};
@@ -68,7 +62,6 @@ export default function DebitPage() {
             setTotalPages(pagination.totalPages || 1);
             setTotalRecords(pagination.total || 0);
 
-            // Set both filtered and overall totals
             setTotals({
                 totalBorrow: filteredStats.totalBorrowed || 0,
                 totalReturn: filteredStats.totalReturned || 0,
@@ -78,114 +71,24 @@ export default function DebitPage() {
                 overallNetBalance: overallStats.overallNetBalance || 0,
             });
         } catch (err) {
-            toast.error(`❌ ${err.message}`);
+            toast.error(`${err.message}`);
         } finally {
             setFetching(false);
         }
     };
 
-    // Debounced search effect
     useEffect(() => {
         const timer = setTimeout(() => {
-            setPage(1); // Reset to first page when search/filter changes
+            setPage(1);
             fetchLoans();
-        }, 500); // 500ms debounce
+        }, 500);
 
         return () => clearTimeout(timer);
     }, [search, filterDate]);
 
-    // Fetch when page or perPage changes
     useEffect(() => {
         fetchLoans();
     }, [page, perPage]);
-
-    // 🧾 Form handlers
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setForm((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        // Validation
-        if (!form.name.trim() || !form.phone.trim() || !form.amount) {
-            toast.error('❌ Please fill in all required fields');
-            return;
-        }
-
-        if (parseFloat(form.amount) <= 0) {
-            toast.error('❌ Amount must be greater than 0');
-            return;
-        }
-
-        setLoading(true);
-        try {
-            const url = editId
-                ? `${BASE_URL}/loans/update-loan/${editId}`
-                : `${BASE_URL}/loans/new-loan`;
-            const method = editId ? 'PUT' : 'POST';
-
-            const payload = {
-                ...form,
-                amount: parseFloat(form.amount),
-                date: new Date(form.date).toISOString(),
-            };
-
-            const res = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || 'Failed to save loan');
-
-            toast.success(
-                editId ? '✏️ Updated successfully' : '✅ Added successfully'
-            );
-            closeModal();
-            resetForm();
-            fetchLoans(); // Refresh the list
-        } catch (err) {
-            toast.error(`❌ ${err.message}`);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const resetForm = () => {
-        setForm({
-            name: '',
-            phone: '',
-            address: '',
-            amount: '',
-            type: 'borrow',
-            date: format(new Date(), 'yyyy-MM-dd'),
-        });
-        setEditId(null);
-    };
-
-    const openModal = () => document.getElementById('add_modal').showModal();
-    const closeModal = () => {
-        document.getElementById('add_modal').close();
-        resetForm();
-    };
-
-    const handleEdit = (tx) => {
-        setEditId(tx._id);
-        setForm({
-            name: tx.name || '',
-            phone: tx.phone || '',
-            address: tx.address || '',
-            amount: tx.amount || '',
-            type: tx.type || 'borrow',
-            date: tx.date
-                ? format(new Date(tx.date), 'yyyy-MM-dd')
-                : format(new Date(), 'yyyy-MM-dd'),
-        });
-        openModal();
-    };
 
     const handleDelete = async (id) => {
         const result = await Swal.fire({
@@ -248,7 +151,6 @@ export default function DebitPage() {
         let start = Math.max(1, page - Math.floor(maxVisible / 2));
         let end = Math.min(totalPages, start + maxVisible - 1);
 
-        // Adjust start if we're near the end
         if (end - start + 1 < maxVisible) {
             start = Math.max(1, end - maxVisible + 1);
         }
@@ -278,7 +180,7 @@ export default function DebitPage() {
                         disabled={page === 1}
                         onClick={() => setPage(page - 1)}
                     >
-                        «
+                        <ChevronLeftIcon className="size-4" />
                     </button>
 
                     {pages.map((p, i) =>
@@ -309,7 +211,7 @@ export default function DebitPage() {
                         disabled={page === totalPages}
                         onClick={() => setPage(page + 1)}
                     >
-                        »
+                        <ChevronRightIcon className="size-4" />
                     </button>
                 </div>
             </div>
@@ -318,6 +220,11 @@ export default function DebitPage() {
 
     return (
         <div className="p-6 min-h-screen bg-base-200 space-y-6">
+            <div className="flex items-center gap-4 justify-end">
+                <AddPerson />
+                <AddTransaction fetchLoans={fetchLoans} />
+            </div>
+
             {/* --- Summary --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="stat bg-white !border rounded-lg">
@@ -384,13 +291,13 @@ export default function DebitPage() {
                         placeholder="Search name, phone, or type"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="input input-bordered w-64"
+                        className="input !border w-64"
                     />
                     <input
                         type="date"
                         value={filterDate}
                         onChange={(e) => setFilterDate(e.target.value)}
-                        className="input input-bordered w-auto"
+                        className="input !border w-auto"
                     />
                     {(search || filterDate) && (
                         <button
@@ -401,7 +308,7 @@ export default function DebitPage() {
                         </button>
                     )}
                     <select
-                        className="select select-bordered w-[140px]"
+                        className="select !border w-[140px]"
                         value={perPage}
                         onChange={(e) => {
                             setPerPage(Number(e.target.value));
@@ -414,12 +321,6 @@ export default function DebitPage() {
                             </option>
                         ))}
                     </select>
-                    <button
-                        className="btn bg-violet-600 hover:bg-violet-700 text-white"
-                        onClick={openModal}
-                    >
-                        <FaPlus /> Add
-                    </button>
                 </div>
             </div>
 
@@ -482,13 +383,10 @@ export default function DebitPage() {
                                     </td>
                                     <td className="text-center">
                                         <div className="flex justify-center gap-1">
-                                            <button
-                                                className="btn btn-xs btn-outline btn-primary"
-                                                onClick={() => handleEdit(tx)}
-                                                title="Edit"
-                                            >
-                                                <FaEdit />
-                                            </button>
+                                            <UpdateTransaction
+                                                fetchLoans={fetchLoans}
+                                                data={tx}
+                                            />
                                             <button
                                                 className="btn btn-xs btn-outline btn-error"
                                                 onClick={() =>
@@ -520,143 +418,6 @@ export default function DebitPage() {
 
             {/* --- Pagination --- */}
             {renderPagination()}
-
-            {/* --- Modal --- */}
-            <dialog id="add_modal" className="modal">
-                <div className="modal-box bg-base-100 max-w-md relative">
-                    <button
-                        className="absolute top-3 right-3 text-gray-500 hover:text-red-500"
-                        onClick={closeModal}
-                    >
-                        <IoClose size={24} />
-                    </button>
-
-                    <h3 className="font-bold text-lg text-violet-600 mb-4">
-                        {editId
-                            ? '✏️ Edit Transaction'
-                            : '➕ Add New Transaction'}
-                    </h3>
-
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="label">
-                                <span className="label-text">Name *</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="name"
-                                value={form.name}
-                                onChange={handleChange}
-                                placeholder="Enter name"
-                                className="input input-bordered w-full"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="label">
-                                <span className="label-text">Phone *</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="phone"
-                                value={form.phone}
-                                onChange={handleChange}
-                                placeholder="Enter phone number"
-                                className="input input-bordered w-full"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="label">
-                                <span className="label-text">Address</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="address"
-                                value={form.address}
-                                onChange={handleChange}
-                                placeholder="Enter address (optional)"
-                                className="input input-bordered w-full"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="label">
-                                <span className="label-text">Amount *</span>
-                            </label>
-                            <input
-                                type="number"
-                                name="amount"
-                                value={form.amount}
-                                onChange={handleChange}
-                                placeholder="Enter amount"
-                                className="input input-bordered w-full"
-                                min="0"
-                                step="0.01"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="label">
-                                <span className="label-text">Type *</span>
-                            </label>
-                            <select
-                                name="type"
-                                value={form.type}
-                                onChange={handleChange}
-                                className="select select-bordered w-full"
-                            >
-                                <option value="borrow">
-                                    Borrow (Money received)
-                                </option>
-                                <option value="return">
-                                    Return (Money given back)
-                                </option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="label">
-                                <span className="label-text">Date *</span>
-                            </label>
-                            <input
-                                type="date"
-                                name="date"
-                                value={form.date}
-                                onChange={handleChange}
-                                className="input input-bordered w-full"
-                                required
-                            />
-                        </div>
-
-                        <div className="modal-action">
-                            <button
-                                type="submit"
-                                className={`btn bg-violet-600 hover:bg-violet-700 text-white ${
-                                    loading ? 'loading' : ''
-                                }`}
-                                disabled={loading}
-                            >
-                                {loading
-                                    ? 'Saving...'
-                                    : editId
-                                    ? 'Update'
-                                    : 'Save'}
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-outline"
-                                onClick={closeModal}
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </dialog>
         </div>
     );
 }
