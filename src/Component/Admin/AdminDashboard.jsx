@@ -4,7 +4,7 @@ import AddMainBalanceModal from './AddMainBalanceModal';
 import { ContextData } from '../../DataProvider';
 
 const AdminDashboard = () => {
-    const { user, userName, currentUser, mainBalance, unpaidAmount, totalExpense, sharedProfit } = useContext(ContextData);
+    const { mainBalance, unpaidAmount, totalExpense, sharedProfit } = useContext(ContextData);
 
     // ****************************************************************
     const handleAddBalance = () => {
