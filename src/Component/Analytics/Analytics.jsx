@@ -377,123 +377,168 @@ const Analytics = () => {
     // **************************************************************************
     return (
         <div className="w-full p-4">
-            <div className="bg-gray-100 rounded-md p-2 shadow">
-                <h3 className="text-xl font-bold mt-2">Yearly Summary</h3>
-                <div className="flex items-center">
-                    <div className="w-1/2 flex flex-wrap gap-2">
-                        <div className="bg-white rounded-md p-4">
-                            <h4 className="text-xl font-semibold text-purple-800 mb-2">
-                                Revenue
-                            </h4>
-                            <p className="font-bold text-purple-600">
-                                {formatNumber(yearlyTotals.earnings)} BDT
-                            </p>
-                        </div>
-                        <div className="bg-white rounded-md p-4">
-                            <h4 className="text-xl font-semibold text-orange-800 mb-2">
-                                Expense
-                            </h4>
-                            <p className=" font-bold text-orange-600">
-                                {formatNumber(yearlyTotals.expense)} BDT
-                            </p>
-                        </div>
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+                <div className="flex flex-col lg:flex-row justify-between gap-6">
+                    {/* Left: Yearly Summary Cards */}
+                    <div className="flex-1">
+                        <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            📅 Yearly Summary
+                        </h3>
 
-                        <div
-                            className={`${
-                                yearlyTotals.profit >= 0
-                                    ? 'bg-green-100 border-green-200'
-                                    : 'bg-red-100 border-red-200'
-                            } rounded-lg p-4 shadow border`}
-                        >
-                            <h4
-                                className={`text-xl font-semibold mt-2 ${
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {/* Revenue */}
+                            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-5 shadow-sm border border-purple-200 hover:shadow-md transition-all duration-300">
+                                <h4 className="text-lg font-semibold text-purple-800 mb-1 flex items-center gap-2">
+                                    💼 Revenue
+                                </h4>
+                                <p className="text-3xl font-bold text-purple-700 tracking-wide">
+                                    {formatNumber(yearlyTotals.earnings)}{' '}
+                                    <span className="text-sm">BDT</span>
+                                </p>
+                            </div>
+
+                            {/* Expense */}
+                            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-5 shadow-sm border border-orange-200 hover:shadow-md transition-all duration-300">
+                                <h4 className="text-lg font-semibold text-orange-800 mb-1 flex items-center gap-2">
+                                    💸 Expense
+                                </h4>
+                                <p className="text-3xl font-bold text-orange-700 tracking-wide">
+                                    {formatNumber(yearlyTotals.expense)}{' '}
+                                    <span className="text-sm">BDT</span>
+                                </p>
+                            </div>
+
+                            {/* Profit */}
+                            <div
+                                className={`rounded-xl p-5 shadow-sm border transition-all duration-300 hover:shadow-md ${
                                     yearlyTotals.profit >= 0
-                                        ? 'text-green-800'
-                                        : 'text-red-800'
+                                        ? 'bg-gradient-to-br from-green-50 to-green-100 border-green-200'
+                                        : 'bg-gradient-to-br from-red-50 to-red-100 border-red-200'
                                 }`}
                             >
-                                Profit
-                            </h4>
-                            <p
-                                className={`font-bold ${
-                                    yearlyTotals.profit >= 0
-                                        ? 'text-green-600'
-                                        : 'text-red-600'
-                                }`}
-                            >
-                                {formatNumber(yearlyTotals.profit)} BDT
-                            </p>
-                        </div>
-                        <div
-                            className={`border rounded-xl p-5 shadow-sm transition-all duration-300 ${
-                                final >= 0
-                                    ? 'bg-violet-50 border-violet-200 hover:shadow-md'
-                                    : 'bg-rose-50 border-rose-200 hover:shadow-md'
-                            }`}
-                        >
-                            <h4
-                                className={`text-lg font-semibold mb-1 ${
-                                    final >= 0
-                                        ? 'text-violet-700'
-                                        : 'text-rose-700'
-                                }`}
-                            >
-                                Final Amount 💰
-                            </h4>
+                                <h4
+                                    className={`text-lg font-semibold mb-1 flex items-center gap-2 ${
+                                        yearlyTotals.profit >= 0
+                                            ? 'text-green-800'
+                                            : 'text-red-800'
+                                    }`}
+                                >
+                                    📈 Profit
+                                </h4>
+                                <p
+                                    className={`text-3xl font-bold tracking-wide ${
+                                        yearlyTotals.profit >= 0
+                                            ? 'text-green-700'
+                                            : 'text-red-700'
+                                    }`}
+                                >
+                                    {formatNumber(yearlyTotals.profit)}{' '}
+                                    <span className="text-sm">BDT</span>
+                                </p>
+                            </div>
 
-                            <p className="text-sm text-gray-500 mb-1">
-                                {formatNumber(final)} +{' '}
-                                {formatNumber(yearlyTotals.profit)} =
-                            </p>
+                            {/* Unpaid */}
+                            <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-5 shadow-sm border border-yellow-200 hover:shadow-md transition-all duration-300">
+                                <h4 className="text-lg font-semibold text-yellow-800 mb-1 flex items-center gap-2">
+                                    🧾 Unpaid
+                                </h4>
+                                <p className="text-3xl font-bold text-yellow-700 tracking-wide">
+                                    {formatNumber(unpaidAmount)}{' '}
+                                    <span className="text-sm">BDT</span>
+                                </p>
+                            </div>
 
-                            <p
-                                className={`text-2xl font-bold tracking-wide ${
+                            {/* Shared */}
+                            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-5 shadow-sm border border-orange-200 hover:shadow-md transition-all duration-300">
+                                <h4 className="text-lg font-semibold text-orange-800 mb-1 flex items-center gap-2">
+                                    🤝 Shared
+                                </h4>
+                                <p className="text-3xl font-bold text-orange-700 tracking-wide">
+                                    {formatNumber(sharedProfit)}{' '}
+                                    <span className="text-sm">BDT</span>
+                                </p>
+                            </div>
+
+                            {/* Final Amount */}
+                            <div
+                                className={`rounded-xl p-5 shadow-sm border transition-all duration-300 hover:shadow-md ${
                                     final >= 0
-                                        ? 'text-violet-600'
-                                        : 'text-rose-600'
+                                        ? 'bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200'
+                                        : 'bg-gradient-to-br from-rose-50 to-rose-100 border-rose-200'
                                 }`}
                             >
-                                {formatNumber(final + yearlyTotals.profit)}
-                                &nbsp;BDT
-                            </p>
+                                <h4
+                                    className={`text-lg font-semibold mb-1 flex items-center gap-2 ${
+                                        final >= 0
+                                            ? 'text-violet-700'
+                                            : 'text-rose-700'
+                                    }`}
+                                >
+                                    💰 Final Amount
+                                </h4>
+
+                                <p className="text-sm text-gray-500 mb-1">
+                                    {formatNumber(final)} +{' '}
+                                    {formatNumber(yearlyTotals.profit)} =
+                                </p>
+
+                                <p
+                                    className={`text-3xl font-bold tracking-wide ${
+                                        final >= 0
+                                            ? 'text-violet-600'
+                                            : 'text-rose-600'
+                                    }`}
+                                >
+                                    {formatNumber(final + yearlyTotals.profit)}{' '}
+                                    <span className="text-sm">BDT</span>
+                                </p>
+                            </div>
                         </div>
                     </div>
-                    <div className="w-1/2 h-52">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    activeIndex={activeIndex}
-                                    activeShape={renderActiveShape}
-                                    data={prepareYearlySummaryData()}
-                                    cx="60%"
-                                    cy="50%"
-                                    innerRadius={40}
-                                    outerRadius={60}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                    onMouseEnter={onPieEnter}
-                                >
-                                    {prepareYearlySummaryData().map(
-                                        (entry, index) => (
-                                            <Cell
-                                                key={`cell-${index}`}
-                                                fill={
-                                                    COLORS[
-                                                        index % COLORS.length
-                                                    ]
-                                                }
-                                            />
-                                        )
-                                    )}
-                                </Pie>
-                                <Tooltip
-                                    formatter={(value) =>
-                                        `${formatNumber(value)} BDT`
-                                    }
-                                />
-                                <Legend />
-                            </PieChart>
-                        </ResponsiveContainer>
+
+                    {/* Right: Pie Chart */}
+                    <div className="lg:w-1/3 flex flex-col items-center justify-center bg-gray-50 rounded-xl p-4 shadow-sm border border-gray-200">
+                        <h4 className="text-lg font-semibold text-gray-700 mb-2">
+                            📊 Distribution
+                        </h4>
+                        <div className="w-full h-60">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        activeIndex={activeIndex}
+                                        activeShape={renderActiveShape}
+                                        data={prepareYearlySummaryData()}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={50}
+                                        outerRadius={80}
+                                        fill="#8884d8"
+                                        dataKey="value"
+                                        onMouseEnter={onPieEnter}
+                                    >
+                                        {prepareYearlySummaryData().map(
+                                            (entry, index) => (
+                                                <Cell
+                                                    key={`cell-${index}`}
+                                                    fill={
+                                                        COLORS[
+                                                            index %
+                                                                COLORS.length
+                                                        ]
+                                                    }
+                                                />
+                                            )
+                                        )}
+                                    </Pie>
+                                    <Tooltip
+                                        formatter={(value) =>
+                                            `${formatNumber(value)} BDT`
+                                        }
+                                    />
+                                    <Legend />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
                 </div>
             </div>
