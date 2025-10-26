@@ -153,6 +153,7 @@ const ProfitShare = () => {
                     year,
                     sharedAmount,
                     userName,
+                    netAmount: final,
                     note: note || '',
                 }
             );
