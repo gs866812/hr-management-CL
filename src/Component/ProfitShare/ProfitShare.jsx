@@ -135,7 +135,8 @@ const ProfitShare = () => {
     const handleDistributeProfit = async (e) => {
         e.preventDefault();
 
-        const { userName, note } = newShareholder;
+        const { userName, note, shareHoldersName, mobile, email } =
+            newShareholder;
 
         if (!selectedMonth || !profitBalance || !userName) {
             toast.error('Please fill all required fields');
@@ -149,6 +150,9 @@ const ProfitShare = () => {
             const res = await axiosSecure.post(
                 '/addMonthlyProfitDistribution',
                 {
+                    name: shareHoldersName,
+                    email,
+                    mobile,
                     month,
                     year,
                     sharedAmount,
@@ -380,6 +384,7 @@ const ProfitShare = () => {
                                 <th>Mobile</th>
                                 <th>Share(%)</th>
                                 <th>Share/Transfer Balance</th>
+                                <th>Month</th>
                                 <th>User</th>
                             </tr>
                         </thead>
@@ -402,6 +407,9 @@ const ProfitShare = () => {
                                             )}
                                         </td>
 
+                                        <td>
+                                            {info.month}, {info.year}
+                                        </td>
                                         <td>{info.userName}</td>
                                     </tr>
                                 ))

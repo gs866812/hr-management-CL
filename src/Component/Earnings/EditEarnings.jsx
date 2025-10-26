@@ -1,5 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { ContextData } from '../../DataProvider';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import useAxiosSecure from '../../utils/useAxiosSecure';
@@ -7,237 +6,351 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { setRefetch } from '../../redux/refetchSlice';
 
-const EditEarnings = () => {
-    const { user } = useContext(ContextData);
+const months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+];
 
-    const { id } = useParams();
+function toNum(val) {
+    const n = parseFloat(val);
+    return Number.isFinite(n) ? n : 0;
+}
+
+export default function EditEarnings({ id }) {
+    const { user } = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
     const axiosSecure = useAxiosSecure();
 
-    const [clientID, setClientID] = useState([]);
-    const [earnings, setEarnings] = useState([]);
-    const [originalEarning, setOriginalEarning] = useState(null);
+    const dispatch = useDispatch();
+    const refetch = useSelector((s) => s.refetch.refetch);
 
+    const [loading, setLoading] = useState(true);
+    const [clientIDs, setClientIDs] = useState([]);
+
+    // Keep text for inputs to avoid NaN / flickers while typing
     const [formData, setFormData] = useState({
         month: '',
         clientId: '',
-        imageQty: '',
-        totalUsd: '',
-        convertRate: '',
-        convertedBdt: '',
-        status: ''
+        imageQtyText: '', // text version
+        totalUsdText: '', // text version
+        convertRateText: '', // text version
+        status: '',
     });
 
-    // ********************************************************************************
+    // Derived numbers
+    const imageQty = useMemo(
+        () => toNum(formData.imageQtyText),
+        [formData.imageQtyText]
+    );
+    const totalUsd = useMemo(
+        () => toNum(formData.totalUsdText),
+        [formData.totalUsdText]
+    );
+    const convertRate = useMemo(
+        () => toNum(formData.convertRateText),
+        [formData.convertRateText]
+    );
+    const convertedBdt = useMemo(
+        () => totalUsd * convertRate,
+        [totalUsd, convertRate]
+    );
 
-
-    const dispatch = useDispatch();
-    const refetch = useSelector((state) => state.refetch.refetch);
-
-
-    // ********************************************************************************
+    // ---- Fetch client IDs
     useEffect(() => {
-        const fetchEarnings = async () => {
+        const load = async () => {
+            if (!user?.email) return;
             try {
-                const response = await axiosProtect.get(`/getEarnings`, {
-                    params: {
-                        userEmail: user?.email,
-                    },
+                const res = await axiosProtect.get('/getClientID', {
+                    params: { userEmail: user.email },
                 });
-                setEarnings(response.data.totalRev);
-            } catch (error) {
-                toast.error('Error fetching data:', error.message);
+                setClientIDs(res.data || []);
+            } catch (err) {
+                toast.error('Failed to load client IDs');
             }
         };
+        load();
+    }, [axiosProtect, user?.email, refetch]);
 
-        if (user?.email) {
-            fetchEarnings();
-        }
-    }, [refetch, user?.email, axiosProtect]);
-    // ********************************************************************************
+    // ---- Fetch earning by ID
     useEffect(() => {
-        if (earnings.length > 0 && id) {
-            const selectedEarning = earnings.find((earning) => earning._id === id);
-            if (selectedEarning) {
-                setFormData({
-                    month: selectedEarning.month || '',
-                    clientId: selectedEarning.clientId || '',
-                    imageQty: selectedEarning.imageQty || '',
-                    totalUsd: selectedEarning.totalUsd || '',
-                    convertRate: selectedEarning.convertRate || '',
-                    convertedBdt: selectedEarning.convertedBdt || '',
-                    status: selectedEarning.status || ''
-                });
-
-                // Store original values separately for reset
-                setOriginalEarning(selectedEarning);
+        let mounted = true;
+        const fetchEarningById = async () => {
+            if (!id) return;
+            try {
+                const response = await axiosProtect.get(
+                    `/getSingleEarning/${id}`
+                );
+                const earning = response.data?.data;
+                if (earning && mounted) {
+                    setFormData({
+                        month: earning.month || '',
+                        clientId: earning.clientId || '',
+                        imageQtyText:
+                            (earning.imageQty ?? '') === ''
+                                ? ''
+                                : String(earning.imageQty),
+                        totalUsdText:
+                            (earning.totalUsd ?? '') === ''
+                                ? ''
+                                : String(earning.totalUsd),
+                        convertRateText:
+                            (earning.convertRate ?? '') === ''
+                                ? ''
+                                : String(earning.convertRate),
+                        status: earning.status || '',
+                    });
+                }
+            } catch (error) {
+                toast.error('Failed to load earning details');
+            } finally {
+                if (mounted) setLoading(false);
             }
-        }
-    }, [earnings, id]);
+        };
+        setLoading(true);
+        fetchEarningById();
+        return () => {
+            mounted = false;
+        };
+    }, [id, axiosProtect, refetch]);
 
-
-    // ********************************************************************************
+    // ---- Handle typed changes (kept as text)
     const handleChange = (e) => {
-        const { name, value, type } = e.target;
+        const { name, value } = e.target;
 
-        // Convert number inputs from string to number
-        const isNumberField = ['imageQty', 'totalUsd', 'convertRate', 'convertedBdt'].includes(name);
-        const parsedValue = isNumberField ? parseFloat(value) || 0 : value;
-
-        // Prevent negative input
-        if (isNumberField && parsedValue < 0) {
+        // Map old field names to new *Text state keys if needed
+        if (
+            name === 'imageQty' ||
+            name === 'totalUsd' ||
+            name === 'convertRate'
+        ) {
+            const key = `${name}Text`;
+            setFormData((prev) => ({ ...prev, [key]: value }));
             return;
         }
 
-        const updated = {
-            ...formData,
-            [name]: parsedValue,
-        };
-
-        // Dynamically calculate convertedBdt
-        if (name === 'totalUsd' || name === 'convertRate') {
-            const usd = name === 'totalUsd' ? parsedValue : updated.totalUsd;
-            const rate = name === 'convertRate' ? parsedValue : updated.convertRate;
-            updated.convertedBdt = usd * rate;
-        }
-
-        setFormData(updated);
-    };
-    // ********************************************************************************
-    const handleReset = () => {
-        if (originalEarning) {
-            setFormData({
-                month: originalEarning.month || '',
-                clientId: originalEarning.clientId || '',
-                imageQty: originalEarning.imageQty || '',
-                totalUsd: originalEarning.totalUsd || '',
-                convertRate: originalEarning.convertRate || '',
-                convertedBdt: originalEarning.convertedBdt || '',
-                status: originalEarning.status || ''
-            });
-        }
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    // ********************************************************************************
-    useEffect(() => {
-        const fetchClientID = async () => {
-            try {
-                const response = await axiosProtect.get('/getClientID', {
-                    params: {
-                        userEmail: user?.email,
-                    },
-                });
-                setClientID(response?.data);
-
-            } catch (error) {
-                toast.error('Error fetching data:', error.message);
-            }
-        };
-        fetchClientID();
-    }, [refetch]);
-    // ********************************************************************************
-    const handleSubmit = (e) => {
+    // ---- Submit
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const editEarningsData = async () => {
-            try {
-                const response = await axiosSecure.put('/updateEarnings', formData);
-                if (response.data.modifiedCount > 0) {
-                    dispatch(setRefetch(!refetch));
-                    toast.success('Earnings updated successfully');
-                    handleReset();
-                } else {
-                    toast.error(response.data.message || 'Something went wrong');
-                }
-            } catch (error) {
-                toast.error('Failed to add earnings');
-            }
+        // Basic validation
+        if (!formData.month || !formData.clientId || !formData.status) {
+            toast.error('Please fill all required fields');
+            return;
+        }
+        if (totalUsd <= 0 || convertRate <= 0) {
+            toast.error('USD and Convert Rate must be positive numbers');
+            return;
+        }
+
+        const payload = {
+            month: formData.month,
+            clientId: formData.clientId,
+            imageQty, // numeric
+            totalUsd, // numeric
+            convertRate, // numeric
+            convertedBdt, // derived numeric
+            status: formData.status,
         };
 
-        editEarningsData();
+        try {
+            const res = await axiosSecure.put(`/updateEarnings/${id}`, payload);
+
+            if (res.data?.success) {
+                toast.success('Earning updated successfully!');
+                dispatch(setRefetch(!refetch));
+                const dlg = document.getElementById('edit-earning-modal');
+                if (dlg?.close) dlg.close();
+            } else {
+                toast.error(res.data?.message || 'Update failed');
+            }
+        } catch (err) {
+            toast.error('Failed to update earning');
+        }
     };
-    // ********************************************************************************
+
+    const handleReset = () => {
+        // Keep month/clientId/status so user doesn’t lose selections; clear numbers
+        setFormData((prev) => ({
+            ...prev,
+            imageQtyText: '',
+            totalUsdText: '',
+            convertRateText: '',
+        }));
+    };
+
+    if (loading) return <p>Loading...</p>;
 
     return (
         <div className="bg-gray-100 p-4 rounded-md">
-            <div className=''>
-                <h3 className="font-bold text-lg">Edit Earnings:</h3>
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-                    {/* Select Month */}
-                    <div>
-                        <label className="label">Select Month</label>
-                        <select name="month" value={formData.month} required onChange={handleChange} className="input input-bordered w-full !border !border-gray-300 mt-1">
-                            <option value="">Select</option>
-                            <option value="January">January</option>
-                            <option value="February">February</option>
-                            <option value="March">March</option>
-                            <option value="April">April</option>
-                            <option value="May">May</option>
-                            <option value="June">June</option>
-                            <option value="July">July</option>
-                            <option value="August">August</option>
-                            <option value="September">September</option>
-                            <option value="October">October</option>
-                            <option value="November">November</option>
-                            <option value="December">December</option>
-                        </select>
-                    </div>
+            <h3 className="font-bold text-lg mb-4">Edit Earnings</h3>
 
-                    {/* Client ID */}
-                    <div>
-                        <label className="label">Client ID</label>
-                        <select name="clientId" value={formData.clientId} required onChange={handleChange} className="input input-bordered w-full !border !border-gray-300 mt-1">
-                            <option value="">Select</option>
-                            {clientID.map(client => (
-                                <option key={client._id} value={client.clientID}>{client.clientID}</option>
-                            ))}
-                        </select>
-                    </div>
+            <form
+                onSubmit={handleSubmit}
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            >
+                {/* Month */}
+                <div>
+                    <label className="label">Month</label>
+                    <select
+                        name="month"
+                        value={formData.month}
+                        onChange={handleChange}
+                        required
+                        className="input input-bordered w-full !border !border-gray-300 mt-1"
+                    >
+                        <option value="">Select</option>
+                        {months.map((m) => (
+                            <option key={m} value={m}>
+                                {m}
+                            </option>
+                        ))}
+                    </select>
+                </div>
 
-                    {/* Number of Image Qty */}
-                    <div>
-                        <label className="label">Number of Image QTY</label>
-                        <input type="number" name="imageQty" required value={formData.imageQty} onChange={handleChange} className="input input-bordered w-full !border !border-gray-300 mt-1" />
-                    </div>
+                {/* Client ID */}
+                <div>
+                    <label className="label">Client ID</label>
+                    <select
+                        name="clientId"
+                        value={formData.clientId}
+                        onChange={handleChange}
+                        required
+                        className="input input-bordered w-full !border !border-gray-300 mt-1"
+                    >
+                        <option value="">Select</option>
+                        {clientIDs.map((c) => (
+                            <option key={c._id} value={c.clientID}>
+                                {c.clientID}
+                            </option>
+                        ))}
+                    </select>
+                </div>
 
-                    {/* Total USD */}
-                    <div>
-                        <label className="label">Total USD Amount</label>
-                        <input type="number" required name="totalUsd" value={formData.totalUsd} onChange={handleChange} className="input input-bordered w-full !border !border-gray-300 mt-1" />
-                    </div>
+                {/* Image QTY (text -> numeric later) */}
+                <div>
+                    <label className="label">Image Quantity</label>
+                    <input
+                        type="text"
+                        inputMode="numeric"
+                        name="imageQty"
+                        value={formData.imageQtyText}
+                        onChange={handleChange}
+                        placeholder="e.g. 1200"
+                        className="input input-bordered w-full !border !border-gray-300 mt-1"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                        Parsed: {imageQty.toLocaleString()}
+                    </p>
+                </div>
 
-                    {/* Convert Rate */}
-                    <div>
-                        <label className="label">Convert Rate</label>
-                        <input type="number" required name="convertRate" value={formData.convertRate} onChange={handleChange} className="input input-bordered w-full !border !border-gray-300 mt-1" />
-                    </div>
+                {/* Total USD (text -> numeric later) */}
+                <div>
+                    <label className="label">Total USD</label>
+                    <input
+                        type="text"
+                        inputMode="decimal"
+                        name="totalUsd"
+                        value={formData.totalUsdText}
+                        onChange={handleChange}
+                        placeholder="e.g. 320"
+                        className="input input-bordered w-full !border !border-gray-300 mt-1"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                        Parsed: {totalUsd.toLocaleString()}
+                    </p>
+                </div>
 
-                    {/* Converted BDT */}
-                    <div>
-                        <label className="label">Converted Amount in BDT</label>
-                        <input type="number" required name="convertedBdt" value={formData.convertedBdt} className="input input-bordered w-full !border !border-gray-300 mt-1 bg-red-200" readOnly />
-                    </div>
+                {/* Convert Rate (text -> numeric later) */}
+                <div>
+                    <label className="label">Convert Rate</label>
+                    <input
+                        type="text"
+                        inputMode="decimal"
+                        name="convertRate"
+                        value={formData.convertRateText}
+                        onChange={handleChange}
+                        placeholder="e.g. 120"
+                        className="input input-bordered w-full !border !border-gray-300 mt-1"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                        Parsed: {convertRate.toLocaleString()}
+                    </p>
+                </div>
 
-                    {/* Status */}
-                    <div className=''>
-                        <label className="label">Status</label>
-                        <select name="status" required value={formData.status} onChange={handleChange} className="input input-bordered w-full !border !border-gray-300 mt-1">
-                            <option value="">Select</option>
-                            <option value="Paid">Paid</option>
-                            <option value="Unpaid">Due</option>
-                        </select>
-                    </div>
+                {/* Converted BDT (derived) */}
+                <div>
+                    <label className="label">Converted BDT</label>
+                    <input
+                        type="text"
+                        value={
+                            Number.isFinite(convertedBdt)
+                                ? convertedBdt.toLocaleString()
+                                : '0'
+                        }
+                        readOnly
+                        className="input input-bordered w-full !border !border-gray-300 mt-1 bg-red-100"
+                    />
+                    <p className="text-xs text-gray-600 mt-1">
+                        = Total USD × Convert Rate = {totalUsd.toLocaleString()}{' '}
+                        × {convertRate.toLocaleString()}
+                    </p>
+                </div>
 
-                    {/* Buttons */}
-                    <div className="col-span-1 md:col-span-2 flex justify-center gap-2 mt-4">
-                        <button type="button" onClick={handleReset} className="btn btn-outline">Reset</button>
-                        <button type="submit" className="btn bg-[#6E3FF3] text-white">Submit</button>
-                    </div>
-                </form>
+                {/* Status */}
+                <div>
+                    <label className="label">Status</label>
+                    <select
+                        name="status"
+                        value={formData.status}
+                        onChange={handleChange}
+                        required
+                        className="input input-bordered w-full !border !border-gray-300 mt-1"
+                    >
+                        <option value="">Select</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Unpaid">Unpaid</option>
+                    </select>
+                </div>
 
-            </div>
+                {/* Buttons */}
+                <div className="col-span-1 md:col-span-2 flex flex-col items-center gap-2 mt-4">
+                    <div className="text-sm text-gray-700">
+                        <strong>Preview Total:</strong>{' '}
+                        {Number.isFinite(convertedBdt)
+                            ? convertedBdt.toLocaleString()
+                            : '0'}{' '}
+                        BDT
+                    </div>
+                    <div className="flex gap-3">
+                        <button
+                            type="button"
+                            onClick={handleReset}
+                            className="btn btn-outline"
+                        >
+                            Reset
+                        </button>
+                        <button
+                            type="submit"
+                            className="btn bg-[#6E3FF3] text-white"
+                        >
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     );
-};
-
-export default EditEarnings;
+}
