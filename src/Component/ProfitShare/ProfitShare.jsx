@@ -52,14 +52,9 @@ const ProfitShare = () => {
                 );
                 const result = await res.json();
 
-                if (result.success && result.data) {
-                    const loanBalance = result.data.total || 0;
-                    setFinal(
-                        loanBalance + profit - sharedProfit - unpaidAmount
-                    );
-                } else {
-                    setFinal(0);
-                }
+                const loanBalance = result?.data?.total ?? 0;
+
+                setFinal(loanBalance + profit - sharedProfit - unpaidAmount);
             } catch (err) {
                 console.error('Error fetching loan balance:', err);
                 setFinal(0);
