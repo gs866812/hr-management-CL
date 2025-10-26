@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { FaPlus, FaRegEdit } from 'react-icons/fa';
 import { CiEdit } from 'react-icons/ci';
 import EarningsModal from './EarningsModal';
+import EditEarnings from './EditEarnings';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import { ContextData } from '../../DataProvider';
 import moment from 'moment';
@@ -23,6 +24,7 @@ const Earnings = () => {
     const [totalSummary, setTotalSummary] = useState({});
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [selectedEarningId, setSelectedEarningId] = useState(null);
 
     const axiosSecure = useAxiosSecure();
     const dispatch = useDispatch();
@@ -86,14 +88,13 @@ const Earnings = () => {
         return pageNumbers;
     };
 
-    // Dynamic status update handler
     const handleStatusUpdate = (item) => {
         const currentStatus = item.status;
         const newStatus = currentStatus === 'Paid' ? 'Unpaid' : 'Paid';
 
         Swal.fire({
             title: 'Are you sure?',
-            text: `You want to change status from "${currentStatus}" to "${newStatus}"? Amount: ${item?.convertedBdt}`,
+            text: `Change status from "${currentStatus}" to "${newStatus}"? Amount: ${item?.convertedBdt}`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
@@ -131,7 +132,6 @@ const Earnings = () => {
                         });
                     }
                 } catch (error) {
-                    console.error('❌ Status update failed:', error);
                     Swal.fire({
                         title: 'Error!',
                         text: 'Failed to update the earning status.',
@@ -142,10 +142,8 @@ const Earnings = () => {
         });
     };
 
-    // Get status badge style
     const getStatusBadge = (status) => {
         const baseClasses = 'px-2 py-1 rounded-full text-xs font-semibold';
-
         switch (status) {
             case 'Paid':
                 return `${baseClasses} bg-green-100 text-green-800`;
@@ -156,11 +154,16 @@ const Earnings = () => {
         }
     };
 
+    const handleOpenEditModal = (id) => {
+        setSelectedEarningId(id);
+        document.getElementById('edit-earning-modal').showModal();
+    };
+
     return (
         <div className="mt-2 pb-2">
             <section className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-gray-800">
-                    Earnings List{' '}
+                    Earnings List
                 </h2>
                 <div className="flex gap-2 flex-wrap">
                     <input
@@ -224,28 +227,16 @@ const Earnings = () => {
                                         <td>{item.month}</td>
                                         <td>{item.clientId}</td>
                                         <td>
-                                            {item.imageQty.toLocaleString(
-                                                undefined,
-                                                { minimumFractionDigits: 2 }
-                                            )}
+                                            {item.imageQty.toLocaleString()}
                                         </td>
                                         <td>
-                                            {item.totalUsd.toLocaleString(
-                                                undefined,
-                                                { minimumFractionDigits: 2 }
-                                            )}
+                                            {item.totalUsd.toLocaleString()}
                                         </td>
                                         <td>
-                                            {item.convertRate.toLocaleString(
-                                                undefined,
-                                                { minimumFractionDigits: 2 }
-                                            )}
+                                            {item.convertRate.toLocaleString()}
                                         </td>
                                         <td>
-                                            {item.convertedBdt.toLocaleString(
-                                                undefined,
-                                                { minimumFractionDigits: 2 }
-                                            )}
+                                            {item.convertedBdt.toLocaleString()}
                                         </td>
                                         <td>
                                             <div className="flex items-center gap-2">
@@ -261,19 +252,19 @@ const Earnings = () => {
                                                         handleStatusUpdate(item)
                                                     }
                                                     className="cursor-pointer hover:text-blue-500 ml-1"
-                                                    title={`Change to ${
-                                                        item.status === 'Paid'
-                                                            ? 'Unpaid'
-                                                            : 'Paid'
-                                                    }`}
                                                     size={18}
                                                 />
                                             </div>
                                         </td>
                                         <td>
                                             <FaRegEdit
-                                                className="cursor-pointer hover:text-red-500"
-                                                title="Restricted"
+                                                className="cursor-pointer hover:text-yellow-500"
+                                                title="Edit earning"
+                                                onClick={() =>
+                                                    handleOpenEditModal(
+                                                        item._id
+                                                    )
+                                                }
                                             />
                                         </td>
                                     </tr>
@@ -292,22 +283,13 @@ const Earnings = () => {
                                     </td>
                                     <td>{totalSummary.totalImageQty}</td>
                                     <td>
-                                        {totalSummary.totalUsd?.toLocaleString(
-                                            undefined,
-                                            { minimumFractionDigits: 2 }
-                                        )}
+                                        {totalSummary.totalUsd?.toLocaleString()}
                                     </td>
                                     <td>
-                                        {totalSummary.avgRate?.toLocaleString(
-                                            undefined,
-                                            { minimumFractionDigits: 2 }
-                                        )}
+                                        {totalSummary.avgRate?.toLocaleString()}
                                     </td>
                                     <td>
-                                        {totalSummary.totalBdt?.toLocaleString(
-                                            undefined,
-                                            { minimumFractionDigits: 2 }
-                                        )}
+                                        {totalSummary.totalBdt?.toLocaleString()}
                                     </td>
                                     <td colSpan="2"></td>
                                 </tr>
@@ -317,7 +299,6 @@ const Earnings = () => {
                 </div>
             </section>
 
-            {/* Pagination */}
             {totalCount > itemsPerPage && (
                 <div className="mt-4 flex justify-between items-center">
                     <p>
@@ -387,6 +368,22 @@ const Earnings = () => {
             )}
 
             <EarningsModal />
+
+            {/* 🔹 Edit Earnings Modal */}
+            <dialog id="edit-earning-modal" className="modal">
+                <div className="modal-box max-w-3xl">
+                    <form method="dialog">
+                        <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 bg-[#6E3FF3] text-white hover:bg-red-500">
+                            ✕
+                        </button>
+                    </form>
+                    {selectedEarningId ? (
+                        <EditEarnings id={selectedEarningId} />
+                    ) : (
+                        <p>Loading...</p>
+                    )}
+                </div>
+            </dialog>
         </div>
     );
 };

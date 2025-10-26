@@ -145,11 +145,6 @@ const ProfitShare = () => {
         const [month, year] = selectedMonth.split('-');
         const sharedAmount = parseFloat(profitBalance);
 
-        if (sharedAmount > monthlyRemainingProfitBalance) {
-            toast.error('Cannot share more than available monthly profit');
-            return;
-        }
-
         try {
             const res = await axiosSecure.post(
                 '/addMonthlyProfitDistribution',
@@ -157,12 +152,15 @@ const ProfitShare = () => {
                     month,
                     year,
                     sharedAmount,
-                    userName, // recipient
+                    userName,
                     note: note || '',
                 }
             );
 
-            if (res.data.insertedCount) {
+            console.log('💾 Profit Distribution Response:', res.data);
+
+            // ✅ Backend returns { success, insertedId, message }
+            if (res.data.success && res.data.insertedId) {
                 toast.success('Profit distributed successfully!');
                 dispatch(setRefetch(!refetch));
                 setProfitBalance('');
@@ -175,7 +173,12 @@ const ProfitShare = () => {
                 toast.error(res.data.message || 'Distribution failed');
             }
         } catch (error) {
-            toast.error('Error sharing profit');
+            console.log('❌ Error sharing profit:', error);
+            if (error.response?.data?.message) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error('Error sharing profit');
+            }
         }
     };
 
