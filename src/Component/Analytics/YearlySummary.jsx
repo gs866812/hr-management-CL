@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import { toast } from 'react-toastify';
 
-const YearlySummary = ({ setProfit }) => {
+const YearlySummary = () => {
     const { user, searchOption, unpaidAmount, sharedProfit } =
         useContext(ContextData);
     const axiosProtect = useAxiosProtect();
@@ -179,7 +179,6 @@ const YearlySummary = ({ setProfit }) => {
             (totals.earnings - totals.expense).toFixed(2)
         );
 
-        setProfit(totals.profit);
         setYearlyTotals(totals);
     };
 
