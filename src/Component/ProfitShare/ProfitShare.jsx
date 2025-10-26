@@ -54,7 +54,9 @@ const ProfitShare = () => {
 
                 if (result.success && result.data) {
                     const loanBalance = result.data.total || 0;
-                    setFinal(loanBalance + profit - sharedProfit);
+                    setFinal(
+                        loanBalance + profit - sharedProfit - unpaidAmount
+                    );
                 } else {
                     setFinal(0);
                 }
@@ -502,7 +504,7 @@ const ProfitShare = () => {
                                 type="number"
                                 required
                                 min={1}
-                                max={monthlyRemainingProfitBalance}
+                                max={final}
                                 value={profitBalance}
                                 onChange={(e) =>
                                     setProfitBalance(parseFloat(e.target.value))

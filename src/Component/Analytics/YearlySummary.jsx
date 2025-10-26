@@ -265,7 +265,8 @@ const YearlySummary = () => {
     const onPieEnter = (_, index) => setActiveIndex(index);
 
     // ************************ FINAL CALCULATION ************************
-    const finalAmount = yearlyTotals.profit + loanBalance - (sharedProfit || 0);
+    const finalAmount =
+        yearlyTotals.profit + loanBalance - sharedProfit - unpaidAmount;
 
     // ************************ RENDER UI ************************
     return (
@@ -371,7 +372,7 @@ const YearlySummary = () => {
 
                             <p className="text-sm text-gray-500 mb-1">
                                 ({formatNumber(yearlyTotals.profit)} +{' '}
-                                {formatNumber(loanBalance)} -{' '}
+                                {formatNumber(loanBalance)} - {unpaidAmount} -
                                 {formatNumber(sharedProfit)}) =
                             </p>
 
