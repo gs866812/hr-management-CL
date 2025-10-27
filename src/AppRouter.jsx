@@ -32,6 +32,7 @@ import EmployeeProfile from './Component/EmployeeList/EmployeeProfile';
 import NoticeBoardAdmin from './Component/NoticeBoard/NoticeBoardAdmin';
 import NoticeBoard from './Component/NoticeBoard/NoticeBoard';
 import DebitPage from './Pages/Debit';
+import ClientDetails from './Component/ClientDetails/ClientDetails';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
@@ -99,6 +100,14 @@ export const router = createBrowserRouter([
                 element: (
                     <ProtectedRole>
                         <Clients />
+                    </ProtectedRole>
+                ),
+            },
+            {
+                path: '/clients/:id',
+                element: (
+                    <ProtectedRole>
+                        <ClientDetails />
                     </ProtectedRole>
                 ),
             },

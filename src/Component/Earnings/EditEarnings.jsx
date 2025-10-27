@@ -162,7 +162,6 @@ export default function EditEarnings({ id }) {
             totalUsd, // numeric
             convertRate, // numeric
             convertedBdt, // derived numeric
-            status: formData.status,
         };
 
         try {
@@ -177,6 +176,7 @@ export default function EditEarnings({ id }) {
                 toast.error(res.data?.message || 'Update failed');
             }
         } catch (err) {
+            console.log(err)
             toast.error('Failed to update earning');
         }
     };
@@ -307,22 +307,6 @@ export default function EditEarnings({ id }) {
                         = Total USD × Convert Rate = {totalUsd.toLocaleString()}{' '}
                         × {convertRate.toLocaleString()}
                     </p>
-                </div>
-
-                {/* Status */}
-                <div>
-                    <label className="label">Status</label>
-                    <select
-                        name="status"
-                        value={formData.status}
-                        onChange={handleChange}
-                        required
-                        className="input input-bordered w-full !border !border-gray-300 mt-1"
-                    >
-                        <option value="">Select</option>
-                        <option value="Paid">Paid</option>
-                        <option value="Unpaid">Unpaid</option>
-                    </select>
                 </div>
 
                 {/* Buttons */}

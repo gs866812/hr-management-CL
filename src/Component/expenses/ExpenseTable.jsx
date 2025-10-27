@@ -188,7 +188,7 @@ const ExpenseTable = () => {
                     })}
                 </select>
                 <div className='flex items-center gap-2'>
-                    <div className=" flex max-w-md">
+                    <div className="relative flex max-w-md">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4" />
                         <input
                             type="text"

@@ -1,7 +1,7 @@
-import React, { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { ContextData } from '../../DataProvider';
 import { toast } from 'react-toastify';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import {
     ComposedChart,
@@ -14,11 +14,6 @@ import {
     ResponsiveContainer,
     Line,
     LabelList,
-    ReferenceLine,
-    PieChart,
-    Pie,
-    Cell,
-    Sector,
 } from 'recharts';
 import YearlySummary from './YearlySummary';
 
@@ -26,7 +21,6 @@ const Analytics = () => {
     const {
         user,
         searchOption,
-        setTotalEarnings,
         monthlyProfit,
         unpaidAmount,
         sharedProfit,
