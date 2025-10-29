@@ -3,7 +3,7 @@ import {
     Search,
     ChevronDown,
     Pencil,
-    Trash2,   // ⬅️ NEW
+    Trash2, // ⬅️ NEW
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import moment from 'moment';
@@ -16,14 +16,13 @@ import { BsChevronDoubleLeft, BsChevronDoubleRight } from 'react-icons/bs';
 import EditLocalOrderModal from './EditLocalOrderModal';
 import Swal from 'sweetalert2';
 
-const OrderTable = () => {
+const OrderTable = ({ selectedMonth, setSelectedMonth }) => {
     const axiosProtect = useAxiosProtect();
     const { user, currentUser } = useContext(ContextData);
     const refetch = useSelector((state) => state.refetch.refetch);
 
     const [searchOption, setSearchOption] = useState('');
     const [isOpen, setIsOpen] = useState(false);
-    const [sortValue, setSortValue] = useState('Date');
 
     const [localOrder, setLocalOrder] = useState([]);
     const [orderCount, setOrderCount] = useState(0);
@@ -33,15 +32,20 @@ const OrderTable = () => {
 
     const [editing, setEditing] = useState(null);
 
-    const sortValues = [
-        'Date',
-        'Expense',
-        'Amount',
-        'Category',
-        'Status',
-        'Note',
-        'User',
-        'Action',
+    const months = [
+        'all',
+        'january',
+        'february',
+        'march',
+        'april',
+        'may',
+        'june',
+        'july',
+        'august',
+        'september',
+        'october',
+        'november',
+        'december',
     ];
 
     // Fetch list
@@ -54,17 +58,28 @@ const OrderTable = () => {
                         page: currentPage,
                         size: itemsPerPage,
                         search: searchOption,
+                        selectedMonth,
                     },
                 });
                 setLocalOrder(data?.orders || []);
                 setOrderCount(data?.count || 0);
             } catch (error) {
-                toast.error(error?.response?.data?.message || 'Failed to load orders');
+                toast.error(
+                    error?.response?.data?.message || 'Failed to load orders'
+                );
             }
         };
         if (user?.email) fetchLocalOrder();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [refetch, currentPage, itemsPerPage, searchOption, axiosProtect, user?.email]);
+    }, [
+        refetch,
+        currentPage,
+        itemsPerPage,
+        searchOption,
+        selectedMonth,
+        axiosProtect,
+        user?.email,
+    ]);
 
     const handleViewOrder = (id) => {
         window.open(`/recentOrders/${id}`, '_blank');
@@ -72,14 +87,17 @@ const OrderTable = () => {
 
     // NEW: delete handler
     const handleDeleteOrder = async (order) => {
-        const canDelete = currentUser?.role === 'Admin' || currentUser?.role === 'Developer';
+        const canDelete =
+            currentUser?.role === 'Admin' || currentUser?.role === 'Developer';
         if (!canDelete) return;
 
         const blocked =
             order.isLocked ||
             ['Completed', 'Delivered'].includes(String(order.orderStatus));
         if (blocked) {
-            toast.warn('This order is locked or finalized and cannot be deleted.');
+            toast.warn(
+                'This order is locked or finalized and cannot be deleted.'
+            );
             return;
         }
 
@@ -126,7 +144,6 @@ const OrderTable = () => {
         }
     };
 
-
     // Pagination helpers
     const numberOfPages = Math.ceil(orderCount / itemsPerPage);
 
@@ -143,31 +160,37 @@ const OrderTable = () => {
             pages.push('...', totalPages);
         } else if (currentPage > totalPages - half) {
             pages.push(1, '...');
-            for (let i = totalPages - maxPagesToShow + 1; i <= totalPages; i++) pages.push(i);
+            for (let i = totalPages - maxPagesToShow + 1; i <= totalPages; i++)
+                pages.push(i);
         } else {
             pages.push(1, '...');
-            for (let i = currentPage - half; i <= currentPage + half; i++) pages.push(i);
+            for (let i = currentPage - half; i <= currentPage + half; i++)
+                pages.push(i);
             pages.push('...', totalPages);
         }
         return pages;
     };
 
-    const handlePrevPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
-    const handleNextPage = () => currentPage < numberOfPages && setCurrentPage(currentPage + 1);
+    const handlePrevPage = () =>
+        currentPage > 1 && setCurrentPage(currentPage - 1);
+    const handleNextPage = () =>
+        currentPage < numberOfPages && setCurrentPage(currentPage + 1);
     const handleItemsPerPage = (e) => {
         setItemsPerPage(parseInt(e.target.value, 10));
         setCurrentPage(1);
     };
 
     return (
-        <div className="w-full bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <div className="w-full bg-white rounded-xl border-2 border-violet-600 p-6">
             <div className="flex flex-col gap-6 mb-6">
                 <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-800">Order List</h2>
+                    <h2 className="text-xl font-semibold text-gray-800">
+                        Order List
+                    </h2>
                 </div>
 
                 <div className="flex justify-between items-center gap-4">
-                    <div className="relative flex-1 max-w-md">
+                    <div className="relative flex-1 max-w-md border border-primary rounded-xl">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4" />
                         <input
                             type="text"
@@ -181,24 +204,48 @@ const OrderTable = () => {
                         />
                     </div>
 
-                    <div className="relative">
+                    <div className="relative inline-block text-left font-medium">
+                        {/* Button */}
                         <button
                             onClick={() => setIsOpen(!isOpen)}
-                            className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                            className={`flex items-center justify-between gap-2 w-[200px] px-4 py-2 
+                bg-white border border-gray-200 rounded-xl shadow-sm 
+                hover:shadow-md hover:border-gray-300 transition-all duration-200
+                focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-1`}
                         >
-                            <span className="text-sm text-gray-600">{sortValue}</span>
-                            <ChevronDown className="w-4 h-4" />
+                            <span className="text-gray-700 capitalize tracking-wide">
+                                {selectedMonth}
+                            </span>
+                            <ChevronDown
+                                size={18}
+                                className={`text-gray-500 transition-transform duration-300 ${
+                                    isOpen ? 'rotate-180' : ''
+                                }`}
+                            />
                         </button>
+
+                        {/* Dropdown */}
                         {isOpen && (
-                            <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-100 rounded-lg shadow-lg z-10">
-                                {sortValues.map((item) => (
+                            <div
+                                className="absolute right-0 mt-2 w-[200px] bg-white border border-gray-200 
+                    rounded-xl shadow-lg z-20 max-h-[220px] overflow-y-auto
+                    animate-in fade-in-0 zoom-in-95 transition duration-200"
+                            >
+                                {months.map((item) => (
                                     <button
                                         key={item}
                                         onClick={() => {
-                                            setSortValue(item);
+                                            setSelectedMonth(item);
                                             setIsOpen(false);
                                         }}
-                                        className="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left first:rounded-t-lg last:rounded-b-lg"
+                                        className={`block w-full text-left px-4 py-2 capitalize text-gray-700
+                                hover:bg-violet-50 hover:text-violet-700 transition-all duration-150
+                                ${
+                                    selectedMonth === item
+                                        ? 'bg-violet-100 text-violet-800 font-semibold'
+                                        : ''
+                                }
+                                first:rounded-t-xl last:rounded-b-xl`}
                                     >
                                         {item}
                                     </button>
@@ -219,7 +266,9 @@ const OrderTable = () => {
                             <th>Order QTY</th>
                             {(currentUser?.role === 'Admin' ||
                                 currentUser?.role === 'HR-ADMIN' ||
-                                currentUser?.role === 'Developer') && <th>Order Price</th>}
+                                currentUser?.role === 'Developer') && (
+                                <th>Order Price</th>
+                            )}
                             <th>Deadline</th>
                             <th>Status</th>
                             <th>User</th>
@@ -231,28 +280,42 @@ const OrderTable = () => {
                         {localOrder?.length ? (
                             localOrder.map((order) => {
                                 const canAdmin =
-                                    currentUser?.role === 'Admin' || currentUser?.role === 'Developer';
+                                    currentUser?.role === 'Admin' ||
+                                    currentUser?.role === 'Developer';
                                 const canSeePrice =
-                                    canAdmin || currentUser?.role === 'HR-ADMIN';
+                                    canAdmin ||
+                                    currentUser?.role === 'HR-ADMIN';
 
                                 const blocked =
                                     order.isLocked ||
-                                    ['Completed', 'Delivered'].includes(String(order.orderStatus));
+                                    ['Completed', 'Delivered'].includes(
+                                        String(order.orderStatus)
+                                    );
 
                                 return (
                                     <tr key={order._id}>
-                                        <td>{order?.date ? moment(order.date).format('DD-MMM-YYYY') : '—'}</td>
+                                        <td>
+                                            {order?.date
+                                                ? moment(order.date).format(
+                                                      'DD-MMM-YYYY'
+                                                  )
+                                                : '—'}
+                                        </td>
                                         <td>{order.clientID}</td>
                                         <td>{order.orderName}</td>
                                         <td>
-                                            {Number(order.orderQTY || 0).toLocaleString(undefined, {
+                                            {Number(
+                                                order.orderQTY || 0
+                                            ).toLocaleString(undefined, {
                                                 minimumFractionDigits: 2,
                                                 maximumFractionDigits: 2,
                                             })}
                                         </td>
                                         {canSeePrice && (
                                             <td>
-                                                {Number(order.orderPrice || 0).toLocaleString(undefined, {
+                                                {Number(
+                                                    order.orderPrice || 0
+                                                ).toLocaleString(undefined, {
                                                     minimumFractionDigits: 2,
                                                     maximumFractionDigits: 2,
                                                 })}
@@ -261,13 +324,33 @@ const OrderTable = () => {
                                         <td>
                                             {order?.orderDeadLine ? (
                                                 <Countdown
-                                                    date={moment(order.orderDeadLine, 'DD-MMM-YYYY HH:mm:ss').valueOf()}
-                                                    renderer={({ days, hours, minutes, seconds }) => (
+                                                    date={moment(
+                                                        order.orderDeadLine,
+                                                        'DD-MMM-YYYY HH:mm:ss'
+                                                    ).valueOf()}
+                                                    renderer={({
+                                                        days,
+                                                        hours,
+                                                        minutes,
+                                                        seconds,
+                                                    }) => (
                                                         <span>
-                                                            {String(days).padStart(2, '0')}d{' '}
-                                                            {String(hours).padStart(2, '0')}h{' '}
-                                                            {String(minutes).padStart(2, '0')}m{' '}
-                                                            {String(seconds).padStart(2, '0')}s
+                                                            {String(
+                                                                days
+                                                            ).padStart(2, '0')}
+                                                            d{' '}
+                                                            {String(
+                                                                hours
+                                                            ).padStart(2, '0')}
+                                                            h{' '}
+                                                            {String(
+                                                                minutes
+                                                            ).padStart(2, '0')}
+                                                            m{' '}
+                                                            {String(
+                                                                seconds
+                                                            ).padStart(2, '0')}
+                                                            s
                                                         </span>
                                                     )}
                                                 />
@@ -282,7 +365,11 @@ const OrderTable = () => {
                                                 {/* View */}
                                                 <IoEyeOutline
                                                     className="text-xl cursor-pointer hover:text-[#6E3FF3]"
-                                                    onClick={() => handleViewOrder(order?._id)}
+                                                    onClick={() =>
+                                                        handleViewOrder(
+                                                            order?._id
+                                                        )
+                                                    }
                                                     title="View"
                                                 />
 
@@ -309,13 +396,21 @@ const OrderTable = () => {
                                                 {canAdmin && (
                                                     <button
                                                         className="btn btn-sm btn-ghost text-red-600"
-                                                        title={blocked ? 'Locked / finalized – cannot delete' : 'Delete order'}
-                                                        onClick={() => !blocked && handleDeleteOrder(order)}
+                                                        title={
+                                                            blocked
+                                                                ? 'Locked / finalized – cannot delete'
+                                                                : 'Delete order'
+                                                        }
+                                                        onClick={() =>
+                                                            !blocked &&
+                                                            handleDeleteOrder(
+                                                                order
+                                                            )
+                                                        }
                                                         disabled={blocked}
                                                     >
                                                         <Trash2 size={16} />
                                                     </button>
-
                                                 )}
                                             </div>
                                         </td>
@@ -349,15 +444,22 @@ const OrderTable = () => {
                         <div>
                             <p>
                                 Showing {(currentPage - 1) * itemsPerPage + 1} -
-                                {Math.min(currentPage * itemsPerPage, orderCount)} of {orderCount} entries
+                                {Math.min(
+                                    currentPage * itemsPerPage,
+                                    orderCount
+                                )}{' '}
+                                of {orderCount} entries
                             </p>
                         </div>
 
                         <div className="flex items-center gap-1">
                             <button
                                 onClick={handlePrevPage}
-                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md ${currentPage !== 1 ? 'hover:bg-yellow-600 cursor-pointer' : ''
-                                    }`}
+                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md ${
+                                    currentPage !== 1
+                                        ? 'hover:bg-yellow-600 cursor-pointer'
+                                        : ''
+                                }`}
                                 disabled={currentPage === 1}
                                 title="Previous"
                             >
@@ -367,9 +469,15 @@ const OrderTable = () => {
                             {renderPageNumbers().map((page, idx) => (
                                 <button
                                     key={`${page}-${idx}`}
-                                    onClick={() => typeof page === 'number' && setCurrentPage(page)}
-                                    className={`py-1 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600 cursor-pointer ${currentPage === page ? '!bg-yellow-600' : ''
-                                        }`}
+                                    onClick={() =>
+                                        typeof page === 'number' &&
+                                        setCurrentPage(page)
+                                    }
+                                    className={`py-1 px-3 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600 cursor-pointer ${
+                                        currentPage === page
+                                            ? '!bg-yellow-600'
+                                            : ''
+                                    }`}
                                     disabled={typeof page !== 'number'}
                                 >
                                     {page}
@@ -378,8 +486,11 @@ const OrderTable = () => {
 
                             <button
                                 onClick={handleNextPage}
-                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md ${currentPage !== numberOfPages ? 'hover:bg-yellow-600 cursor-pointer' : ''
-                                    }`}
+                                className={`py-2 px-2 bg-[#6E3FF3] text-white rounded-md ${
+                                    currentPage !== numberOfPages
+                                        ? 'hover:bg-yellow-600 cursor-pointer'
+                                        : ''
+                                }`}
                                 disabled={currentPage === numberOfPages}
                                 title="Next"
                             >

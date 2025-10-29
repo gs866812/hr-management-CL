@@ -25,6 +25,10 @@ function toNum(val) {
     const n = parseFloat(val);
     return Number.isFinite(n) ? n : 0;
 }
+const niceMonth = (m) =>
+    typeof m === 'string' && m.length
+        ? m[0].toUpperCase() + m.slice(1).toLowerCase()
+        : '';
 
 export default function EditEarnings({ id }) {
     const { user } = useContext(ContextData);
@@ -41,10 +45,10 @@ export default function EditEarnings({ id }) {
     const [formData, setFormData] = useState({
         month: '',
         clientId: '',
-        imageQtyText: '', // text version
-        totalUsdText: '', // text version
-        convertRateText: '', // text version
-        status: '',
+        imageQtyText: '',
+        totalUsdText: '',
+        convertRateText: '',
+        status: 'Unpaid',
     });
 
     // Derived numbers
@@ -74,49 +78,57 @@ export default function EditEarnings({ id }) {
                     params: { userEmail: user.email },
                 });
                 setClientIDs(res.data || []);
-            } catch (err) {
+            } catch {
                 toast.error('Failed to load client IDs');
             }
         };
         load();
     }, [axiosProtect, user?.email, refetch]);
 
-    // ---- Fetch earning by ID
+    // ---- Fetch earning by ID (normalize incoming fields)
     useEffect(() => {
         let mounted = true;
         const fetchEarningById = async () => {
             if (!id) return;
+            setLoading(true);
             try {
                 const response = await axiosProtect.get(
                     `/getSingleEarning/${id}`
                 );
                 const earning = response.data?.data;
+
                 if (earning && mounted) {
                     setFormData({
-                        month: earning.month || '',
-                        clientId: earning.clientId || '',
+                        month: niceMonth(earning.month || earning.Month || ''),
+                        clientId: earning.clientId || earning.clientID || '',
                         imageQtyText:
-                            (earning.imageQty ?? '') === ''
-                                ? ''
-                                : String(earning.imageQty),
-                        totalUsdText:
-                            (earning.totalUsd ?? '') === ''
-                                ? ''
-                                : String(earning.totalUsd),
-                        convertRateText:
-                            (earning.convertRate ?? '') === ''
-                                ? ''
-                                : String(earning.convertRate),
-                        status: earning.status || '',
+                            earning.imageQty != null
+                                ? String(earning.imageQty)
+                                : earning.imageQTY != null
+                                ? String(earning.imageQTY)
+                                : '',
+                        totalUsdText: (() => {
+                            const v =
+                                earning.totalUsd ??
+                                earning.totalUSD ??
+                                earning.totalDollar ??
+                                earning.total;
+                            return v != null ? String(v) : '';
+                        })(),
+                        convertRateText: (() => {
+                            const v = earning.convertRate ?? earning.rate;
+                            return v != null ? String(v) : '';
+                        })(),
+                        status: earning.status || 'Unpaid',
                     });
                 }
-            } catch (error) {
+            } catch {
                 toast.error('Failed to load earning details');
             } finally {
                 if (mounted) setLoading(false);
             }
         };
-        setLoading(true);
+
         fetchEarningById();
         return () => {
             mounted = false;
@@ -127,7 +139,6 @@ export default function EditEarnings({ id }) {
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        // Map old field names to new *Text state keys if needed
         if (
             name === 'imageQty' ||
             name === 'totalUsd' ||
@@ -138,6 +149,11 @@ export default function EditEarnings({ id }) {
             return;
         }
 
+        if (name === 'month') {
+            setFormData((prev) => ({ ...prev, month: value }));
+            return;
+        }
+
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
@@ -145,7 +161,6 @@ export default function EditEarnings({ id }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Basic validation
         if (!formData.month || !formData.clientId || !formData.status) {
             toast.error('Please fill all required fields');
             return;
@@ -156,33 +171,33 @@ export default function EditEarnings({ id }) {
         }
 
         const payload = {
-            month: formData.month,
+            userEmail: user?.email || '',
+            month: formData.month.toLowerCase(), // backend expects lowercase
             clientId: formData.clientId,
             imageQty, // numeric
             totalUsd, // numeric
             convertRate, // numeric
             convertedBdt, // derived numeric
+            status: formData.status, // include status
         };
 
         try {
             const res = await axiosSecure.put(`/updateEarnings/${id}`, payload);
-
             if (res.data?.success) {
                 toast.success('Earning updated successfully!');
                 dispatch(setRefetch(!refetch));
-                const dlg = document.getElementById('edit-earning-modal');
-                if (dlg?.close) dlg.close();
+                document.getElementById('edit-earning-modal')?.close();
             } else {
                 toast.error(res.data?.message || 'Update failed');
             }
         } catch (err) {
-            console.log(err)
+            // eslint-disable-next-line no-console
+            console.log(err);
             toast.error('Failed to update earning');
         }
     };
 
     const handleReset = () => {
-        // Keep month/clientId/status so user doesn’t lose selections; clear numbers
         setFormData((prev) => ({
             ...prev,
             imageQtyText: '',
@@ -209,7 +224,7 @@ export default function EditEarnings({ id }) {
                         value={formData.month}
                         onChange={handleChange}
                         required
-                        className="input input-bordered w-full !border !border-gray-300 mt-1"
+                        className="select select-bordered w-full mt-1"
                     >
                         <option value="">Select</option>
                         {months.map((m) => (
@@ -228,18 +243,21 @@ export default function EditEarnings({ id }) {
                         value={formData.clientId}
                         onChange={handleChange}
                         required
-                        className="input input-bordered w-full !border !border-gray-300 mt-1"
+                        className="select select-bordered w-full mt-1"
                     >
                         <option value="">Select</option>
                         {clientIDs.map((c) => (
-                            <option key={c._id} value={c.clientID}>
+                            <option
+                                key={c._id || c.clientID}
+                                value={c.clientID}
+                            >
                                 {c.clientID}
                             </option>
                         ))}
                     </select>
                 </div>
 
-                {/* Image QTY (text -> numeric later) */}
+                {/* Image QTY */}
                 <div>
                     <label className="label">Image Quantity</label>
                     <input
@@ -249,14 +267,14 @@ export default function EditEarnings({ id }) {
                         value={formData.imageQtyText}
                         onChange={handleChange}
                         placeholder="e.g. 1200"
-                        className="input input-bordered w-full !border !border-gray-300 mt-1"
+                        className="input input-bordered w-full mt-1"
                     />
                     <p className="text-xs text-gray-500 mt-1">
                         Parsed: {imageQty.toLocaleString()}
                     </p>
                 </div>
 
-                {/* Total USD (text -> numeric later) */}
+                {/* Total USD */}
                 <div>
                     <label className="label">Total USD</label>
                     <input
@@ -266,14 +284,14 @@ export default function EditEarnings({ id }) {
                         value={formData.totalUsdText}
                         onChange={handleChange}
                         placeholder="e.g. 320"
-                        className="input input-bordered w-full !border !border-gray-300 mt-1"
+                        className="input input-bordered w-full mt-1"
                     />
                     <p className="text-xs text-gray-500 mt-1">
                         Parsed: {totalUsd.toLocaleString()}
                     </p>
                 </div>
 
-                {/* Convert Rate (text -> numeric later) */}
+                {/* Convert Rate */}
                 <div>
                     <label className="label">Convert Rate</label>
                     <input
@@ -283,7 +301,7 @@ export default function EditEarnings({ id }) {
                         value={formData.convertRateText}
                         onChange={handleChange}
                         placeholder="e.g. 120"
-                        className="input input-bordered w-full !border !border-gray-300 mt-1"
+                        className="input input-bordered w-full mt-1"
                     />
                     <p className="text-xs text-gray-500 mt-1">
                         Parsed: {convertRate.toLocaleString()}
@@ -301,12 +319,27 @@ export default function EditEarnings({ id }) {
                                 : '0'
                         }
                         readOnly
-                        className="input input-bordered w-full !border !border-gray-300 mt-1 bg-red-100"
+                        className="input input-bordered w-full mt-1 bg-red-100"
                     />
                     <p className="text-xs text-gray-600 mt-1">
                         = Total USD × Convert Rate = {totalUsd.toLocaleString()}{' '}
                         × {convertRate.toLocaleString()}
                     </p>
+                </div>
+
+                {/* Status */}
+                <div>
+                    <label className="label">Status</label>
+                    <select
+                        name="status"
+                        value={formData.status}
+                        onChange={handleChange}
+                        required
+                        className="select select-bordered w-full mt-1"
+                    >
+                        <option value="Paid">Paid</option>
+                        <option value="Unpaid">Unpaid</option>
+                    </select>
                 </div>
 
                 {/* Buttons */}

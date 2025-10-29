@@ -15,6 +15,7 @@ import { RiCurrencyLine, RiUser2Fill } from 'react-icons/ri';
 import { Link, useLocation } from 'react-router-dom';
 import { ContextData } from '../../DataProvider';
 import { HiDocumentDuplicate } from 'react-icons/hi2';
+import { FileCheck2Icon } from 'lucide-react';
 
 const Navbar = () => {
     const { currentUser } = useContext(ContextData);
@@ -43,7 +44,7 @@ const Navbar = () => {
                 to="/"
                 className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                     location.pathname === '/'
-                        ? 'bg-[#6E3FF3] text-white'
+                        ? 'bg-[#6E3FF3] text-white shadow-md'
                         : 'hover:bg-[#6E3FF3] hover:text-white'
                 }`}
             >
@@ -59,7 +60,7 @@ const Navbar = () => {
                     to="/employeeList"
                     className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname === '/employee'
-                            ? 'bg-[#6E3FF3] text-white'
+                            ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
                     }`}
                 >
@@ -76,7 +77,7 @@ const Navbar = () => {
                     to="/shifting"
                     className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname === '/shifting'
-                            ? 'bg-[#6E3FF3] text-white'
+                            ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
                     }`}
                 >
@@ -93,7 +94,7 @@ const Navbar = () => {
                     className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start
                     ${
                         location.pathname === '/employeeDetails'
-                            ? 'bg-[#6E3FF3] text-white'
+                            ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
                     } `}
                 >
@@ -110,7 +111,7 @@ const Navbar = () => {
                     className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start
                     ${
                         location.pathname === '/appliedLeave'
-                            ? 'bg-[#6E3FF3] text-white'
+                            ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
                     } `}
                 >
@@ -124,7 +125,7 @@ const Navbar = () => {
             {/* <Link
                 to="/expense"
                 className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/expense'
-                        ? 'bg-[#6E3FF3] text-white'
+                        ? 'bg-[#6E3FF3] text-white shadow-md'
                         : 'hover:bg-[#6E3FF3] hover:text-white'
                     } ${currentUser?.role === 'Developer'? '': 'hidden'}` }
             >
@@ -138,7 +139,7 @@ const Navbar = () => {
                     to="/expense"
                     className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname === '/expense'
-                            ? 'bg-[#6E3FF3] text-white'
+                            ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
                     }`}
                 >
@@ -180,11 +181,11 @@ const Navbar = () => {
                             to="/orders"
                             className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                                 location.pathname === '/order-management'
-                                    ? 'bg-[#6E3FF3] text-white'
+                                    ? 'bg-[#6E3FF3] text-white shadow-md'
                                     : 'hover:bg-[#6E3FF3] hover:text-white'
                             }`}
                         >
-                            <CiInboxIn />
+                            <FileCheck2Icon size={20} />
                             <span>Order Management</span>
                         </Link>
                         {/* ************************************************* */}
@@ -196,11 +197,11 @@ const Navbar = () => {
                 to="/orders"
                 className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                     location.pathname === '/orders'
-                        ? 'bg-[#6E3FF3] text-white'
+                        ? 'bg-[#6E3FF3] text-white shadow-md'
                         : 'hover:bg-[#6E3FF3] hover:text-white'
                 }`}
             >
-                <CiInboxIn />
+                <FileCheck2Icon size={20} />
                 <span>Order Management</span>
             </Link>
             {/*************************************************************/}
@@ -212,7 +213,7 @@ const Navbar = () => {
                     className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start
                     ${
                         location.pathname === '/earnings'
-                            ? 'bg-[#6E3FF3] text-white'
+                            ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
                     } `}
                 >
@@ -227,7 +228,7 @@ const Navbar = () => {
                     to="/payroll"
                     className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start
                     ${location.pathname === '/payroll'
-                            ? 'bg-[#6E3FF3] text-white'
+                            ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
                         } `}
                 >
@@ -243,7 +244,7 @@ const Navbar = () => {
                     to="/clients"
                     className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname.startsWith('/clients')
-                            ? 'bg-[#6E3FF3] text-white'
+                            ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
                     }`}
                 >
@@ -259,7 +260,7 @@ const Navbar = () => {
                     to="/profit-share"
                     className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname === '/profit-share'
-                            ? 'bg-[#6E3FF3] text-white'
+                            ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
                     }`}
                 >
@@ -274,7 +275,7 @@ const Navbar = () => {
                     to="/analytics"
                     className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname === '/analytics'
-                            ? 'bg-[#6E3FF3] text-white'
+                            ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
                     }`}
                 >
@@ -288,7 +289,7 @@ const Navbar = () => {
                     to="/debit"
                     className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname === '/debit'
-                            ? 'bg-[#6E3FF3] text-white'
+                            ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
                     }`}
                 >
@@ -305,7 +306,7 @@ const Navbar = () => {
                     to="/notice-board-admin"
                     className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname === '/notice-Board-admin'
-                            ? 'bg-[#6E3FF3] text-white'
+                            ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
                     }`}
                 >
@@ -319,7 +320,7 @@ const Navbar = () => {
                     to="/notice-board-employee"
                     className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname === '/notice-board-employee'
-                            ? 'bg-[#6E3FF3] text-white'
+                            ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
                     }`}
                 >

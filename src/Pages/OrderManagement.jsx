@@ -1,14 +1,15 @@
-import { useState } from 'react';
 import OrderStats from '../Component/orderManagement/OrderStats';
 import OrderTable from '../Component/orderManagement/OrderTable';
 import { Link } from 'react-router-dom';
-import { FaUpRightFromSquare } from "react-icons/fa6";
+import { FaUpRightFromSquare } from 'react-icons/fa6';
 import { ContextData } from '../DataProvider';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
+import { TbCashRegister } from 'react-icons/tb';
+import WithdrawModal from '../Component/orderManagement/WithdrawModal';
 
 export default function OrderManagement() {
-    const { user, currentUser } = useContext(ContextData);
-    const [selectedDate, setSelectedDate] = useState(Date.now);
+    const { currentUser } = useContext(ContextData);
+    const [selectedMonth, setSelectedMonth] = useState('all');
 
     return (
         <section className="p-4 overflow-hidden">
@@ -18,24 +19,45 @@ export default function OrderManagement() {
                         <h3 className="text-black text-xl font-medium">
                             Check Your all Order activity!
                         </h3>
-                        {
-                            currentUser && (currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN' || currentUser?.role === 'Developer') &&
-                            <Link to="/createLocalOrder" className=" px-4 py-2 border-2 border-[#6E3FF3] rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 bg-[#6E3FF3] text-white">
-                                <span className='flex items-center gap-2'>
-                                    <FaUpRightFromSquare /> Assign an order
-                                </span>
-                            </Link>
-                        }
 
-
-
-
+                        {currentUser &&
+                            (currentUser?.role === 'Admin' ||
+                                currentUser?.role === 'HR-ADMIN' ||
+                                currentUser?.role === 'Developer') && (
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        onClick={() => {
+                                            document
+                                                .getElementById(
+                                                    'withdraw-modal'
+                                                )
+                                                .showModal();
+                                        }}
+                                        className="px-4 py-2 border-2 border-[#6E3FF3] rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 bg-[#6E3FF3] text-white flex items-center gap-2"
+                                    >
+                                        <TbCashRegister /> Withdraw
+                                    </button>
+                                    <Link
+                                        to="/createLocalOrder"
+                                        className="px-4 py-2 border-2 border-[#6E3FF3] rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 bg-[#6E3FF3] text-white"
+                                    >
+                                        <span className="flex items-center gap-2">
+                                            <FaUpRightFromSquare /> Assign an
+                                            order
+                                        </span>
+                                    </Link>
+                                </div>
+                            )}
                     </div>
                 </div>
 
-                <OrderStats />
+                <OrderStats selectedMonth={selectedMonth} />
 
-                <OrderTable />
+                <OrderTable
+                    selectedMonth={selectedMonth}
+                    setSelectedMonth={setSelectedMonth}
+                />
+                <WithdrawModal />
             </div>
         </section>
     );

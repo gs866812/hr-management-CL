@@ -1,218 +1,531 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
+import useAxiosProtect from '../../utils/useAxiosProtect';
+
+const fmt2 = (n) =>
+    Number(n || 0).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
 
 export default function ClientDetails() {
-    const { id } = useParams();
+    const { id } = useParams(); // clientID from route
+    const axiosProtect = useAxiosProtect();
 
+    // -------- Client info (header) --------
     const [client, setClient] = useState(null);
-    const [payments, setPayments] = useState([]);
-    const [page, setPage] = useState(1);
-    const [limit, setLimit] = useState(10);
-    const [totalPages, setTotalPages] = useState(1);
-    const [search, setSearch] = useState('');
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const [loadingClient, setLoadingClient] = useState(true);
+    const [errorClient, setErrorClient] = useState('');
 
-    // 🔍 Debounce search input to prevent excessive requests
-    const [debouncedSearch, setDebouncedSearch] = useState(search);
+    // -------- Tabs --------
+    const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'earnings'
+
+    // -------- ORDERS state --------
+    const [orders, setOrders] = useState([]);
+    const [ordersSearch, setOrdersSearch] = useState('');
+    const [ordersDebounced, setOrdersDebounced] = useState('');
+    const [ordersPage, setOrdersPage] = useState(1);
+    const [ordersSize, setOrdersSize] = useState(10);
+    const [ordersCount, setOrdersCount] = useState(0);
+    const [ordersLoading, setOrdersLoading] = useState(true);
+    const [ordersError, setOrdersError] = useState('');
+
+    // Debounce orders search
     useEffect(() => {
-        const handler = setTimeout(() => setDebouncedSearch(search), 400);
-        return () => clearTimeout(handler);
-    }, [search]);
+        const t = setTimeout(() => setOrdersDebounced(ordersSearch), 400);
+        return () => clearTimeout(t);
+    }, [ordersSearch]);
 
-    // 🔁 Fetch client details
+    // -------- EARNINGS state --------
+    const [earnings, setEarnings] = useState([]);
+    const [earningsSearch, setEarningsSearch] = useState('');
+    const [earningsDebounced, setEarningsDebounced] = useState('');
+    const [earningsPage, setEarningsPage] = useState(1);
+    const [earningsSize, setEarningsSize] = useState(10);
+    const [earningsCount, setEarningsCount] = useState(0);
+    const [earningsLoading, setEarningsLoading] = useState(true);
+    const [earningsError, setEarningsError] = useState('');
+
+    // Debounce earnings search
+    useEffect(() => {
+        const t = setTimeout(() => setEarningsDebounced(earningsSearch), 400);
+        return () => clearTimeout(t);
+    }, [earningsSearch]);
+
+    // -------- Fetch client header --------
     const fetchClient = useCallback(async () => {
-        setLoading(true);
-        setError('');
-
-        const controller = new AbortController();
-        const signal = controller.signal;
-
         try {
-            const res = await fetch(
-                `${
-                    import.meta.env.VITE_BASE_URL
-                }/clientDetails/${id}?page=${page}&limit=${limit}&search=${debouncedSearch}`,
-                { signal }
+            setLoadingClient(true);
+            setErrorClient('');
+            // protected call
+            const { data } = await axiosProtect.get(`/clientDetails/${id}`);
+            setClient(data?.client || { clientID: id });
+        } catch (e) {
+            setErrorClient(
+                e?.response?.status === 401
+                    ? 'Unauthorized. Please sign in again.'
+                    : 'Failed to load client info.'
             );
-
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-
-            if (data.success) {
-                setClient(data.client);
-                setPayments(data.payments);
-                setTotalPages(data.pagination.totalPages || 1);
-            } else {
-                throw new Error(data.message || 'Unknown error');
-            }
-        } catch (err) {
-            if (err.name !== 'AbortError') {
-                console.error('❌ Failed to fetch client details:', err);
-                setError('Failed to load client details. Please try again.');
-            }
+            setClient({ clientID: id });
         } finally {
-            setLoading(false);
+            setLoadingClient(false);
         }
-
-        return () => controller.abort();
-    }, [id, page, limit, debouncedSearch]);
+    }, [id, axiosProtect]);
 
     useEffect(() => {
         fetchClient();
     }, [fetchClient]);
 
-    // 🧹 Render states
-    if (loading)
-        return (
-            <div className="flex justify-center items-center h-[70vh]">
-                <span className="loading loading-ring loading-lg text-primary"></span>
-            </div>
-        );
+    // -------- Fetch orders (protected) --------
+    const fetchOrders = useCallback(async () => {
+        if (!id) return;
+        try {
+            setOrdersLoading(true);
+            setOrdersError('');
 
-    if (error)
-        return (
-            <div className="text-center text-red-500 py-10 font-medium">
-                ⚠️ {error}
-            </div>
-        );
+            const params = {
+                clientId: id,
+                page: String(ordersPage),
+                size: String(ordersSize),
+            };
+            if (ordersDebounced) params.search = ordersDebounced;
 
-    if (!client)
-        return (
-            <div className="text-center text-gray-600 py-10 text-lg">
-                ❌ Client not found
-            </div>
-        );
+            const { data } = await axiosProtect.get('/getClientOrders', {
+                params,
+            });
 
-    return (
-        <div className="max-w-6xl mx-auto px-6 py-10">
-            {/* 🧾 Client Info Card */}
+            // Expected: { success, result:[], count, page, size, totalPages }
+            setOrders(data?.result || []);
+            setOrdersCount(data?.count || 0);
+        } catch (e) {
+            setOrdersError(
+                e?.response?.status === 401
+                    ? 'Unauthorized. Please sign in again.'
+                    : 'Failed to load orders.'
+            );
+            setOrders([]);
+            setOrdersCount(0);
+        } finally {
+            setOrdersLoading(false);
+        }
+    }, [id, ordersPage, ordersSize, ordersDebounced, axiosProtect]);
+
+    useEffect(() => {
+        if (activeTab === 'orders') fetchOrders();
+    }, [activeTab, fetchOrders]);
+
+    // -------- Fetch earnings (protected) --------
+    const fetchEarnings = useCallback(async () => {
+        if (!id) return;
+        try {
+            setEarningsLoading(true);
+            setEarningsError('');
+
+            const params = {
+                clientId: id, // backend should filter by clientId
+                page: String(earningsPage),
+                size: String(earningsSize),
+            };
+            if (earningsDebounced) params.search = earningsDebounced;
+
+            const { data } = await axiosProtect.get('/getEarnings', { params });
+
+            // Expected: { result:[], count }  (or { items:[], count })
+            setEarnings(data?.result || data?.items || []);
+            setEarningsCount(data?.count || 0);
+        } catch (e) {
+            setEarningsError(
+                e?.response?.status === 401
+                    ? 'Unauthorized. Please sign in again.'
+                    : 'Failed to load earnings.'
+            );
+            setEarnings([]);
+            setEarningsCount(0);
+        } finally {
+            setEarningsLoading(false);
+        }
+    }, [id, earningsPage, earningsSize, earningsDebounced, axiosProtect]);
+
+    useEffect(() => {
+        if (activeTab === 'earnings') fetchEarnings();
+    }, [activeTab, fetchEarnings]);
+
+    // -------- Pagination helpers --------
+    const ordersTotalPages = useMemo(
+        () => Math.max(1, Math.ceil(ordersCount / ordersSize)),
+        [ordersCount, ordersSize]
+    );
+    const earningsTotalPages = useMemo(
+        () => Math.max(1, Math.ceil(earningsCount / earningsSize)),
+        [earningsCount, earningsSize]
+    );
+
+    // -------- Header renderer --------
+    const renderHeader = () => {
+        if (loadingClient) {
+            return (
+                <div className="bg-gradient-to-br from-[#6E3FF3] to-[#4B2CCC] text-white rounded-2xl p-6 shadow-lg mb-8">
+                    <div className="animate-pulse h-6 w-40 bg-white/30 rounded mb-3" />
+                    <div className="animate-pulse h-4 w-64 bg-white/25 rounded mb-2" />
+                    <div className="animate-pulse h-4 w-52 bg-white/25 rounded" />
+                </div>
+            );
+        }
+        if (errorClient) {
+            return (
+                <div className="bg-red-50 text-red-700 rounded-xl p-4 border border-red-200 mb-6">
+                    {errorClient}
+                </div>
+            );
+        }
+        return (
             <div className="bg-gradient-to-br from-[#6E3FF3] to-[#4B2CCC] text-white rounded-2xl p-6 shadow-lg mb-8">
                 <h1 className="text-3xl font-bold mb-2 tracking-wide">
-                    Client ID: {client.clientID}
+                    Client ID: {client?.clientID || id}
                 </h1>
                 <p className="opacity-90">
-                    🌍 Country: {client.country || 'N/A'}
-                </p>
-                <p className="opacity-90 mt-1">
-                    💳 Total Payments:{' '}
-                    <span className="font-semibold text-white">
-                        {client.paymentHistory?.length || 0}
-                    </span>
+                    🌍 Country: {client?.country || 'N/A'}
                 </p>
             </div>
+        );
+    };
 
-            {/* 🔍 Search & Filter Bar */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-6">
-                <input
-                    type="text"
-                    placeholder="🔍 Search payments..."
-                    value={search}
-                    onChange={(e) => {
-                        setPage(1);
-                        setSearch(e.target.value);
-                    }}
-                    className="input input-bordered !border w-full sm:w-1/3 rounded-xl focus:ring-2 focus:ring-[#6E3FF3]"
-                />
+    return (
+        <div className="max-w-7xl mx-auto px-6 py-10">
+            {renderHeader()}
 
-                <select
-                    value={limit}
-                    onChange={(e) => {
-                        setPage(1);
-                        setLimit(Number(e.target.value));
-                    }}
-                    className="select !border w-[200px] rounded-xl"
+            {/* TABS */}
+            <div role="tablist" className="tabs tabs-boxed bg-white/60">
+                <button
+                    role="tab"
+                    className={`tab ${
+                        activeTab === 'orders' ? 'tab-active' : ''
+                    }`}
+                    onClick={() => setActiveTab('orders')}
                 >
-                    {[5, 10, 20, 50].map((n) => (
-                        <option key={n} value={n}>
-                            {n} / page
-                        </option>
-                    ))}
-                </select>
+                    Orders
+                </button>
+                <button
+                    role="tab"
+                    className={`tab ${
+                        activeTab === 'earnings' ? 'tab-active' : ''
+                    }`}
+                    onClick={() => setActiveTab('earnings')}
+                >
+                    Earnings
+                </button>
             </div>
 
-            {/* 💰 Payment Table */}
-            <div className="overflow-x-auto bg-white border border-gray-100">
-                <table className="table w-full border-collapse">
-                    <thead className="bg-[#6E3FF3] text-white text-sm uppercase tracking-wider">
-                        <tr>
-                            <th className="px-4 py-3">Date</th>
-                            <th className="px-4 py-3">Project</th>
-                            <th className="px-4 py-3">Amount (BDT)</th>
-                            <th className="px-4 py-3">Status</th>
-                            <th className="px-4 py-3">Month</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {payments.length === 0 ? (
-                            <tr>
-                                <td
-                                    colSpan={5}
-                                    className="text-center py-8 text-gray-500"
-                                >
-                                    No payments found.
-                                </td>
-                            </tr>
-                        ) : (
-                            payments.map((p, i) => (
-                                <tr
-                                    key={p._id || i}
-                                    className="hover:bg-violet-50 transition-colors"
-                                >
-                                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
-                                        {p.date || '-'}
-                                    </td>
-                                    <td className="px-4 py-3 text-gray-800 font-medium">
-                                        {p.projectName || '-'}
-                                    </td>
-                                    <td className="px-4 py-3 font-semibold text-violet-700">
-                                        {p.convertedBdt?.toLocaleString() || 0}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <span
-                                            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                                p.status === 'Paid'
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : 'bg-red-100 text-red-700'
-                                            }`}
-                                        >
-                                            {p.status || 'Unpaid'}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-gray-600">
-                                        {p.month}
-                                    </td>
+            {/* ORDERS TAB */}
+            {activeTab === 'orders' && (
+                <div className="mt-6 space-y-4">
+                    {/* Search + page size */}
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <input
+                            type="text"
+                            placeholder="🔍 Search orders (name, status, country, clientID)..."
+                            value={ordersSearch}
+                            onChange={(e) => {
+                                setOrdersPage(1);
+                                setOrdersSearch(e.target.value);
+                            }}
+                            className="input input-bordered w-full sm:w-1/2 rounded-xl focus:ring-2 focus:ring-[#6E3FF3]"
+                        />
+                        <select
+                            value={ordersSize}
+                            onChange={(e) => {
+                                setOrdersPage(1);
+                                setOrdersSize(Number(e.target.value));
+                            }}
+                            className="select !border w-[180px] rounded-xl"
+                        >
+                            {[5, 10, 20, 50, 100].map((n) => (
+                                <option key={n} value={n}>
+                                    {n} / page
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="overflow-x-auto bg-white border border-gray-100 rounded-lg">
+                        <table className="table w-full border-collapse">
+                            <thead className="bg-[#6E3FF3] text-white text-sm uppercase tracking-wider">
+                                <tr>
+                                    <th className="px-4 py-3">Date</th>
+                                    <th className="px-4 py-3">Order Name</th>
+                                    <th className="px-4 py-3">Status</th>
+                                    <th className="px-4 py-3">USD</th>
+                                    <th className="px-4 py-3">Rate</th>
+                                    <th className="px-4 py-3">BDT</th>
+                                    <th className="px-4 py-3">Country</th>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                            </thead>
+                            <tbody>
+                                {ordersLoading ? (
+                                    <tr>
+                                        <td
+                                            colSpan={7}
+                                            className="py-10 text-center"
+                                        >
+                                            <span className="loading loading-ring loading-lg text-primary" />
+                                        </td>
+                                    </tr>
+                                ) : ordersError ? (
+                                    <tr>
+                                        <td
+                                            colSpan={7}
+                                            className="py-8 text-center text-red-600"
+                                        >
+                                            {ordersError}
+                                        </td>
+                                    </tr>
+                                ) : orders.length === 0 ? (
+                                    <tr>
+                                        <td
+                                            colSpan={7}
+                                            className="py-8 text-center text-gray-500"
+                                        >
+                                            No orders found.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    orders.map((o, i) => (
+                                        <tr
+                                            key={o._id || i}
+                                            className="hover:bg-violet-50"
+                                        >
+                                            <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                                                {o.orderDate
+                                                    ? new Date(
+                                                          o.orderDate
+                                                      ).toLocaleDateString()
+                                                    : o.createdAt
+                                                    ? new Date(
+                                                          o.createdAt
+                                                      ).toLocaleDateString()
+                                                    : '—'}
+                                            </td>
+                                            <td className="px-4 py-3 text-gray-800 font-medium">
+                                                {o.orderName || '—'}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span
+                                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                                        String(
+                                                            o.status
+                                                        ).toLowerCase() ===
+                                                        'completed'
+                                                            ? 'bg-green-100 text-green-700'
+                                                            : 'bg-blue-100 text-blue-700'
+                                                    }`}
+                                                >
+                                                    {o.status || '—'}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {fmt2(
+                                                    o.totalUsd ??
+                                                        o.priceUSD ??
+                                                        o.totalDollar
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {fmt2(o.convertRate)}
+                                            </td>
+                                            <td className="px-4 py-3 font-semibold text-violet-700">
+                                                {fmt2(
+                                                    o.convertedBdt ?? o.totalBdt
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 text-gray-600">
+                                                {o.country || '—'}
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
 
-            {/* 📄 Pagination */}
-            {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-4 mt-8">
-                    <button
-                        disabled={page <= 1}
-                        onClick={() => setPage((p) => p - 1)}
-                        className="btn btn-sm bg-gray-200 border-none hover:bg-gray-300 disabled:opacity-50"
-                    >
-                        ⬅ Prev
-                    </button>
+                    {ordersTotalPages > 1 && (
+                        <div className="flex justify-center items-center gap-4">
+                            <button
+                                disabled={ordersPage <= 1}
+                                onClick={() => setOrdersPage((p) => p - 1)}
+                                className="btn btn-sm bg-gray-200 border-none hover:bg-gray-300 disabled:opacity-50"
+                            >
+                                ⬅ Prev
+                            </button>
+                            <span className="text-gray-700 font-medium">
+                                Page{' '}
+                                <span className="text-[#6E3FF3] font-bold">
+                                    {ordersPage}
+                                </span>{' '}
+                                of {ordersTotalPages}
+                            </span>
+                            <button
+                                disabled={ordersPage >= ordersTotalPages}
+                                onClick={() => setOrdersPage((p) => p + 1)}
+                                className="btn btn-sm bg-gray-200 border-none hover:bg-gray-300 disabled:opacity-50"
+                            >
+                                Next ➡
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
 
-                    <span className="text-gray-700 font-medium">
-                        Page{' '}
-                        <span className="text-[#6E3FF3] font-bold">{page}</span>{' '}
-                        of {totalPages}
-                    </span>
+            {/* EARNINGS TAB */}
+            {activeTab === 'earnings' && (
+                <div className="mt-6 space-y-4">
+                    {/* Search + page size */}
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <input
+                            type="text"
+                            placeholder="🔍 Search earnings (month, status, date)..."
+                            value={earningsSearch}
+                            onChange={(e) => {
+                                setEarningsPage(1);
+                                setEarningsSearch(e.target.value);
+                            }}
+                            className="input input-bordered w-full sm:w-1/2 rounded-xl focus:ring-2 focus:ring-[#6E3FF3]"
+                        />
+                        <select
+                            value={earningsSize}
+                            onChange={(e) => {
+                                setEarningsPage(1);
+                                setEarningsSize(Number(e.target.value));
+                            }}
+                            className="select !border w-[180px] rounded-xl"
+                        >
+                            {[5, 10, 20, 50, 100].map((n) => (
+                                <option key={n} value={n}>
+                                    {n} / page
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-                    <button
-                        disabled={page >= totalPages}
-                        onClick={() => setPage((p) => p + 1)}
-                        className="btn btn-sm bg-gray-200 border-none hover:bg-gray-300 disabled:opacity-50"
-                    >
-                        Next ➡
-                    </button>
+                    <div className="overflow-x-auto bg-white border border-gray-100 rounded-lg">
+                        <table className="table w-full border-collapse">
+                            <thead className="bg-[#6E3FF3] text-white text-sm uppercase tracking-wider">
+                                <tr>
+                                    <th className="px-4 py-3">Date</th>
+                                    <th className="px-4 py-3">Month</th>
+                                    <th className="px-4 py-3">Client ID</th>
+                                    <th className="px-4 py-3">Image QTY</th>
+                                    <th className="px-4 py-3">Total USD</th>
+                                    <th className="px-4 py-3">Rate</th>
+                                    <th className="px-4 py-3">BDT</th>
+                                    <th className="px-4 py-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {earningsLoading ? (
+                                    <tr>
+                                        <td
+                                            colSpan={8}
+                                            className="py-10 text-center"
+                                        >
+                                            <span className="loading loading-ring loading-lg text-primary" />
+                                        </td>
+                                    </tr>
+                                ) : earningsError ? (
+                                    <tr>
+                                        <td
+                                            colSpan={8}
+                                            className="py-8 text-center text-red-600"
+                                        >
+                                            {earningsError}
+                                        </td>
+                                    </tr>
+                                ) : earnings.length === 0 ? (
+                                    <tr>
+                                        <td
+                                            colSpan={8}
+                                            className="py-8 text-center text-gray-500"
+                                        >
+                                            No earnings found.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    earnings.map((p, i) => (
+                                        <tr
+                                            key={p._id || i}
+                                            className="hover:bg-violet-50"
+                                        >
+                                            <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                                                {p.date || '—'}
+                                            </td>
+                                            <td className="px-4 py-3 text-gray-600">
+                                                {p.month || '—'}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {p.clientId || p.clientID || id}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {fmt2(p.imageQty)}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {fmt2(
+                                                    p.totalUsd || p.totalDollar
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {fmt2(p.convertRate || p.rate)}
+                                            </td>
+                                            <td className="px-4 py-3 font-semibold text-violet-700">
+                                                {fmt2(
+                                                    p.convertedBdt ||
+                                                        p.totalBdt ||
+                                                        p.bdtAmount
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span
+                                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                                        String(
+                                                            p.status || 'Unpaid'
+                                                        ) === 'Paid'
+                                                            ? 'bg-green-100 text-green-700'
+                                                            : 'bg-red-100 text-red-700'
+                                                    }`}
+                                                >
+                                                    {p.status || 'Unpaid'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {earningsTotalPages > 1 && (
+                        <div className="flex justify-center items-center gap-4">
+                            <button
+                                disabled={earningsPage <= 1}
+                                onClick={() => setEarningsPage((p) => p - 1)}
+                                className="btn btn-sm bg-gray-200 border-none hover:bg-gray-300 disabled:opacity-50"
+                            >
+                                ⬅ Prev
+                            </button>
+                            <span className="text-gray-700 font-medium">
+                                Page{' '}
+                                <span className="text-[#6E3FF3] font-bold">
+                                    {earningsPage}
+                                </span>{' '}
+                                of {earningsTotalPages}
+                            </span>
+                            <button
+                                disabled={earningsPage >= earningsTotalPages}
+                                onClick={() => setEarningsPage((p) => p + 1)}
+                                className="btn btn-sm bg-gray-200 border-none hover:bg-gray-300 disabled:opacity-50"
+                            >
+                                Next ➡
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
