@@ -449,12 +449,20 @@ const ProfitShare = () => {
                             <select
                                 required
                                 value={newShareholder.userName}
-                                onChange={(e) =>
+                                onChange={(e) => {
+                                    const selectedUser = shareHolders.find(
+                                        (s) => s.userName === e.target.value
+                                    );
                                     setNewShareholder({
                                         ...newShareholder,
-                                        userName: e.target.value,
-                                    })
-                                }
+                                        userName: selectedUser?.userName || '',
+                                        shareHoldersName:
+                                            selectedUser?.shareHoldersName ||
+                                            '',
+                                        mobile: selectedUser?.mobile || '',
+                                        email: selectedUser?.email || '',
+                                    });
+                                }}
                                 className="!border !border-gray-300 px-3 py-2 rounded w-full"
                             >
                                 <option value="">Select Shareholder</option>

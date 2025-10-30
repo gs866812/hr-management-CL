@@ -128,7 +128,9 @@ export default function ClientDetails() {
             };
             if (earningsDebounced) params.search = earningsDebounced;
 
-            const { data } = await axiosProtect.get('/getEarnings', { params });
+            const { data } = await axiosProtect.get('/getClientEarnings', {
+                params,
+            });
 
             // Expected: { result:[], count }  (or { items:[], count })
             setEarnings(data?.result || data?.items || []);
@@ -190,27 +192,39 @@ export default function ClientDetails() {
         );
     };
 
+    console.log(orders)
+
     return (
         <div className="max-w-7xl mx-auto px-6 py-10">
             {renderHeader()}
 
             {/* TABS */}
-            <div role="tablist" className="tabs tabs-boxed bg-white/60">
+            <div
+                role="tablist"
+                className="flex items-center justify-center gap-2 p-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200 w-fit mx-auto"
+            >
                 <button
                     role="tab"
-                    className={`tab ${
-                        activeTab === 'orders' ? 'tab-active' : ''
-                    }`}
                     onClick={() => setActiveTab('orders')}
+                    className={`px-6 py-2.5 font-semibold rounded-lg transition-all duration-300 text-sm sm:text-base
+      ${
+          activeTab === 'orders'
+              ? 'bg-[#4B2CCC] text-white shadow-md scale-105'
+              : 'text-gray-600 hover:text-[#4B2CCC] hover:bg-[#edeaff]'
+      }`}
                 >
                     Orders
                 </button>
+
                 <button
                     role="tab"
-                    className={`tab ${
-                        activeTab === 'earnings' ? 'tab-active' : ''
-                    }`}
                     onClick={() => setActiveTab('earnings')}
+                    className={`px-6 py-2.5 font-semibold rounded-lg transition-all duration-300 text-sm sm:text-base
+      ${
+          activeTab === 'earnings'
+              ? 'bg-[#4B2CCC] text-white shadow-md scale-105'
+              : 'text-gray-600 hover:text-[#4B2CCC] hover:bg-[#edeaff]'
+      }`}
                 >
                     Earnings
                 </button>
@@ -229,7 +243,7 @@ export default function ClientDetails() {
                                 setOrdersPage(1);
                                 setOrdersSearch(e.target.value);
                             }}
-                            className="input input-bordered w-full sm:w-1/2 rounded-xl focus:ring-2 focus:ring-[#6E3FF3]"
+                            className="input !border-2 !border-primary w-full sm:w-1/2 rounded-xl focus:ring-2 focus:ring-[#6E3FF3]"
                         />
                         <select
                             value={ordersSize}
@@ -247,24 +261,42 @@ export default function ClientDetails() {
                         </select>
                     </div>
 
-                    <div className="overflow-x-auto bg-white border border-gray-100 rounded-lg">
+                    <div className="overflow-x-auto bg-white border border-gray-100">
                         <table className="table w-full border-collapse">
                             <thead className="bg-[#6E3FF3] text-white text-sm uppercase tracking-wider">
                                 <tr>
-                                    <th className="px-4 py-3">Date</th>
-                                    <th className="px-4 py-3">Order Name</th>
-                                    <th className="px-4 py-3">Status</th>
-                                    <th className="px-4 py-3">USD</th>
-                                    <th className="px-4 py-3">Rate</th>
-                                    <th className="px-4 py-3">BDT</th>
-                                    <th className="px-4 py-3">Country</th>
+                                    <th className="px-4 py-3 text-left">
+                                        Date
+                                    </th>
+                                    <th className="px-4 py-3 text-left">
+                                        Order Name
+                                    </th>
+                                    <th className="px-4 py-3 text-left">
+                                        Status
+                                    </th>
+                                    <th className="px-4 py-3 text-right">
+                                        Qty
+                                    </th>
+                                    <th className="px-4 py-3 text-right">
+                                        USD
+                                    </th>
+                                    <th className="px-4 py-3 text-left">
+                                        Deadline
+                                    </th>
+                                    <th className="px-4 py-3 text-left">
+                                        Return Format
+                                    </th>
+                                    <th className="px-4 py-3 text-left">
+                                        Services
+                                    </th>
                                 </tr>
                             </thead>
+
                             <tbody>
                                 {ordersLoading ? (
                                     <tr>
                                         <td
-                                            colSpan={7}
+                                            colSpan={8}
                                             className="py-10 text-center"
                                         >
                                             <span className="loading loading-ring loading-lg text-primary" />
@@ -273,7 +305,7 @@ export default function ClientDetails() {
                                 ) : ordersError ? (
                                     <tr>
                                         <td
-                                            colSpan={7}
+                                            colSpan={8}
                                             className="py-8 text-center text-red-600"
                                         >
                                             {ordersError}
@@ -282,7 +314,7 @@ export default function ClientDetails() {
                                 ) : orders.length === 0 ? (
                                     <tr>
                                         <td
-                                            colSpan={7}
+                                            colSpan={8}
                                             className="py-8 text-center text-gray-500"
                                         >
                                             No orders found.
@@ -292,53 +324,56 @@ export default function ClientDetails() {
                                     orders.map((o, i) => (
                                         <tr
                                             key={o._id || i}
-                                            className="hover:bg-violet-50"
+                                            className="hover:bg-violet-50 transition-colors duration-200"
                                         >
                                             <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
-                                                {o.orderDate
-                                                    ? new Date(
-                                                          o.orderDate
-                                                      ).toLocaleDateString()
-                                                    : o.createdAt
-                                                    ? new Date(
-                                                          o.createdAt
-                                                      ).toLocaleDateString()
-                                                    : '—'}
+                                                {o.date || '—'}
                                             </td>
-                                            <td className="px-4 py-3 text-gray-800 font-medium">
+
+                                            <td className="px-4 py-3 text-gray-800 font-semibold">
                                                 {o.orderName || '—'}
                                             </td>
+
                                             <td className="px-4 py-3">
                                                 <span
                                                     className={`px-3 py-1 rounded-full text-xs font-semibold ${
                                                         String(
-                                                            o.status
+                                                            o.orderStatus
                                                         ).toLowerCase() ===
-                                                        'completed'
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : 'bg-blue-100 text-blue-700'
+                                                        'delivered'
+                                                            ? 'bg-green-100 text-green-700 border border-green-200'
+                                                            : 'bg-blue-100 text-blue-700 border border-blue-200'
                                                     }`}
                                                 >
-                                                    {o.status || '—'}
+                                                    {o.orderStatus || '—'}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3">
-                                                {fmt2(
-                                                    o.totalUsd ??
-                                                        o.priceUSD ??
-                                                        o.totalDollar
-                                                )}
+
+                                            <td className="px-4 py-3 text-right text-gray-800">
+                                                {o.orderQTY || 0}
                                             </td>
-                                            <td className="px-4 py-3">
-                                                {fmt2(o.convertRate)}
+
+                                            <td className="px-4 py-3 text-right font-medium text-violet-700">
+                                                $
+                                                {Number(
+                                                    o.orderPrice || 0
+                                                ).toFixed(2)}
                                             </td>
-                                            <td className="px-4 py-3 font-semibold text-violet-700">
-                                                {fmt2(
-                                                    o.convertedBdt ?? o.totalBdt
-                                                )}
+
+                                            <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                                                {o.orderDeadLine || '—'}
                                             </td>
+
+                                            <td className="px-4 py-3 text-gray-800 font-medium">
+                                                {o.returnFormat || '—'}
+                                            </td>
+
                                             <td className="px-4 py-3 text-gray-600">
-                                                {o.country || '—'}
+                                                {Array.isArray(
+                                                    o.needServices
+                                                ) && o.needServices.length > 0
+                                                    ? o.needServices.join(', ')
+                                                    : '—'}
                                             </td>
                                         </tr>
                                     ))
@@ -388,7 +423,7 @@ export default function ClientDetails() {
                                 setEarningsPage(1);
                                 setEarningsSearch(e.target.value);
                             }}
-                            className="input input-bordered w-full sm:w-1/2 rounded-xl focus:ring-2 focus:ring-[#6E3FF3]"
+                            className="input !border-2 !border-primary w-full sm:w-1/2 rounded-xl focus:ring-2 focus:ring-[#6E3FF3]"
                         />
                         <select
                             value={earningsSize}
@@ -406,7 +441,7 @@ export default function ClientDetails() {
                         </select>
                     </div>
 
-                    <div className="overflow-x-auto bg-white border border-gray-100 rounded-lg">
+                    <div className="overflow-x-auto bg-white border border-gray-100">
                         <table className="table w-full border-collapse">
                             <thead className="bg-[#6E3FF3] text-white text-sm uppercase tracking-wider">
                                 <tr>
