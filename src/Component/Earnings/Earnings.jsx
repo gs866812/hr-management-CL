@@ -1,7 +1,6 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
-import { FaPlus, FaRegEdit } from 'react-icons/fa';
+import { useContext, useEffect, useMemo, useState } from 'react';
+import { FaRegEdit } from 'react-icons/fa';
 import { CiEdit } from 'react-icons/ci';
-import EarningsModal from './EarningsModal';
 import EditEarnings from './EditEarnings';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import useAxiosSecure from '../../utils/useAxiosSecure';
@@ -9,9 +8,11 @@ import { ContextData } from '../../DataProvider';
 import moment from 'moment';
 import { BsChevronDoubleLeft, BsChevronDoubleRight } from 'react-icons/bs';
 import { toast } from 'react-toastify';
-import Swal from 'sweetalert2';
+import { TbCashRegister } from 'react-icons/tb';
 import { setRefetch } from '../../redux/refetchSlice';
 import { useDispatch, useSelector } from 'react-redux';
+import EditWithdrawModal from '../orderManagement/EditWithdrawModal';
+import WithdrawModal from '../orderManagement/WithdrawModal';
 
 const number = (v) => (typeof v === 'number' ? v : Number(v || 0));
 const fmt2 = (v) =>
@@ -21,12 +22,10 @@ const fmt2 = (v) =>
     });
 const safe = (v, fallback = '—') => (v === 0 || v ? v : fallback);
 
-// Normalize one earning row coming from various sources (addEarnings, withdraw modal, legacy)
 const normalizeEarning = (row) => {
     if (!row || typeof row !== 'object') return null;
 
     const dateRaw = row.date || row.createdAt || row.created_at;
-    // Stored via backend as 'DD-MM-YYYY' (Asia/Dhaka); fallback to ISO if needed
     const date =
         typeof dateRaw === 'string'
             ? dateRaw
@@ -34,7 +33,6 @@ const normalizeEarning = (row) => {
             ? moment(dateRaw).format('DD-MM-YYYY')
             : '—';
 
-    // Month may be lowercase (august). Keep as given but make a Nice label.
     const monthRaw = row.month || row.Month;
     const month =
         typeof monthRaw === 'string'
@@ -42,17 +40,12 @@ const normalizeEarning = (row) => {
             : safe(monthRaw);
 
     const clientID = row.clientId || row.clientID || row.client_id || '—';
-
     const imageQty = number(row.imageQty || row.imageQTY || row.qty || 0);
-
-    // USD + rate + charge
     const totalUsd = number(
         row.totalUsd || row.totalUSD || row.totalDollar || row.total || 0
     );
     const convertRate = number(row.convertRate || row.rate || 0);
     const charge = number(row.charge || 0);
-
-    // Computed/Stored BDT
     const convertedBdt = number(
         row.convertedBdt || row.totalBdt || row.bdtAmount || 0
     );
@@ -89,7 +82,6 @@ const Earnings = () => {
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [selectedEarningId, setSelectedEarningId] = useState(null);
 
-    // NEW: status change modal state
     const [statusModalOpen, setStatusModalOpen] = useState(false);
     const [statusItem, setStatusItem] = useState(null);
     const [statusForm, setStatusForm] = useState({
@@ -100,7 +92,7 @@ const Earnings = () => {
     });
     const [submittingStatus, setSubmittingStatus] = useState(false);
 
-    // Fetch
+    // ===== FETCH EARNINGS =====
     useEffect(() => {
         const fetchEarnings = async () => {
             try {
@@ -110,18 +102,15 @@ const Earnings = () => {
                         page: currentPage,
                         size: itemsPerPage,
                         search: searchEarnings,
-                        month: selectedMonth, // pass "" for all
                     },
                 });
 
-                // Normalize rows
                 const norm = (res.data?.result || [])
                     .map(normalizeEarning)
                     .filter(Boolean);
                 setEarnings(norm);
                 setTotalCount(res.data?.count || norm.length);
 
-                // If backend does not give a summary, compute here
                 const backendSummary = res.data?.totalSummary;
                 if (backendSummary && typeof backendSummary === 'object') {
                     setTotalSummary({
@@ -173,7 +162,7 @@ const Earnings = () => {
         axiosProtect,
     ]);
 
-    // Pagination helpers
+    // ===== PAGINATION =====
     const totalPages = useMemo(
         () => Math.ceil((totalCount || 0) / itemsPerPage),
         [totalCount, itemsPerPage]
@@ -202,18 +191,18 @@ const Earnings = () => {
         return pages;
     };
 
-    // ===== Status modal workflow =====
+    // ===== STATUS MODAL OPEN =====
     const openStatusModal = (item) => {
         const currentStatus = item.status;
         const newStatus = currentStatus === 'Paid' ? 'Unpaid' : 'Paid';
 
-        // Prefill with existing values if present; otherwise blank strings
         setStatusForm({
             rateText: item.convertRate ? String(item.convertRate) : '',
             chargeText: item.charge ? String(item.charge) : '',
             totalUsdText: item.totalUsd ? String(item.totalUsd) : '',
             newStatus,
         });
+
         setStatusItem(item);
         setStatusModalOpen(true);
         setTimeout(() => {
@@ -246,22 +235,22 @@ const Earnings = () => {
         [statusForm.totalUsdText]
     );
 
-    // Preview: if we have USD and rate, use (USD - charge) * rate; otherwise show existing BDT
+    // ===== PREVIEW BDT =====
     const previewBdt = useMemo(() => {
         if (!statusModalOpen || !statusItem) return 0;
-        if (
-            Number.isFinite(statusTotalUsd) &&
-            Number.isFinite(statusRate) &&
-            statusRate > 0
-        ) {
-            const receivable =
-                statusTotalUsd -
-                (Number.isFinite(statusCharge) ? statusCharge : 0);
-            return Math.max(0, receivable * statusRate);
-        }
-        return number(statusItem.convertedBdt); // fallback to existing
-    }, [statusModalOpen, statusItem, statusTotalUsd, statusRate, statusCharge]);
+        const usd = statusTotalUsd;
+        const chg = statusCharge;
+        const r = statusRate;
 
+        if (Number.isFinite(usd) && Number.isFinite(r) && r > 0) {
+            const receivable = usd - (Number.isFinite(chg) ? chg : 0);
+            return Math.max(0, receivable * r);
+        }
+
+        return number(statusItem.convertedBdt || 0);
+    }, [statusModalOpen, statusItem, statusTotalUsd, statusCharge, statusRate]);
+
+    // ===== SUBMIT STATUS CHANGE =====
     const submitStatusChange = async (e) => {
         e?.preventDefault?.();
         if (!statusItem) return;
@@ -272,14 +261,12 @@ const Earnings = () => {
             const parsedYear = moment(statusItem.date, 'DD-MM-YYYY').format(
                 'YYYY'
             );
-
             const payload = {
                 year: parsedYear,
                 month: (statusItem?.month || '').toLowerCase(),
-                newStatus: statusForm.newStatus, // "Paid" | "Unpaid"
+                newStatus: statusForm.newStatus,
             };
 
-            // include edit fields if given
             if (statusForm.rateText) payload.rate = number(statusForm.rateText);
             if (statusForm.chargeText)
                 payload.charge = number(statusForm.chargeText);
@@ -293,23 +280,30 @@ const Earnings = () => {
 
             if (res.data?.success) {
                 dispatch(setRefetch(!refetch));
-                toast.success(`Status changed to ${statusForm.newStatus}`);
+                toast.success(
+                    res.data?.message ||
+                        `Status changed to ${statusForm.newStatus}`
+                );
                 closeStatusModal();
             } else {
                 toast.error(res.data?.message || 'Failed to update status');
             }
         } catch (err) {
-            toast.error('Failed to update the earning status');
+            console.error(err);
+            toast.error(
+                err?.response?.data?.message ||
+                    err.message ||
+                    'Failed to update the earning status'
+            );
         } finally {
             setSubmittingStatus(false);
         }
     };
 
-    // =================================
-
+    // ===== OTHER UI FUNCTIONS =====
     const handleOpenEditModal = (id) => {
         setSelectedEarningId(id);
-        document.getElementById('edit-earning-modal')?.showModal();
+        document.getElementById('edit-withdraw-modal')?.showModal();
     };
 
     const getStatusBadge = (status) => {
@@ -324,6 +318,7 @@ const Earnings = () => {
         }
     };
 
+    // ===== MAIN RENDER =====
     return (
         <div className="mt-2 pb-2">
             {/* Header & Controls */}
@@ -358,14 +353,14 @@ const Earnings = () => {
                         ))}
                     </select>
                     <button
-                        className="bg-[#6E3FF3] text-white px-4 py-2 rounded"
                         onClick={() =>
                             document
-                                .getElementById('add-new-earnings-modal')
-                                ?.showModal()
+                                .getElementById('withdraw-modal')
+                                .showModal()
                         }
+                        className="px-4 py-2 border-2 border-[#6E3FF3] rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 bg-[#6E3FF3] text-white flex items-center gap-2"
                     >
-                        <FaPlus className="inline mr-2" /> Add new earnings
+                        <TbCashRegister /> Withdraw
                     </button>
                 </div>
             </section>
@@ -387,7 +382,6 @@ const Earnings = () => {
                                 <th>Action</th>
                             </tr>
                         </thead>
-
                         <tbody>
                             {earnings.length > 0 ? (
                                 earnings.map((item) => (
@@ -444,7 +438,7 @@ const Earnings = () => {
                                 </tr>
                             )}
 
-                            {/* Totals row */}
+                            {/* Totals */}
                             {earnings.length > 0 && (
                                 <tr className="bg-gray-100 font-semibold">
                                     <td colSpan="3" className="text-right">
@@ -526,8 +520,9 @@ const Earnings = () => {
                 </div>
             )}
 
-            {/* Add Earnings Modal (includes withdraw-as-earnings) */}
-            <EarningsModal />
+            {/* Withdraw + Edit Modals */}
+            <WithdrawModal />
+            <EditWithdrawModal id={selectedEarningId} />
 
             {/* Edit Earnings Modal */}
             <dialog id="edit-earning-modal" className="modal">
@@ -564,34 +559,28 @@ const Earnings = () => {
 
                         {statusItem && (
                             <>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="label">
-                                            <span className="label-text font-medium">
-                                                Current Status
-                                            </span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={statusItem.status}
-                                            readOnly
-                                            className="input input-bordered w-full bg-gray-100"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="label">
-                                            <span className="label-text font-medium">
-                                                New Status
-                                            </span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={statusForm.newStatus}
-                                            readOnly
-                                            className="input input-bordered w-full bg-gray-100"
-                                        />
-                                    </div>
-                                </div>
+                                <p className="text-center font-medium text-sm mb-2">
+                                    Changing from{' '}
+                                    <span
+                                        className={`font-semibold ${
+                                            statusItem.status === 'Paid'
+                                                ? 'text-green-600'
+                                                : 'text-red-600'
+                                        }`}
+                                    >
+                                        {statusItem.status}
+                                    </span>{' '}
+                                    →{' '}
+                                    <span
+                                        className={`font-semibold ${
+                                            statusForm.newStatus === 'Paid'
+                                                ? 'text-green-600'
+                                                : 'text-red-600'
+                                        }`}
+                                    >
+                                        {statusForm.newStatus}
+                                    </span>
+                                </p>
 
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
@@ -613,7 +602,7 @@ const Earnings = () => {
                                                       )
                                                     : 'e.g., 320.00'
                                             }
-                                            className="input input-bordered w-full"
+                                            className="input !border !border-primary w-full"
                                         />
                                     </div>
                                     <div>
@@ -633,7 +622,7 @@ const Earnings = () => {
                                                     ? String(statusItem.charge)
                                                     : 'e.g., 5.00'
                                             }
-                                            className="input input-bordered w-full"
+                                            className="input !border !border-primary w-full"
                                         />
                                     </div>
                                 </div>
@@ -658,7 +647,7 @@ const Earnings = () => {
                                                       )
                                                     : 'e.g., 120.00'
                                             }
-                                            className="input input-bordered w-full"
+                                            className="input !border !border-primary w-full"
                                         />
                                     </div>
 
@@ -672,12 +661,10 @@ const Earnings = () => {
                                             type="text"
                                             value={fmt2(previewBdt)}
                                             readOnly
-                                            className="input input-bordered w-full bg-gray-100 font-semibold"
+                                            className="input !border !border-primary w-full bg-gray-100 font-semibold"
                                         />
                                         <p className="text-xs text-gray-500 mt-1">
-                                            Uses (Total USD − Charge) × Rate
-                                            when provided; otherwise shows
-                                            existing.
+                                            Formula: (Total USD − Charge) × Rate
                                         </p>
                                     </div>
                                 </div>
@@ -687,7 +674,7 @@ const Earnings = () => {
                         <div className="modal-action">
                             <button
                                 type="button"
-                                className="btn btn-ghost"
+                                className="btn btn-outline"
                                 onClick={closeStatusModal}
                             >
                                 Cancel

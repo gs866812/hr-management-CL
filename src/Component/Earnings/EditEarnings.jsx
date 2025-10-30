@@ -48,6 +48,8 @@ export default function EditEarnings({ id }) {
         imageQtyText: '',
         totalUsdText: '',
         convertRateText: '',
+        charge: '',
+        receivable: '',
         status: 'Unpaid',
     });
 
@@ -182,6 +184,7 @@ export default function EditEarnings({ id }) {
         };
 
         try {
+            console.log(id);
             const res = await axiosSecure.put(`/updateEarnings/${id}`, payload);
             if (res.data?.success) {
                 toast.success('Earning updated successfully!');
@@ -282,6 +285,21 @@ export default function EditEarnings({ id }) {
                         inputMode="decimal"
                         name="totalUsd"
                         value={formData.totalUsdText}
+                        onChange={handleChange}
+                        placeholder="e.g. 320"
+                        className="input input-bordered w-full mt-1"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                        Parsed: {totalUsd.toLocaleString()}
+                    </p>
+                </div>
+                <div>
+                    <label className="label">Total USD</label>
+                    <input
+                        type="text"
+                        inputMode="decimal"
+                        name="totalUsd"
+                        value={formData.receivable}
                         onChange={handleChange}
                         placeholder="e.g. 320"
                         className="input input-bordered w-full mt-1"

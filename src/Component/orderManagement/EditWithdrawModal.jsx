@@ -3,10 +3,18 @@ import { X } from 'lucide-react';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import { ContextData } from '../../DataProvider';
 import { toast } from 'react-toastify';
+import { useDispatch, useSelector } from 'react-redux';
+import { setRefetch } from '../../redux/refetchSlice';
 
-export default function WithdrawModal() {
+export default function EditWithdrawModal({ id }) {
     const axiosProtect = useAxiosProtect();
     const { user } = useContext(ContextData);
+    const dispatch = useDispatch();
+    const refetch = useSelector((s) => s.refetch.refetch);
+
+    const [loading, setLoading] = useState(true);
+    const [clients, setClients] = useState([]);
+    const [submitting, setSubmitting] = useState(false);
 
     const months = [
         'January',
@@ -23,9 +31,6 @@ export default function WithdrawModal() {
         'December',
     ];
 
-    const [clients, setClients] = useState([]);
-    const [submitting, setSubmitting] = useState(false);
-
     const [form, setForm] = useState({
         month: '',
         clientId: '',
@@ -38,10 +43,36 @@ export default function WithdrawModal() {
         status: 'Unpaid',
     });
 
-    // 🔹 Fetch clients by selected month
+    useEffect(() => {
+        if (!id) return;
+        setLoading(true);
+
+        axiosProtect
+            .get(`/getSingleEarning/${id}`)
+            .then(({ data }) => {
+                const earning = data?.data;
+                if (!earning) throw new Error('Earning not found');
+                console.log(earning);
+
+                setForm({
+                    month: earning.month || '',
+                    clientId: earning.clientId || earning.clientID || '',
+                    imageQty: earning.imageQty ?? '',
+                    totalUsd: earning.totalUsd ?? '',
+                    charge: earning.charge ?? 0,
+                    receivable: earning.receivable ?? '',
+                    convertRate: earning.convertRate ?? '',
+                    convertedBdt: earning.convertedBdt ?? '',
+                    status: earning.status || 'Unpaid',
+                });
+            })
+            .catch(() => toast.error('Failed to load earning details'))
+            .finally(() => setLoading(false));
+    }, [id, axiosProtect, refetch]);
+
+    // 🧠 Load clients by month
     useEffect(() => {
         if (!form.month || !user?.email) return;
-
         (async () => {
             try {
                 const { data } = await axiosProtect.get('/getClientsByMonth', {
@@ -50,39 +81,27 @@ export default function WithdrawModal() {
                         selectedMonth: form.month.toLowerCase(),
                     },
                 });
-
-                if (data?.success) {
-                    setClients(data.clients || []);
-                } else {
-                    setClients([]);
-                    toast.info('No client data found for this month');
-                }
-            } catch (err) {
-                toast.error(
-                    err?.response?.data?.message || 'Failed to load clients'
-                );
+                setClients(data?.clients || []);
+            } catch {
+                toast.error('Failed to load clients');
             }
         })();
     }, [form.month, user?.email, axiosProtect]);
 
-    // 🔹 Auto-fill client’s imageQty & totalUsd when client changes
+    // 🔁 Auto-fill totalUsd if client selected
     useEffect(() => {
         if (form.clientId && clients.length > 0) {
-            const selectedClient = clients.find(
-                (c) => c.clientID === form.clientId
-            );
-
-            if (selectedClient) {
+            const client = clients.find((c) => c.clientID === form.clientId);
+            if (client) {
                 setForm((prev) => ({
                     ...prev,
-                    imageQty: selectedClient.imageQty || '',
-                    totalUsd: Number(selectedClient.totalUsd || 0).toFixed(2),
+                    totalUsd: Number(client.totalUsd || 0).toFixed(2),
                 }));
             }
         }
     }, [form.clientId, clients]);
 
-    // 🔹 Input handler with live calculation
+    // 🧮 Handle input and recalc derived fields
     const handleChange = (e) => {
         const { name, value } = e.target;
         const updated = { ...form, [name]: value };
@@ -90,29 +109,17 @@ export default function WithdrawModal() {
         const total = parseFloat(updated.totalUsd) || 0;
         const charge = parseFloat(updated.charge) || 0;
         const rate = parseFloat(updated.convertRate) || 0;
+
         const receivable = total - charge;
         const convertedBdt = receivable * rate;
 
         updated.receivable = receivable.toFixed(2);
         updated.convertedBdt = convertedBdt.toFixed(2);
+
         setForm(updated);
     };
 
-    // 🔹 Reset handler
-    const handleReset = () =>
-        setForm({
-            month: '',
-            clientId: '',
-            imageQty: '',
-            totalUsd: '',
-            charge: '',
-            receivable: '',
-            convertRate: '',
-            convertedBdt: '',
-            status: 'Unpaid',
-        });
-
-    // 🔹 Submit handler
+    // 💾 Submit update
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!form.month) return toast.error('Please select a month');
@@ -123,7 +130,7 @@ export default function WithdrawModal() {
 
             const payload = {
                 userEmail: user?.email || '',
-                month: form.month.toLowerCase(),
+                month: String(form.month).toLowerCase(),
                 clientId: form.clientId,
                 imageQty: Number(form.imageQty) || 0,
                 totalUsd: Number(form.totalUsd) || 0,
@@ -132,31 +139,44 @@ export default function WithdrawModal() {
                 convertRate: Number(form.convertRate) || 0,
                 convertedBdt: Number(form.convertedBdt) || 0,
                 status: form.status,
-                createdAt: new Date(),
+                updatedAt: new Date(),
             };
 
-            const { data } = await axiosProtect.post('/addEarnings', payload);
+            const { data } = await axiosProtect.put(
+                `/updateEarnings/${id}`,
+                payload
+            );
 
-            if (data?.success || data?.insertedId) {
-                toast.success('Withdrawal form submitted successfully');
-                handleReset();
-                document.getElementById('withdraw-modal')?.close();
+            if (data?.success) {
+                dispatch(setRefetch(!refetch));
+                toast.success('Earning updated successfully');
+                document.getElementById('edit-withdraw-modal')?.close();
             } else {
-                throw new Error(data?.message || 'Submission failed');
+                throw new Error(data?.message || 'Update failed');
             }
         } catch (err) {
+            console.log(err);
             toast.error(
                 err?.response?.data?.message ||
                     err.message ||
-                    'Failed to submit'
+                    'Failed to update'
             );
         } finally {
             setSubmitting(false);
         }
     };
 
+    if (loading)
+        return (
+            <dialog id="edit-withdraw-modal" className="modal">
+                <div className="modal-box">
+                    <p>Loading earning data...</p>
+                </div>
+            </dialog>
+        );
+
     return (
-        <dialog id="withdraw-modal" className="modal">
+        <dialog id="edit-withdraw-modal" className="modal">
             <div className="modal-box w-full max-w-lg border-2 !border-primary">
                 <form method="dialog">
                     <button className="btn btn-sm btn-circle btn-error absolute right-2 top-2 text-white">
@@ -169,10 +189,10 @@ export default function WithdrawModal() {
                     className="space-y-4 text-gray-700"
                 >
                     <h3 className="font-bold text-xl mb-2 text-center">
-                        Withdraw Form
+                        Edit Withdrawal
                     </h3>
 
-                    {/* Select Month */}
+                    {/* Month */}
                     <div className="form-control">
                         <label className="label">
                             <span className="label-text font-medium">
@@ -184,9 +204,8 @@ export default function WithdrawModal() {
                             className="select !border !border-primary w-full"
                             value={form.month}
                             onChange={handleChange}
-                            required
                         >
-                            <option value="">Select Month</option>
+                            <option value="">-- Select Month --</option>
                             {months.map((m) => (
                                 <option key={m} value={m.toLowerCase()}>
                                     {m}
@@ -207,10 +226,9 @@ export default function WithdrawModal() {
                             className="select !border !border-primary w-full"
                             value={form.clientId}
                             onChange={handleChange}
-                            required
-                            disabled={!form.month || clients.length === 0}
+                            disabled={!form.month}
                         >
-                            <option value="">Select Client ID</option>
+                            <option value="">-- Select Client ID --</option>
                             {clients.map((c) => (
                                 <option key={c.clientID} value={c.clientID}>
                                     Client_{c.clientID}
@@ -219,7 +237,7 @@ export default function WithdrawModal() {
                         </select>
                     </div>
 
-                    {/* Image Quantity */}
+                    {/* Image Qty */}
                     <div className="form-control">
                         <label className="label">
                             <span className="label-text font-medium">
@@ -229,38 +247,29 @@ export default function WithdrawModal() {
                         <input
                             type="number"
                             name="imageQty"
-                            min={0}
-                            step={1}
-                            placeholder="e.g., 120"
-                            className="input !border !border-primary w-full"
                             value={form.imageQty}
                             onChange={handleChange}
-                            required
-                            readOnly
+                            className="input !border !border-primary w-full"
                         />
                     </div>
 
-                    {/* Total Dollar + Charge */}
+                    {/* USD & Charge */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="form-control">
                             <label className="label">
                                 <span className="label-text font-medium">
-                                    Total Dollar ($)
+                                    Total USD ($)
                                 </span>
                             </label>
                             <input
                                 type="number"
                                 name="totalUsd"
                                 step="0.01"
-                                placeholder="Total"
-                                className="input !border !border-primary w-full"
                                 value={form.totalUsd}
                                 onChange={handleChange}
-                                required
-                                readOnly
+                                className="input !border !border-primary w-full"
                             />
                         </div>
-
                         <div className="form-control">
                             <label className="label">
                                 <span className="label-text font-medium">
@@ -271,15 +280,14 @@ export default function WithdrawModal() {
                                 type="number"
                                 name="charge"
                                 step="0.01"
-                                placeholder="Charge"
-                                className="input !border !border-primary w-full"
                                 value={form.charge}
                                 onChange={handleChange}
+                                className="input !border !border-primary w-full"
                             />
                         </div>
                     </div>
 
-                    {/* Receivable + Rate */}
+                    {/* Receivable & Rate */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="form-control">
                             <label className="label">
@@ -295,7 +303,6 @@ export default function WithdrawModal() {
                                 className="input !border !border-primary w-full bg-gray-100"
                             />
                         </div>
-
                         <div className="form-control">
                             <label className="label">
                                 <span className="label-text font-medium">
@@ -306,16 +313,14 @@ export default function WithdrawModal() {
                                 type="number"
                                 name="convertRate"
                                 step="0.01"
-                                placeholder="Rate"
-                                className="input !border !border-primary w-full"
                                 value={form.convertRate}
                                 onChange={handleChange}
-                                required
+                                className="input !border !border-primary w-full"
                             />
                         </div>
                     </div>
 
-                    {/* BDT Amount */}
+                    {/* Converted BDT */}
                     <div className="form-control">
                         <label className="label">
                             <span className="label-text font-medium">
@@ -331,7 +336,7 @@ export default function WithdrawModal() {
                         />
                     </div>
 
-                    {/* Payment Status */}
+                    {/* Status */}
                     <div className="form-control">
                         <label className="label">
                             <span className="label-text font-medium">
@@ -355,7 +360,7 @@ export default function WithdrawModal() {
                             className="btn btn-primary w-full"
                             disabled={submitting}
                         >
-                            {submitting ? 'Submitting...' : 'Submit Withdrawal'}
+                            {submitting ? 'Updating...' : 'Update Earning'}
                         </button>
                     </div>
                 </form>
