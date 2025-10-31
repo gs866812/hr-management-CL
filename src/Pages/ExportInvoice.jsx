@@ -165,11 +165,9 @@ export default function ExportInvoice() {
         const doc = new jsPDF('p', 'pt', 'a4');
         const margin = 40;
         const pageWidth = doc.internal.pageSize.getWidth();
-        const violet = [111, 66, 193];
+        const teal = [0, 153, 153]; // Web Briks teal 600
 
         // ============ HEADER ============
-
-        // 🖼️ Company Logo - Made bigger
         const logoUrl =
             'https://res.cloudinary.com/dny7zfbg9/image/upload/v1755954483/mqontecf1xao7znsh6cx.png';
 
@@ -184,13 +182,11 @@ export default function ExportInvoice() {
                             reader.readAsDataURL(blob);
                         })
                 );
-            // Increased logo size from 120x40 to 150x50
             doc.addImage(img, 'PNG', margin, 20, 150, 50);
         } catch (err) {
             console.warn('Logo failed to load.');
         }
 
-        // Invoice title and meta
         const invoiceNumber = `INV-${new Date()
             .toISOString()
             .slice(0, 10)
@@ -203,7 +199,7 @@ export default function ExportInvoice() {
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(16);
-        doc.setTextColor(...violet);
+        doc.setTextColor(...teal);
         doc.text('INVOICE', pageWidth - margin - 100, 40);
 
         doc.setFont('helvetica', 'normal');
@@ -212,30 +208,53 @@ export default function ExportInvoice() {
         doc.text(`#${invoiceNumber}`, pageWidth - margin - 100, 58);
         doc.text(`Date: ${exportDate}`, pageWidth - margin - 100, 72);
 
-        // ============ BILL TO SECTION ============
-
+        // ============ BILL FROM / BILL TO ============
         const billY = 100;
+        const spacing = 15; // reduced spacing
+        const boxWidth = (pageWidth - margin * 2 - spacing) / 2; // adjusted to fit within page
+
+        // 🏢 Bill From
         doc.setDrawColor(220, 220, 220);
-        doc.roundedRect(margin, billY, pageWidth - margin * 2, 70, 6, 6, 'S');
+        doc.roundedRect(margin, billY, boxWidth, 85, 6, 6, 'S');
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
-        doc.setTextColor(...violet);
-        doc.text('BILL TO', margin + 15, billY + 20);
+        doc.setTextColor(...teal);
+        doc.text('BILL FROM', margin + 15, billY + 20);
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
         doc.setTextColor(50, 50, 50);
-        doc.text(`${clientInfo?.name || 'N/A'}`, margin + 15, billY + 38);
+        doc.text('Web Briks LLC', margin + 15, billY + 38);
         doc.text(
-            `${clientInfo?.companyName || 'N/A'}`,
+            '115 Senpara Parbota, Begum Rokeya Ave,',
             margin + 15,
             billY + 52
         );
-        doc.text(`${clientInfo?.address || 'N/A'}`, margin + 15, billY + 66);
+        doc.text('Mirpur-10, Dhaka-1216', margin + 15, billY + 66);
+        doc.text('support@webbriks.com', margin + 15, billY + 80);
+
+        // 👤 Bill To
+        const billToX = margin + boxWidth + spacing;
+        doc.roundedRect(billToX, billY, boxWidth, 85, 6, 6, 'S');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(...teal);
+        doc.text('BILL TO', billToX + 15, billY + 20);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(50, 50, 50);
+        doc.text(`${clientInfo?.name || 'N/A'}`, billToX + 15, billY + 38);
+        doc.text(
+            `${clientInfo?.companyName || 'N/A'}`,
+            billToX + 15,
+            billY + 52
+        );
+        doc.text(`${clientInfo?.address || 'N/A'}`, billToX + 15, billY + 66);
 
         // ============ TABLE ============
-
         const tableColumn = [
             'Date',
             'Order Name',
@@ -245,7 +264,7 @@ export default function ExportInvoice() {
             'Status',
         ];
 
-        const tableRows = selectedData.map((o, i) => [
+        const tableRows = selectedData.map((o) => [
             o.date || '—',
             o.orderName,
             o.orderQTY,
@@ -255,12 +274,12 @@ export default function ExportInvoice() {
         ]);
 
         autoTable(doc, {
-            startY: 190,
+            startY: billY + 110,
             head: [tableColumn],
             body: tableRows,
             theme: 'grid',
             headStyles: {
-                fillColor: [245, 245, 245], // ✅ light gray background
+                fillColor: [245, 245, 245],
                 textColor: [0, 0, 0],
                 fontStyle: 'bold',
                 lineWidth: 0.2,
@@ -274,39 +293,30 @@ export default function ExportInvoice() {
                 lineWidth: 0.2,
                 lineColor: [230, 230, 230],
             },
-            alternateRowStyles: {
-                fillColor: [250, 250, 250],
-            },
-            columnStyles: {
-                5: { halign: 'center' },
-            },
+            alternateRowStyles: { fillColor: [250, 250, 250] },
+            columnStyles: { 5: { halign: 'center' } },
             styles: { overflow: 'linebreak' },
         });
 
         // ============ FOOTER ============
-
         const pageHeight = doc.internal.pageSize.height;
-
-        // Full width border top
         doc.setDrawColor(230, 230, 230);
-        doc.line(0, pageHeight - 60, pageWidth, pageHeight - 60); // Changed to full width
+        doc.line(0, pageHeight - 60, pageWidth, pageHeight - 60);
 
         doc.setFontSize(9);
         doc.setTextColor(100, 100, 100);
 
-        // Centered text for footer
         const footerText1 =
             'Thank you for your business. If you have any questions about this invoice, contact us at info@webbriks.com.';
         const footerText2 = 'Web Briks LLC — Excellence in Editing and Design';
 
-        // Center align both footer lines
         const textWidth1 = doc.getTextWidth(footerText1);
         const textWidth2 = doc.getTextWidth(footerText2);
 
         doc.text(footerText1, (pageWidth - textWidth1) / 2, pageHeight - 30);
         doc.text(footerText2, (pageWidth - textWidth2) / 2, pageHeight - 10);
 
-        // ============ SAVE FILE ============
+        // ============ SAVE ============
         const fileName = `Invoice_${
             clientInfo?.companyName?.replace(/\s+/g, '_') || 'Client'
         }_${invoiceNumber}.pdf`;
