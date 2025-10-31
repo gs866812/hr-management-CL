@@ -157,7 +157,7 @@ export default function WithdrawModal() {
 
     return (
         <dialog id="withdraw-modal" className="modal">
-            <div className="modal-box w-full max-w-lg border-2 !border-primary">
+            <div className="modal-box w-full max-w-lg border-2 border-primary!">
                 <form method="dialog">
                     <button className="btn btn-sm btn-circle btn-error absolute right-2 top-2 text-white">
                         <X size={16} />
@@ -181,7 +181,7 @@ export default function WithdrawModal() {
                         </label>
                         <select
                             name="month"
-                            className="select !border !border-primary w-full"
+                            className="select border! border-primary! w-full"
                             value={form.month}
                             onChange={handleChange}
                             required
@@ -204,7 +204,7 @@ export default function WithdrawModal() {
                         </label>
                         <select
                             name="clientId"
-                            className="select !border !border-primary w-full"
+                            className="select border! border-primary! w-full"
                             value={form.clientId}
                             onChange={handleChange}
                             required
@@ -232,7 +232,7 @@ export default function WithdrawModal() {
                             min={0}
                             step={1}
                             placeholder="e.g., 120"
-                            className="input !border !border-primary w-full"
+                            className="input border! border-primary! w-full"
                             value={form.imageQty}
                             onChange={handleChange}
                             required
@@ -253,7 +253,7 @@ export default function WithdrawModal() {
                                 name="totalUsd"
                                 step="0.01"
                                 placeholder="Total"
-                                className="input !border !border-primary w-full"
+                                className="input border! border-primary! w-full"
                                 value={form.totalUsd}
                                 onChange={handleChange}
                                 required
@@ -272,7 +272,7 @@ export default function WithdrawModal() {
                                 name="charge"
                                 step="0.01"
                                 placeholder="Charge"
-                                className="input !border !border-primary w-full"
+                                className="input border! border-primary! w-full"
                                 value={form.charge}
                                 onChange={handleChange}
                             />
@@ -292,7 +292,7 @@ export default function WithdrawModal() {
                                 name="receivable"
                                 value={form.receivable}
                                 readOnly
-                                className="input !border !border-primary w-full bg-gray-100"
+                                className="input border! border-primary! w-full bg-gray-100"
                             />
                         </div>
 
@@ -307,7 +307,7 @@ export default function WithdrawModal() {
                                 name="convertRate"
                                 step="0.01"
                                 placeholder="Rate"
-                                className="input !border !border-primary w-full"
+                                className="input border! border-primary! w-full"
                                 value={form.convertRate}
                                 onChange={handleChange}
                                 required
@@ -327,7 +327,7 @@ export default function WithdrawModal() {
                             name="convertedBdt"
                             value={form.convertedBdt}
                             readOnly
-                            className="input !border !border-primary w-full bg-gray-100 font-semibold"
+                            className="input border! border-primary! w-full bg-gray-100 font-semibold"
                         />
                     </div>
 
@@ -340,7 +340,7 @@ export default function WithdrawModal() {
                         </label>
                         <select
                             name="status"
-                            className="select !border !border-primary w-full"
+                            className="select border! border-primary! w-full"
                             value={form.status}
                             onChange={handleChange}
                         >

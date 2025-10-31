@@ -38,11 +38,11 @@ const Navbar = () => {
     // ************************************************************************************************
 
     return (
-        <div className="flex flex-col mb-[1px]">
+        <div className="flex flex-col mb-px">
             {/* ********************************************************* */}
             <Link
                 to="/"
-                className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                className={`mb-px font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                     location.pathname === '/'
                         ? 'bg-[#6E3FF3] text-white shadow-md'
                         : 'hover:bg-[#6E3FF3] hover:text-white'
@@ -58,7 +58,7 @@ const Navbar = () => {
                 currentUser?.role === 'HR-ADMIN') && (
                 <Link
                     to="/employeeList"
-                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                    className={`mb-px font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname === '/employee'
                             ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
@@ -75,7 +75,7 @@ const Navbar = () => {
                 currentUser?.role === 'teamLeader') && (
                 <Link
                     to="/shifting"
-                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                    className={`mb-px font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname === '/shifting'
                             ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
@@ -91,7 +91,7 @@ const Navbar = () => {
                 currentUser?.role === 'HR-ADMIN') && (
                 <Link
                     to="/employeeDetails"
-                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start
+                    className={`mb-px font-semibold p-2 rounded-md flex gap-2 items-center justify-start
                     ${
                         location.pathname === '/employeeDetails'
                             ? 'bg-[#6E3FF3] text-white shadow-md'
@@ -108,7 +108,7 @@ const Navbar = () => {
                 currentUser?.role === 'HR-ADMIN') && (
                 <Link
                     to="/appliedLeave"
-                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start
+                    className={`mb-px font-semibold p-2 rounded-md flex gap-2 items-center justify-start
                     ${
                         location.pathname === '/appliedLeave'
                             ? 'bg-[#6E3FF3] text-white shadow-md'
@@ -124,7 +124,7 @@ const Navbar = () => {
 
             {/* <Link
                 to="/expense"
-                className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/expense'
+                className={`mb-px font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${location.pathname === '/expense'
                         ? 'bg-[#6E3FF3] text-white shadow-md'
                         : 'hover:bg-[#6E3FF3] hover:text-white'
                     } ${currentUser?.role === 'Developer'? '': 'hidden'}` }
@@ -137,7 +137,7 @@ const Navbar = () => {
                 currentUser?.role === 'HR-ADMIN') && (
                 <Link
                     to="/expense"
-                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                    className={`mb-px font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname === '/expense'
                             ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
@@ -153,10 +153,10 @@ const Navbar = () => {
             <section
                 className={`hidden ${
                     isOpenOrderManagement ? 'bg-gray-100' : ''
-                } rounded-md mb-[1px]`}
+                } rounded-md mb-px`}
             >
                 <div
-                    className={`flex items-center justify-between cursor-pointer p-2 w-full gap-2 hover:bg-gray-100 mb-[1px] rounded-md ${
+                    className={`flex items-center justify-between cursor-pointer p-2 w-full gap-2 hover:bg-gray-100 mb-px rounded-md ${
                         isOpenOrderManagement ? 'hover:bg-gray-100' : ''
                     }`}
                     onClick={toggleDropdownOrderManagement}
@@ -179,7 +179,7 @@ const Navbar = () => {
                         {/* ************************************************* */}
                         <Link
                             to="/orders"
-                            className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                            className={`mb-px font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                                 location.pathname === '/order-management'
                                     ? 'bg-[#6E3FF3] text-white shadow-md'
                                     : 'hover:bg-[#6E3FF3] hover:text-white'
@@ -195,8 +195,8 @@ const Navbar = () => {
             {/*************************************************************/}
             <Link
                 to="/orders"
-                className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
-                    location.pathname === '/orders'
+                className={`mb-px font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                    location.pathname.startsWith('/orders')
                         ? 'bg-[#6E3FF3] text-white shadow-md'
                         : 'hover:bg-[#6E3FF3] hover:text-white'
                 }`}
@@ -210,7 +210,7 @@ const Navbar = () => {
                 currentUser?.role === 'HR-ADMIN') && (
                 <Link
                     to="/earnings"
-                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start
+                    className={`mb-px font-semibold p-2 rounded-md flex gap-2 items-center justify-start
                     ${
                         location.pathname === '/earnings'
                             ? 'bg-[#6E3FF3] text-white shadow-md'
@@ -226,7 +226,7 @@ const Navbar = () => {
             {/* {(currentUser?.role === 'Developer' || currentUser?.role === 'Admin' || currentUser?.role === 'HR-ADMIN') && (
                 <Link
                     to="/payroll"
-                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start
+                    className={`mb-px font-semibold p-2 rounded-md flex gap-2 items-center justify-start
                     ${location.pathname === '/payroll'
                             ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
@@ -242,7 +242,7 @@ const Navbar = () => {
                 currentUser?.role === 'HR-ADMIN') && (
                 <Link
                     to="/clients"
-                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                    className={`mb-px font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname.startsWith('/clients')
                             ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
@@ -258,7 +258,7 @@ const Navbar = () => {
                 currentUser?.role === 'Admin') && (
                 <Link
                     to="/profit-share"
-                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                    className={`mb-px font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname === '/profit-share'
                             ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
@@ -273,7 +273,7 @@ const Navbar = () => {
                 currentUser?.role === 'Admin') && (
                 <Link
                     to="/analytics"
-                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                    className={`mb-px font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname === '/analytics'
                             ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
@@ -287,7 +287,7 @@ const Navbar = () => {
                 currentUser?.role === 'Admin') && (
                 <Link
                     to="/debit"
-                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                    className={`mb-px font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname === '/debit'
                             ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
@@ -304,7 +304,7 @@ const Navbar = () => {
                 currentUser?.role === 'HR-ADMIN') && (
                 <Link
                     to="/notice-board-admin"
-                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                    className={`mb-px font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname === '/notice-Board-admin'
                             ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'
@@ -318,7 +318,7 @@ const Navbar = () => {
             {currentUser?.role === 'employee' && (
                 <Link
                     to="/notice-board-employee"
-                    className={`mb-[1px] font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
+                    className={`mb-px font-semibold p-2 rounded-md flex gap-2 items-center justify-start ${
                         location.pathname === '/notice-board-employee'
                             ? 'bg-[#6E3FF3] text-white shadow-md'
                             : 'hover:bg-[#6E3FF3] hover:text-white'

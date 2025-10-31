@@ -33,6 +33,7 @@ import NoticeBoardAdmin from './Component/NoticeBoard/NoticeBoardAdmin';
 import NoticeBoard from './Component/NoticeBoard/NoticeBoard';
 import DebitPage from './Pages/Debit';
 import ClientDetails from './Component/ClientDetails/ClientDetails';
+import ExportInvoice from './Pages/ExportInvoice';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
@@ -87,6 +88,7 @@ export const router = createBrowserRouter([
             },
             { path: '/settings', element: <Settings /> },
             { path: '/orders', element: <OrderManagement /> },
+            { path: '/orders/export-invoice', element: <ExportInvoice /> },
             {
                 path: '/employeeList',
                 element: (
