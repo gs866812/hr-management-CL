@@ -78,6 +78,7 @@ export default function ExportInvoice() {
                 params: {
                     month: form.month,
                     clientId,
+                    size: 0,
                 },
             });
             console.log(data);
@@ -302,29 +303,40 @@ export default function ExportInvoice() {
         doc.text(clientInfo?.address || 'Address', rightX + 20, infoY + 52);
 
         // ===== TABLE =====
+        // ===== TABLE =====
         const tableY = infoY + boxHeight + 35;
+
+        // 🧾 Define columns (your new layout)
         const tableColumns = [
             'No.',
-            'Order',
-            'Services',
-            'Images',
-            'Price',
             'Date',
+            'Services',
+            'Image QTY',
+            'Per Image',
+            'Sub Total',
         ];
 
-        const tableRows = selectedData.map((o, i) => [
-            i + 1,
-            o.orderName,
-            (o.needServices || []).join(', '),
-            o.orderQTY,
-            `$${parseFloat(o.orderPrice || 0).toFixed(2)}`,
-            o.date || '—',
-        ]);
+        // 🧮 Map data rows
+        const tableRows = selectedData.map((o, i) => {
+            const qty = parseFloat(o.orderQTY) || 0;
+            const total = parseFloat(o.orderPrice) || 0;
+            const perImage = qty > 0 ? total / qty : 0;
 
-        const totalAmount = selectedData.reduce((acc, o) => {
-            const price = Number(o.orderPrice); // convert safely
-            return acc + (isNaN(price) ? 0 : price);
-        }, 0);
+            return [
+                i + 1,
+                o.date || '—',
+                (o.needServices || []).join(', '),
+                qty,
+                `$${perImage.toFixed(2)}`,
+                `$${total.toFixed(2)}`,
+            ];
+        });
+
+        // 💰 Calculate grand total
+        const totalAmount = selectedData.reduce(
+            (acc, o) => acc + (parseFloat(o.orderPrice) || 0),
+            0
+        );
 
         autoTable(doc, {
             startY: tableY,
@@ -476,6 +488,21 @@ export default function ExportInvoice() {
                 >
                     Load Orders
                 </button>
+                {/* Export Button */}
+                <div className="text-right">
+                    <button
+                        className={`btn flex items-center gap-2 text-white ${
+                            selectedOrders.length
+                                ? 'bg-violet-600 hover:bg-violet-700'
+                                : 'btn-disabled bg-gray-400'
+                        }`}
+                        disabled={!selectedOrders.length}
+                        onClick={handleExportPDF}
+                    >
+                        <FaFilePdf />
+                        Export PDF
+                    </button>
+                </div>
             </div>
 
             {/* Orders Table */}
@@ -546,22 +573,6 @@ export default function ExportInvoice() {
                     No orders found. Select a month and client to view orders.
                 </p>
             )}
-
-            {/* Export Button */}
-            <div className="mt-6 text-right">
-                <button
-                    className={`btn flex items-center gap-2 text-white ${
-                        selectedOrders.length
-                            ? 'bg-violet-600 hover:bg-violet-700'
-                            : 'btn-disabled bg-gray-400'
-                    }`}
-                    disabled={!selectedOrders.length}
-                    onClick={handleExportPDF}
-                >
-                    <FaFilePdf />
-                    Export PDF
-                </button>
-            </div>
 
             {/* Client Info Popup */}
             {showClientPopup && (
