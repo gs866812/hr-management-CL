@@ -369,7 +369,7 @@ export default function ExportInvoice() {
                 1: { halign: 'left' },
                 2: { halign: 'left' },
                 3: { halign: 'center' },
-                4: { halign: 'right' },
+                4: { halign: 'center' },
                 5: { halign: 'right' },
             },
             margin: { left: margin, right: margin },
