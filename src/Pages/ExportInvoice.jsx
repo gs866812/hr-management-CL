@@ -25,7 +25,6 @@ export default function ExportInvoice() {
     const [tempClientData, setTempClientData] = useState({
         name: '',
         address: '',
-        company: '',
     });
 
     useEffect(() => {
@@ -60,8 +59,7 @@ export default function ExportInvoice() {
             if (data && data.clientID) {
                 setClientInfo(data);
 
-                const isMissingInfo =
-                    !data.name || !data.address || !data.companyName;
+                const isMissingInfo = !data.name || !data.address;
 
                 setShowClientPopup(isMissingInfo);
             } else {
@@ -121,10 +119,6 @@ export default function ExportInvoice() {
             const payload = {
                 clientID: clientId,
                 name: tempClientData.name?.trim() || clientInfo?.name || '',
-                companyName:
-                    tempClientData.company?.trim() ||
-                    clientInfo?.companyName ||
-                    '',
                 address:
                     tempClientData.address?.trim() || clientInfo?.address || '',
             };
@@ -165,9 +159,25 @@ export default function ExportInvoice() {
         const doc = new jsPDF('p', 'pt', 'a4');
         const margin = 40;
         const pageWidth = doc.internal.pageSize.getWidth();
-        const teal = [0, 153, 153]; // Web Briks teal 600
+        const pageHeight = doc.internal.pageSize.getHeight();
 
-        // ============ HEADER ============
+        const orange = [255, 138, 0]; // Vibrant orange
+        const teal = [0, 153, 153];
+        const darkTeal = [0, 120, 120];
+        const lightOrange = [255, 200, 150];
+        const gray = [70, 70, 70];
+        const lightGray = [240, 240, 240];
+        const white = [255, 255, 255];
+
+        // ===== HEADER BACKGROUND BLOCK =====
+        doc.setFillColor(...white);
+        doc.rect(0, 0, pageWidth, 140, 'F');
+
+        // Orange accent strip at top
+        doc.setFillColor(...orange);
+        doc.rect(0, 0, pageWidth, 8, 'F');
+
+        // ===== LOGO =====
         const logoUrl =
             'https://res.cloudinary.com/dny7zfbg9/image/upload/v1755954483/mqontecf1xao7znsh6cx.png';
 
@@ -182,146 +192,227 @@ export default function ExportInvoice() {
                             reader.readAsDataURL(blob);
                         })
                 );
-            doc.addImage(img, 'PNG', margin, 20, 150, 50);
+
+            const logo = new Image();
+            logo.src = img;
+
+            await new Promise((resolve) => {
+                logo.onload = () => {
+                    const desiredHeight = 70;
+                    const aspectRatio = logo.width / logo.height;
+                    const autoWidth = desiredHeight * aspectRatio;
+
+                    doc.addImage(
+                        img,
+                        'PNG',
+                        margin,
+                        40,
+                        autoWidth,
+                        desiredHeight
+                    );
+                    resolve();
+                };
+            });
         } catch (err) {
-            console.warn('Logo failed to load.');
+            console.warn('⚠️ Logo failed to load.', err);
         }
 
-        const invoiceNumber = `INV-${new Date()
-            .toISOString()
-            .slice(0, 10)
-            .replace(/-/g, '')}-001`;
+        const invoiceNumber = `NO. 000001`;
         const exportDate = new Date().toLocaleDateString('en-GB', {
-            day: 'numeric',
+            day: '2-digit',
             month: 'long',
             year: 'numeric',
         });
 
+        // ===== INVOICE TITLE WITH ORANGE ACCENT =====
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(16);
+        doc.setFontSize(32);
         doc.setTextColor(...teal);
-        doc.text('INVOICE', pageWidth - margin - 100, 40);
+        doc.text('INVOICE', pageWidth - margin - 150, 65);
 
+        // Orange underline accent
+        doc.setFillColor(...orange);
+        doc.rect(pageWidth - margin - 150, 72, 140, 4, 'F');
+
+        // ===== INVOICE INFO IN TEAL =====
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(80, 80, 80);
-        doc.text(`#${invoiceNumber}`, pageWidth - margin - 100, 58);
-        doc.text(`Date: ${exportDate}`, pageWidth - margin - 100, 72);
+        doc.setFontSize(11);
+        doc.setTextColor(...gray);
+        doc.text(`Invoice No: ${invoiceNumber}`, pageWidth - margin - 150, 95);
+        doc.text(`Date: ${exportDate}`, pageWidth - margin - 150, 110);
 
-        // ============ BILL FROM / BILL TO ============
-        const billY = 100;
-        const spacing = 15; // reduced spacing
-        const boxWidth = (pageWidth - margin * 2 - spacing) / 2; // adjusted to fit within page
+        // ===== BILL FROM / TO SECTION WITH COLORED BACKGROUNDS =====
+        const infoY = 135;
+        const columnGap = 30;
+        const boxWidth = (pageWidth - margin * 2 - columnGap) / 2;
+        const boxHeight = 85;
 
-        // 🏢 Bill From
-        doc.setDrawColor(220, 220, 220);
-        doc.roundedRect(margin, billY, boxWidth, 85, 6, 6, 'S');
+        const leftX = margin;
+        const rightX = margin + boxWidth + columnGap;
+
+        // ----- BILL FROM BOX (TEAL WITH ORANGE ACCENT) -----
+        doc.setFillColor(...teal);
+        doc.rect(leftX, infoY, boxWidth, boxHeight, 'F');
+
+        // Orange accent bar on left side
+        doc.setFillColor(...orange);
+        doc.rect(leftX, infoY, 8, boxHeight, 'F');
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
-        doc.setTextColor(...teal);
-        doc.text('BILL FROM', margin + 15, billY + 20);
+        doc.setTextColor(...white);
+        doc.text('BILL FROM', leftX + 20, infoY + 18);
 
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(50, 50, 50);
-        doc.text('Web Briks LLC', margin + 15, billY + 38);
-        doc.text(
-            '115 Senpara Parbota, Begum Rokeya Ave,',
-            margin + 15,
-            billY + 52
-        );
-        doc.text('Mirpur-10, Dhaka-1216', margin + 15, billY + 66);
-        doc.text('support@webbriks.com', margin + 15, billY + 80);
+        doc.setFontSize(9);
+        doc.setTextColor(...white);
+        doc.text('Web Briks LLC', leftX + 20, infoY + 38);
+        doc.text('Web Briks LLC', leftX + 20.2, infoY + 38);
+        doc.text('Web Briks LLC', leftX + 20.4, infoY + 38);
+        doc.text('115 Senpara Parbota,', leftX + 20, infoY + 52);
+        doc.text('Begum Rokeya Avenue,', leftX + 20, infoY + 64);
+        doc.text('Mirpur-10, Dhaka-1216', leftX + 20, infoY + 76);
 
-        // 👤 Bill To
-        const billToX = margin + boxWidth + spacing;
-        doc.roundedRect(billToX, billY, boxWidth, 85, 6, 6, 'S');
+        // ----- BILLED TO BOX (ORANGE WITH TEAL ACCENT) -----
+        doc.setFillColor(...orange);
+        doc.rect(rightX, infoY, boxWidth, boxHeight, 'F');
+
+        // Teal accent bar on left side
+        doc.setFillColor(...teal);
+        doc.rect(rightX, infoY, 8, boxHeight, 'F');
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
-        doc.setTextColor(...teal);
-        doc.text('BILL TO', billToX + 15, billY + 20);
+        doc.setTextColor(...white);
+        doc.text('BILL TO', rightX + 20, infoY + 18);
 
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(50, 50, 50);
-        doc.text(`${clientInfo?.name || 'N/A'}`, billToX + 15, billY + 38);
-        doc.text(
-            `${clientInfo?.companyName || 'N/A'}`,
-            billToX + 15,
-            billY + 52
-        );
-        doc.text(`${clientInfo?.address || 'N/A'}`, billToX + 15, billY + 66);
+        doc.setFontSize(9);
+        doc.setTextColor(...white);
+        doc.text(clientInfo.name, rightX + 20, infoY + 38);
+        doc.text(clientInfo.name, rightX + 20.2, infoY + 38);
+        doc.text(clientInfo.name, rightX + 20.4, infoY + 38);
+        doc.text(clientInfo?.address || 'Address', rightX + 20, infoY + 52);
 
-        // ============ TABLE ============
-        const tableColumn = [
+        // ===== TABLE =====
+        const tableY = infoY + boxHeight + 35;
+        const tableColumns = [
+            'No.',
+            'Order',
+            'Services',
+            'Images',
+            'Price',
             'Date',
-            'Order Name',
-            'Image QTY',
-            'Price (USD)',
-            'Deadline',
-            'Status',
         ];
 
-        const tableRows = selectedData.map((o) => [
-            o.date || '—',
+        const tableRows = selectedData.map((o, i) => [
+            i + 1,
             o.orderName,
+            (o.needServices || []).join(', '),
             o.orderQTY,
             `$${o.orderPrice}`,
-            o.orderDeadLine,
-            o.orderStatus,
+            o.date || '—',
         ]);
 
+        const totalAmount = selectedData.reduce(
+            (acc, o) => acc + (o.orderPrice || 0),
+            0
+        );
+
         autoTable(doc, {
-            startY: billY + 110,
-            head: [tableColumn],
+            startY: tableY,
+            head: [tableColumns],
             body: tableRows,
-            theme: 'grid',
+            theme: 'plain',
+            showHead: 'firstPage',
+            styles: {
+                fontSize: 9,
+                cellPadding: 8,
+                textColor: [50, 50, 50],
+                lineColor: [220, 220, 220],
+                lineWidth: 0.5,
+            },
             headStyles: {
-                fillColor: [245, 245, 245],
-                textColor: [0, 0, 0],
+                fillColor: teal,
+                textColor: white,
                 fontStyle: 'bold',
-                lineWidth: 0.2,
-                lineColor: [200, 200, 200],
-                fontSize: 9.5,
+                halign: 'center',
+                fontSize: 10,
             },
             bodyStyles: {
-                textColor: [60, 60, 60],
-                fontSize: 9,
-                cellPadding: 6,
-                lineWidth: 0.2,
-                lineColor: [230, 230, 230],
+                fillColor: white,
             },
-            alternateRowStyles: { fillColor: [250, 250, 250] },
-            columnStyles: { 5: { halign: 'center' } },
-            styles: { overflow: 'linebreak' },
+            alternateRowStyles: {
+                fillColor: lightGray,
+            },
+            columnStyles: {
+                0: { halign: 'center' },
+                1: { halign: 'left' },
+                2: { halign: 'left' },
+                3: { halign: 'center' },
+                4: { halign: 'right' },
+                5: { halign: 'right' },
+            },
+            margin: { left: margin, right: margin },
+            tableWidth: 'auto',
         });
 
-        // ============ FOOTER ============
-        const pageHeight = doc.internal.pageSize.height;
-        doc.setDrawColor(230, 230, 230);
-        doc.line(0, pageHeight - 60, pageWidth, pageHeight - 60);
+        const tableEndY = doc.lastAutoTable.finalY;
+
+        // ===== TOTAL BLOCK WITH ORANGE ACCENT =====
+        const totalY = tableEndY + 25;
+        const totalBlockWidth = 180;
+        const totalBlockHeight = 38;
+        const totalBlockX = pageWidth - margin - totalBlockWidth;
+
+        // Orange background for total
+        doc.setFillColor(...orange);
+        doc.rect(totalBlockX, totalY, totalBlockWidth, totalBlockHeight, 'F');
+
+        // Teal accent bar on left side
+        doc.setFillColor(...teal);
+        doc.rect(totalBlockX, totalY, 8, totalBlockHeight, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(...white);
+        doc.text('TOTAL', totalBlockX + 22, totalY + 22);
+
+        doc.setFontSize(12);
+        doc.text(
+            `$${totalAmount.toFixed(2)}`,
+            pageWidth - margin - 12,
+            totalY + 22,
+            {
+                align: 'right',
+            }
+        );
+
+        // ===== FOOTER WITH TEAL BAR =====
+        const footerY = pageHeight - 40;
+
+        // Teal footer bar
+        doc.setFillColor(...teal);
+        doc.rect(0, footerY, pageWidth, 3, 'F');
 
         doc.setFontSize(9);
-        doc.setTextColor(100, 100, 100);
+        doc.setTextColor(...gray);
+        doc.setFont('helvetica', 'normal');
+        const footerText =
+            'Web Briks LLC — Excellence in Editing and Design. For inquiry info@webbriks.com';
+        doc.text(footerText, pageWidth / 2, footerY + 25, { align: 'center' });
 
-        const footerText1 =
-            'Thank you for your business. If you have any questions about this invoice, contact us at info@webbriks.com.';
-        const footerText2 = 'Web Briks LLC — Excellence in Editing and Design';
+        // Orange accent dots
+        doc.setFillColor(...orange);
+        doc.circle(pageWidth / 2 - 180, footerY + 22, 2, 'F');
+        doc.circle(pageWidth / 2 + 180, footerY + 22, 2, 'F');
 
-        const textWidth1 = doc.getTextWidth(footerText1);
-        const textWidth2 = doc.getTextWidth(footerText2);
-
-        doc.text(footerText1, (pageWidth - textWidth1) / 2, pageHeight - 30);
-        doc.text(footerText2, (pageWidth - textWidth2) / 2, pageHeight - 10);
-
-        // ============ SAVE ============
+        // ===== SAVE =====
         const fileName = `Invoice_${
-            clientInfo?.companyName?.replace(/\s+/g, '_') || 'Client'
-        }_${invoiceNumber}.pdf`;
-        doc.save(fileName);
+            clientInfo?.name?.replace(/\s+/g, '_') || 'Client'
+        }_${new Date().toISOString().slice(0, 10)}.pdf`;
 
+        doc.save(fileName);
         toast.success('🧾 Invoice PDF exported successfully!');
     };
 
@@ -476,7 +567,7 @@ export default function ExportInvoice() {
                         </h3>
                         <input
                             type="text"
-                            placeholder="Client Name"
+                            placeholder="Client name or company name"
                             className="input border-2! w-full mb-2"
                             required
                             value={tempClientData.name}
@@ -484,19 +575,6 @@ export default function ExportInvoice() {
                                 setTempClientData({
                                     ...tempClientData,
                                     name: e.target.value,
-                                })
-                            }
-                        />
-                        <input
-                            type="text"
-                            placeholder="Company Name"
-                            className="input border-2! w-full mb-2"
-                            required
-                            value={tempClientData.company}
-                            onChange={(e) =>
-                                setTempClientData({
-                                    ...tempClientData,
-                                    company: e.target.value,
                                 })
                             }
                         />
