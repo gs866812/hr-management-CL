@@ -127,12 +127,12 @@ export default function ExportInvoice() {
 
             if (data?.success) {
                 toast.success('Client info updated successfully');
+                await fetchClient(clientId);
                 setClientInfo(data.updatedClient); // 👈 update state with new data
+                setShowClientPopup(false);
             } else {
                 toast.warning(data?.message || 'Update may not have succeeded');
             }
-
-            setShowClientPopup(false);
         } catch (error) {
             console.error(error);
             toast.error(
