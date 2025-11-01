@@ -78,7 +78,7 @@ export default function ExportInvoice() {
                 params: {
                     month: form.month,
                     clientId,
-                    size: 0
+                    size: 0,
                 },
             });
             setOrders(data?.result || []);
@@ -296,27 +296,38 @@ export default function ExportInvoice() {
         doc.text(clientInfo?.address || 'Address', rightX + 20, infoY + 52);
 
         // ===== TABLE =====
+        // ===== TABLE =====
         const tableY = infoY + boxHeight + 35;
+
+        // 🧾 Define columns (your new layout)
         const tableColumns = [
             'No.',
-            'Order',
-            'Services',
-            'Images',
-            'Price',
             'Date',
+            'Services',
+            'Image QTY',
+            'Per Image',
+            'Sub Total',
         ];
 
-        const tableRows = selectedData.map((o, i) => [
-            i + 1,
-            o.orderName,
-            (o.needServices || []).join(', '),
-            o.orderQTY,
-            `$${o.orderPrice}`,
-            o.date || '—',
-        ]);
+        // 🧮 Map data rows
+        const tableRows = selectedData.map((o, i) => {
+            const qty = parseFloat(o.orderQTY) || 0;
+            const total = parseFloat(o.orderPrice) || 0;
+            const perImage = qty > 0 ? total / qty : 0;
 
+            return [
+                i + 1,
+                o.date || '—',
+                (o.needServices || []).join(', '),
+                qty,
+                `$${perImage.toFixed(2)}`,
+                `$${total.toFixed(2)}`,
+            ];
+        });
+
+        // 💰 Calculate grand total
         const totalAmount = selectedData.reduce(
-            (acc, o) => acc + (o.orderPrice || 0),
+            (acc, o) => acc + (parseFloat(o.orderPrice) || 0),
             0
         );
 
