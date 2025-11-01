@@ -110,6 +110,10 @@ export default function ExportInvoice() {
         );
     };
 
+    // 🪙 Determine currency symbol by client ID
+    const euroClients = ['WB_1008_69', 'WB_1025_92'];
+    const currencySymbol = euroClients.includes(clientId) ? '€' : '$';
+
     const handleSaveClient = async () => {
         try {
             if (!clientId) {
@@ -169,26 +173,21 @@ export default function ExportInvoice() {
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
 
-        const orange = [255, 138, 0]; // Vibrant orange
+        const orange = [255, 138, 0];
         const teal = [0, 153, 153];
-        const darkTeal = [0, 120, 120];
-        const lightOrange = [255, 200, 150];
         const gray = [70, 70, 70];
         const lightGray = [240, 240, 240];
         const white = [255, 255, 255];
 
-        // ===== HEADER BACKGROUND BLOCK =====
+        // ===== HEADER =====
         doc.setFillColor(...white);
         doc.rect(0, 0, pageWidth, 140, 'F');
-
-        // Orange accent strip at top
         doc.setFillColor(...orange);
         doc.rect(0, 0, pageWidth, 8, 'F');
 
         // ===== LOGO =====
         const logoUrl =
             'https://res.cloudinary.com/dny7zfbg9/image/upload/v1755954483/mqontecf1xao7znsh6cx.png';
-
         try {
             const img = await fetch(logoUrl)
                 .then((res) => res.blob())
@@ -200,16 +199,13 @@ export default function ExportInvoice() {
                             reader.readAsDataURL(blob);
                         })
                 );
-
             const logo = new Image();
             logo.src = img;
-
             await new Promise((resolve) => {
                 logo.onload = () => {
                     const desiredHeight = 70;
                     const aspectRatio = logo.width / logo.height;
                     const autoWidth = desiredHeight * aspectRatio;
-
                     doc.addImage(
                         img,
                         'PNG',
@@ -232,39 +228,50 @@ export default function ExportInvoice() {
             year: 'numeric',
         });
 
-        // ===== INVOICE TITLE WITH ORANGE ACCENT =====
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(32);
         doc.setTextColor(...teal);
         doc.text('INVOICE', pageWidth - margin - 150, 65);
-
-        // Orange underline accent
         doc.setFillColor(...orange);
         doc.rect(pageWidth - margin - 150, 72, 140, 4, 'F');
 
-        // ===== INVOICE INFO IN TEAL =====
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(11);
         doc.setTextColor(...gray);
         doc.text(`Invoice No: ${invoiceNumber}`, pageWidth - margin - 150, 95);
         doc.text(`Date: ${exportDate}`, pageWidth - margin - 150, 110);
 
-        // ===== BILL FROM / TO SECTION WITH COLORED BACKGROUNDS =====
+        // ===== BILL FROM / BILL TO =====
         const infoY = 135;
         const columnGap = 30;
         const boxWidth = (pageWidth - margin * 2 - columnGap) / 2;
-        const boxHeight = 85;
-
+        const baseBoxHeight = 85;
         const leftX = margin;
         const rightX = margin + boxWidth + columnGap;
 
-        // ----- BILL FROM BOX (TEAL WITH ORANGE ACCENT) -----
-        doc.setFillColor(...teal);
-        doc.rect(leftX, infoY, boxWidth, boxHeight, 'F');
+        const fromAddressLines = [
+            'Web Briks LLC',
+            '115 Senpara Parbota,',
+            'Begum Rokeya Avenue,',
+            'Mirpur-10, Dhaka-1216',
+        ];
 
-        // Orange accent bar on left side
+        const toAddress = clientInfo?.address || 'Address not provided';
+        const wrappedToAddress = doc.splitTextToSize(toAddress, boxWidth - 40);
+        const wrappedName = doc.splitTextToSize(
+            clientInfo?.name || 'Client',
+            boxWidth - 40
+        );
+        const dynamicBoxHeight = Math.max(
+            baseBoxHeight,
+            50 + wrappedToAddress.length * 10
+        );
+
+        // BILL FROM BOX
+        doc.setFillColor(...teal);
+        doc.rect(leftX, infoY, boxWidth, dynamicBoxHeight, 'F');
         doc.setFillColor(...orange);
-        doc.rect(leftX, infoY, 8, boxHeight, 'F');
+        doc.rect(leftX, infoY, 8, dynamicBoxHeight, 'F');
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
@@ -273,21 +280,17 @@ export default function ExportInvoice() {
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
-        doc.setTextColor(...white);
-        doc.text('Web Briks LLC', leftX + 20, infoY + 38);
-        doc.text('Web Briks LLC', leftX + 20.2, infoY + 38);
-        doc.text('Web Briks LLC', leftX + 20.4, infoY + 38);
-        doc.text('115 Senpara Parbota,', leftX + 20, infoY + 52);
-        doc.text('Begum Rokeya Avenue,', leftX + 20, infoY + 64);
-        doc.text('Mirpur-10, Dhaka-1216', leftX + 20, infoY + 76);
+        let yFrom = infoY + 38;
+        fromAddressLines.forEach((line) => {
+            doc.text(line, leftX + 20, yFrom);
+            yFrom += 12;
+        });
 
-        // ----- BILLED TO BOX (ORANGE WITH TEAL ACCENT) -----
+        // BILL TO BOX
         doc.setFillColor(...orange);
-        doc.rect(rightX, infoY, boxWidth, boxHeight, 'F');
-
-        // Teal accent bar on left side
+        doc.rect(rightX, infoY, boxWidth, dynamicBoxHeight, 'F');
         doc.setFillColor(...teal);
-        doc.rect(rightX, infoY, 8, boxHeight, 'F');
+        doc.rect(rightX, infoY, 8, dynamicBoxHeight, 'F');
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
@@ -296,17 +299,15 @@ export default function ExportInvoice() {
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
-        doc.setTextColor(...white);
-        doc.text(clientInfo.name, rightX + 20, infoY + 38);
-        doc.text(clientInfo.name, rightX + 20.2, infoY + 38);
-        doc.text(clientInfo.name, rightX + 20.4, infoY + 38);
-        doc.text(clientInfo?.address || 'Address', rightX + 20, infoY + 52);
+        let yTo = infoY + 38;
+        wrappedName.forEach((line) => {
+            doc.text(line, rightX + 20, yTo);
+            yTo += 12;
+        });
+        doc.text(wrappedToAddress, rightX + 20, yTo);
 
         // ===== TABLE =====
-        // ===== TABLE =====
-        const tableY = infoY + boxHeight + 35;
-
-        // 🧾 Define columns (your new layout)
+        const tableY = infoY + dynamicBoxHeight + 35;
         const tableColumns = [
             'No.',
             'Date',
@@ -316,23 +317,20 @@ export default function ExportInvoice() {
             'Sub Total',
         ];
 
-        // 🧮 Map data rows
         const tableRows = selectedData.map((o, i) => {
             const qty = parseFloat(o.orderQTY) || 0;
             const total = parseFloat(o.orderPrice) || 0;
             const perImage = qty > 0 ? total / qty : 0;
-
             return [
                 i + 1,
                 o.date || '—',
                 (o.needServices || []).join(', '),
                 qty,
-                `$${perImage.toFixed(2)}`,
-                `$${total.toFixed(2)}`,
+                `${currencySymbol}${perImage.toFixed(2)}`,
+                `${currencySymbol}${total.toFixed(2)}`,
             ];
         });
 
-        // 💰 Calculate grand total
         const totalAmount = selectedData.reduce(
             (acc, o) => acc + (parseFloat(o.orderPrice) || 0),
             0
@@ -356,39 +354,29 @@ export default function ExportInvoice() {
                 textColor: white,
                 fontStyle: 'bold',
                 halign: 'center',
-                fontSize: 10,
             },
-            bodyStyles: {
-                fillColor: white,
-            },
-            alternateRowStyles: {
-                fillColor: lightGray,
-            },
+            alternateRowStyles: { fillColor: lightGray },
             columnStyles: {
-                0: { halign: 'center' },
-                1: { halign: 'left' },
-                2: { halign: 'left' },
-                3: { halign: 'center' },
-                4: { halign: 'center' },
-                5: { halign: 'right' },
+                0: { halign: 'center', cellWidth: 35 },
+                1: { halign: 'center', cellWidth: 90 },
+                2: { halign: 'left', cellWidth: 150 },
+                3: { halign: 'center', cellWidth: 70 },
+                4: { halign: 'center', cellWidth: 80 },
+                5: { halign: 'center', cellWidth: 80 },
             },
             margin: { left: margin, right: margin },
-            tableWidth: 'auto',
         });
 
         const tableEndY = doc.lastAutoTable.finalY;
 
-        // ===== TOTAL BLOCK WITH ORANGE ACCENT =====
+        // ===== TOTAL BLOCK =====
         const totalY = tableEndY + 25;
         const totalBlockWidth = 180;
         const totalBlockHeight = 38;
         const totalBlockX = pageWidth - margin - totalBlockWidth;
 
-        // Orange background for total
         doc.setFillColor(...orange);
         doc.rect(totalBlockX, totalY, totalBlockWidth, totalBlockHeight, 'F');
-
-        // Teal accent bar on left side
         doc.setFillColor(...teal);
         doc.rect(totalBlockX, totalY, 8, totalBlockHeight, 'F');
 
@@ -396,35 +384,32 @@ export default function ExportInvoice() {
         doc.setFontSize(10);
         doc.setTextColor(...white);
         doc.text('TOTAL', totalBlockX + 22, totalY + 22);
-
         doc.setFontSize(12);
         doc.text(
-            `$${totalAmount.toFixed(2)}`,
+            `${currencySymbol}${totalAmount.toFixed(2)}`,
             pageWidth - margin - 12,
             totalY + 22,
             { align: 'right' }
         );
 
-        // ===== FOOTER WITH TEAL BAR =====
+        // ===== FOOTER =====
         const footerY = pageHeight - 40;
-
-        // Teal footer bar
         doc.setFillColor(...teal);
         doc.rect(0, footerY, pageWidth, 3, 'F');
 
         doc.setFontSize(9);
         doc.setTextColor(...gray);
-        doc.setFont('helvetica', 'normal');
         const footerText =
             'Web Briks LLC — Excellence in Editing and Design. For inquiry info@webbriks.com';
-        doc.text(footerText, pageWidth / 2, footerY + 25, { align: 'center' });
+        const wrappedFooter = doc.splitTextToSize(footerText, pageWidth - 100);
+        doc.text(wrappedFooter, pageWidth / 2, footerY + 25, {
+            align: 'center',
+        });
 
-        // Orange accent dots
         doc.setFillColor(...orange);
-        doc.circle(pageWidth / 2 - 180, footerY + 22, 2, 'F');
-        doc.circle(pageWidth / 2 + 180, footerY + 22, 2, 'F');
+        doc.circle(pageWidth / 2 - 200, footerY + 22, 2, 'F');
+        doc.circle(pageWidth / 2 + 200, footerY + 22, 2, 'F');
 
-        // ===== SAVE =====
         const fileName = `Invoice_${
             clientInfo?.name?.replace(/\s+/g, '_') || 'Client'
         }_${new Date().toISOString().slice(0, 10)}.pdf`;
