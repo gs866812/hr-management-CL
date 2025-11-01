@@ -78,6 +78,7 @@ export default function ExportInvoice() {
                 params: {
                     month: form.month,
                     clientId,
+                    size: 0
                 },
             });
             setOrders(data?.result || []);
@@ -471,6 +472,21 @@ export default function ExportInvoice() {
                 >
                     Load Orders
                 </button>
+                {/* Export Button */}
+                <div className="text-right">
+                    <button
+                        className={`btn flex items-center gap-2 text-white ${
+                            selectedOrders.length
+                                ? 'bg-violet-600 hover:bg-violet-700'
+                                : 'btn-disabled bg-gray-400'
+                        }`}
+                        disabled={!selectedOrders.length}
+                        onClick={handleExportPDF}
+                    >
+                        <FaFilePdf />
+                        Export PDF
+                    </button>
+                </div>
             </div>
 
             {/* Orders Table */}
@@ -541,22 +557,6 @@ export default function ExportInvoice() {
                     No orders found. Select a month and client to view orders.
                 </p>
             )}
-
-            {/* Export Button */}
-            <div className="mt-6 text-right">
-                <button
-                    className={`btn flex items-center gap-2 text-white ${
-                        selectedOrders.length
-                            ? 'bg-violet-600 hover:bg-violet-700'
-                            : 'btn-disabled bg-gray-400'
-                    }`}
-                    disabled={!selectedOrders.length}
-                    onClick={handleExportPDF}
-                >
-                    <FaFilePdf />
-                    Export PDF
-                </button>
-            </div>
 
             {/* Client Info Popup */}
             {showClientPopup && (
