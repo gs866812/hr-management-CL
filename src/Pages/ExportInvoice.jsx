@@ -80,6 +80,7 @@ export default function ExportInvoice() {
                     clientId,
                 },
             });
+            console.log(data);
             setOrders(data?.result || []);
         } catch (error) {
             toast.error('Failed to load orders');
@@ -110,7 +111,6 @@ export default function ExportInvoice() {
 
     const handleSaveClient = async () => {
         try {
-            // ensure clientId exists
             if (!clientId) {
                 toast.warning('Client ID is missing');
                 return;
@@ -125,13 +125,20 @@ export default function ExportInvoice() {
 
             const { data } = await axiosProtect.put('/update-client', payload);
 
-            if (data?.success) {
+            if (data?.success && data?.updatedClient) {
                 toast.success('Client info updated successfully');
-                await fetchClient(clientId);
-                setClientInfo(data.updatedClient); // 👈 update state with new data
+
+                // ✅ Update the client info directly from response
+                setClientInfo(data.updatedClient);
+
+                // ✅ Close the popup and clear temporary state
                 setShowClientPopup(false);
+                setTempClientData({ name: '', address: '' });
             } else {
-                toast.warning(data?.message || 'Update may not have succeeded');
+                toast.warning(
+                    data?.message || 'Unexpected response. Refetching...'
+                );
+                await fetchClient(clientId); // fallback to ensure latest data
             }
         } catch (error) {
             console.error(error);
@@ -310,14 +317,14 @@ export default function ExportInvoice() {
             o.orderName,
             (o.needServices || []).join(', '),
             o.orderQTY,
-            `$${o.orderPrice}`,
+            `$${parseFloat(o.orderPrice || 0).toFixed(2)}`,
             o.date || '—',
         ]);
 
-        const totalAmount = selectedData.reduce(
-            (acc, o) => acc + (o.orderPrice || 0),
-            0
-        );
+        const totalAmount = selectedData.reduce((acc, o) => {
+            const price = Number(o.orderPrice); // convert safely
+            return acc + (isNaN(price) ? 0 : price);
+        }, 0);
 
         autoTable(doc, {
             startY: tableY,
@@ -383,9 +390,7 @@ export default function ExportInvoice() {
             `$${totalAmount.toFixed(2)}`,
             pageWidth - margin - 12,
             totalY + 22,
-            {
-                align: 'right',
-            }
+            { align: 'right' }
         );
 
         // ===== FOOTER WITH TEAL BAR =====
