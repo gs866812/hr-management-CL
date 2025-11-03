@@ -251,9 +251,7 @@ export default function ExportInvoice() {
 
         const fromAddressLines = [
             'Web Briks LLC',
-            '115 Senpara Parbota,',
-            'Begum Rokeya Avenue,',
-            'Mirpur-10, Dhaka-1216',
+            '1209 Mountain Road PL NE, STE R, Albuquerque, NM 87110, US',
         ];
 
         const toAddress = clientInfo?.address || 'Address not provided';
