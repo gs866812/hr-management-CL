@@ -311,7 +311,7 @@ export default function ExportInvoice() {
         const tableColumns = [
             'No.',
             'Date',
-            'Services',
+            'Order Name',
             'Image QTY',
             'Per Image',
             'Sub Total',
@@ -324,7 +324,7 @@ export default function ExportInvoice() {
             return [
                 i + 1,
                 o.date || '—',
-                (o.needServices || []).join(', '),
+                o.orderName,
                 qty,
                 `${currencySymbol}${perImage.toFixed(2)}`,
                 `${currencySymbol}${total.toFixed(2)}`,
