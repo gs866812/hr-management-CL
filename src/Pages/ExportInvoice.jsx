@@ -26,6 +26,7 @@ export default function ExportInvoice() {
         name: '',
         address: '',
     });
+    const [invoiceNumber, setInvoiceNumber] = useState('');
 
     useEffect(() => {
         if (!form.month || !user?.email) return;
@@ -153,6 +154,17 @@ export default function ExportInvoice() {
         }
     };
 
+    async function fetchInvoiceNumber() {
+        const { data } = await axiosProtect.get('/invoice-number');
+        setInvoiceNumber(data.invoiceNumber);
+    }
+
+    useEffect(() => {
+        fetchInvoiceNumber();
+    }, []);
+
+    console.log(invoiceNumber);
+
     const handleExportPDF = async () => {
         if (!selectedOrders.length) {
             toast.warning('No orders selected');
@@ -168,254 +180,277 @@ export default function ExportInvoice() {
             return;
         }
 
-        const doc = new jsPDF('p', 'pt', 'a4');
-        const margin = 40;
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-
-        const orange = [255, 138, 0];
-        const teal = [0, 153, 153];
-        const gray = [70, 70, 70];
-        const lightGray = [240, 240, 240];
-        const white = [255, 255, 255];
-
-        // ===== HEADER =====
-        doc.setFillColor(...white);
-        doc.rect(0, 0, pageWidth, 140, 'F');
-        doc.setFillColor(...orange);
-        doc.rect(0, 0, pageWidth, 8, 'F');
-
-        // ===== LOGO =====
-        const logoUrl =
-            'https://res.cloudinary.com/dny7zfbg9/image/upload/v1755954483/mqontecf1xao7znsh6cx.png';
         try {
-            const img = await fetch(logoUrl)
-                .then((res) => res.blob())
-                .then(
-                    (blob) =>
-                        new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onload = () => resolve(reader.result);
-                            reader.readAsDataURL(blob);
-                        })
-                );
-            const logo = new Image();
-            logo.src = img;
-            await new Promise((resolve) => {
-                logo.onload = () => {
-                    const desiredHeight = 70;
-                    const aspectRatio = logo.width / logo.height;
-                    const autoWidth = desiredHeight * aspectRatio;
-                    doc.addImage(
-                        img,
-                        'PNG',
-                        margin,
-                        40,
-                        autoWidth,
-                        desiredHeight
+            await axiosProtect.post('/invoice-number');
+
+            const doc = new jsPDF('p', 'pt', 'a4');
+            const margin = 40;
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+
+            const orange = [255, 138, 0];
+            const teal = [0, 153, 153];
+            const gray = [70, 70, 70];
+            const lightGray = [240, 240, 240];
+            const white = [255, 255, 255];
+
+            // ===== HEADER =====
+            doc.setFillColor(...white);
+            doc.rect(0, 0, pageWidth, 140, 'F');
+            doc.setFillColor(...orange);
+            doc.rect(0, 0, pageWidth, 8, 'F');
+
+            // ===== LOGO =====
+            const logoUrl =
+                'https://res.cloudinary.com/dny7zfbg9/image/upload/v1755954483/mqontecf1xao7znsh6cx.png';
+            try {
+                const img = await fetch(logoUrl)
+                    .then((res) => res.blob())
+                    .then(
+                        (blob) =>
+                            new Promise((resolve) => {
+                                const reader = new FileReader();
+                                reader.onload = () => resolve(reader.result);
+                                reader.readAsDataURL(blob);
+                            })
                     );
-                    resolve();
-                };
+                const logo = new Image();
+                logo.src = img;
+                await new Promise((resolve) => {
+                    logo.onload = () => {
+                        const desiredHeight = 70;
+                        const aspectRatio = logo.width / logo.height;
+                        const autoWidth = desiredHeight * aspectRatio;
+                        doc.addImage(
+                            img,
+                            'PNG',
+                            margin,
+                            40,
+                            autoWidth,
+                            desiredHeight
+                        );
+                        resolve();
+                    };
+                });
+            } catch (err) {
+                console.warn('⚠️ Logo failed to load.', err);
+            }
+
+            const exportDate = new Date().toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric',
             });
-        } catch (err) {
-            console.warn('⚠️ Logo failed to load.', err);
-        }
 
-        const invoiceNumber = `NO. 000001`;
-        const exportDate = new Date().toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric',
-        });
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(32);
+            doc.setTextColor(...teal);
+            doc.text('INVOICE', pageWidth - margin - 150, 65);
+            doc.setFillColor(...orange);
+            doc.rect(pageWidth - margin - 150, 72, 140, 4, 'F');
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(32);
-        doc.setTextColor(...teal);
-        doc.text('INVOICE', pageWidth - margin - 150, 65);
-        doc.setFillColor(...orange);
-        doc.rect(pageWidth - margin - 150, 72, 140, 4, 'F');
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            doc.setTextColor(...gray);
+            doc.text(
+                `Invoice No: ${invoiceNumber}`,
+                pageWidth - margin - 150,
+                95
+            );
+            doc.text(`Date: ${exportDate}`, pageWidth - margin - 150, 110);
 
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(11);
-        doc.setTextColor(...gray);
-        doc.text(`Invoice No: ${invoiceNumber}`, pageWidth - margin - 150, 95);
-        doc.text(`Date: ${exportDate}`, pageWidth - margin - 150, 110);
+            // ===== BILL FROM / BILL TO =====
+            const infoY = 135;
+            const columnGap = 30;
+            const boxWidth = (pageWidth - margin * 2 - columnGap) / 2;
+            const baseBoxHeight = 85;
+            const leftX = margin;
+            const rightX = margin + boxWidth + columnGap;
 
-        // ===== BILL FROM / BILL TO =====
-        const infoY = 135;
-        const columnGap = 30;
-        const boxWidth = (pageWidth - margin * 2 - columnGap) / 2;
-        const baseBoxHeight = 85;
-        const leftX = margin;
-        const rightX = margin + boxWidth + columnGap;
-
-        const fromAddressLines = [
-            'Web Briks LLC',
-            '1209 Mountain Road PL NE,' ,
-            'STE R, Albuquerque, NM 87110, US',
-        ];
-
-        const toAddress = clientInfo?.address || 'Address not provided';
-        const wrappedToAddress = doc.splitTextToSize(toAddress, boxWidth - 40);
-        const wrappedName = doc.splitTextToSize(
-            clientInfo?.name || 'Client',
-            boxWidth - 40
-        );
-        const dynamicBoxHeight = Math.max(
-            baseBoxHeight,
-            50 + wrappedToAddress.length * 10
-        );
-
-        // BILL FROM BOX
-        doc.setFillColor(...teal);
-        doc.rect(leftX, infoY, boxWidth, dynamicBoxHeight, 'F');
-        doc.setFillColor(...orange);
-        doc.rect(leftX, infoY, 8, dynamicBoxHeight, 'F');
-
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.setTextColor(...white);
-        doc.text('BILL FROM', leftX + 20, infoY + 18);
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        let yFrom = infoY + 38;
-        fromAddressLines.forEach((line) => {
-            doc.text(line, leftX + 20, yFrom);
-            yFrom += 12;
-        });
-
-        // BILL TO BOX
-        doc.setFillColor(...orange);
-        doc.rect(rightX, infoY, boxWidth, dynamicBoxHeight, 'F');
-        doc.setFillColor(...teal);
-        doc.rect(rightX, infoY, 8, dynamicBoxHeight, 'F');
-
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.setTextColor(...white);
-        doc.text('BILL TO', rightX + 20, infoY + 18);
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        let yTo = infoY + 38;
-        wrappedName.forEach((line) => {
-            doc.text(line, rightX + 20, yTo);
-            yTo += 12;
-        });
-        doc.text(wrappedToAddress, rightX + 20, yTo);
-
-        // ===== TABLE =====
-        const tableY = infoY + dynamicBoxHeight + 35;
-        const tableColumns = [
-            'No.',
-            'Date',
-            'Order Name',
-            'Image QTY',
-            'Per Image',
-            'Sub Total',
-        ];
-
-        const tableRows = selectedData.map((o, i) => {
-            const qty = parseFloat(o.orderQTY) || 0;
-            const total = parseFloat(o.orderPrice) || 0;
-            const perImage = qty > 0 ? total / qty : 0;
-            return [
-                i + 1,
-                o.date || '—',
-                o.orderName,
-                qty,
-                `${currencySymbol}${perImage.toFixed(2)}`,
-                `${currencySymbol}${total.toFixed(2)}`,
+            const fromAddressLines = [
+                'Web Briks LLC',
+                '1209 Mountain Road PL NE,',
+                'STE R, Albuquerque, NM 87110, US',
             ];
-        });
 
-        const totalAmount = selectedData.reduce(
-            (acc, o) => acc + (parseFloat(o.orderPrice) || 0),
-            0
-        );
+            const toAddress = clientInfo?.address || 'Address not provided';
+            const wrappedToAddress = doc.splitTextToSize(
+                toAddress,
+                boxWidth - 40
+            );
+            const wrappedName = doc.splitTextToSize(
+                clientInfo?.name || 'Client',
+                boxWidth - 40
+            );
+            const dynamicBoxHeight = Math.max(
+                baseBoxHeight,
+                50 + wrappedToAddress.length * 10
+            );
 
-        autoTable(doc, {
-            startY: tableY,
-            head: [tableColumns],
-            body: tableRows,
-            theme: 'plain',
-            showHead: 'firstPage',
-            styles: {
-                fontSize: 9,
-                cellPadding: 8,
-                textColor: [50, 50, 50],
-                lineColor: [220, 220, 220],
-                lineWidth: 0.5,
-            },
-            headStyles: {
-                fillColor: teal,
-                textColor: white,
-                fontStyle: 'bold',
-                halign: 'center',
-            },
-            alternateRowStyles: { fillColor: lightGray },
-            tableWidth: 'auto',
-            columnStyles: {
-                0: { halign: 'center' },
-                1: { halign: 'center' },
-                2: { halign: 'left' },
-                3: { halign: 'center' },
-                4: { halign: 'center' },
-                5: { halign: 'center' },
-            },
-            margin: { left: margin, right: margin },
-        });
+            // BILL FROM BOX
+            doc.setFillColor(...teal);
+            doc.rect(leftX, infoY, boxWidth, dynamicBoxHeight, 'F');
+            doc.setFillColor(...orange);
+            doc.rect(leftX, infoY, 8, dynamicBoxHeight, 'F');
 
-        const tableEndY = doc.lastAutoTable.finalY;
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.setTextColor(...white);
+            doc.text('BILL FROM', leftX + 20, infoY + 18);
 
-        // ===== TOTAL BLOCK =====
-        const totalY = tableEndY + 25;
-        const totalBlockWidth = 180;
-        const totalBlockHeight = 38;
-        const totalBlockX = pageWidth - margin - totalBlockWidth;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            let yFrom = infoY + 38;
+            fromAddressLines.forEach((line) => {
+                doc.text(line, leftX + 20, yFrom);
+                yFrom += 12;
+            });
 
-        doc.setFillColor(...orange);
-        doc.rect(totalBlockX, totalY, totalBlockWidth, totalBlockHeight, 'F');
-        doc.setFillColor(...teal);
-        doc.rect(totalBlockX, totalY, 8, totalBlockHeight, 'F');
+            // BILL TO BOX
+            doc.setFillColor(...orange);
+            doc.rect(rightX, infoY, boxWidth, dynamicBoxHeight, 'F');
+            doc.setFillColor(...teal);
+            doc.rect(rightX, infoY, 8, dynamicBoxHeight, 'F');
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.setTextColor(...white);
-        doc.text('TOTAL', totalBlockX + 22, totalY + 22);
-        doc.setFontSize(12);
-        doc.text(
-            `${currencySymbol}${totalAmount.toFixed(2)}`,
-            pageWidth - margin - 12,
-            totalY + 22,
-            { align: 'right' }
-        );
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.setTextColor(...white);
+            doc.text('BILL TO', rightX + 20, infoY + 18);
 
-        // ===== FOOTER =====
-        const footerY = pageHeight - 40;
-        doc.setFillColor(...teal);
-        doc.rect(0, footerY, pageWidth, 3, 'F');
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            let yTo = infoY + 38;
+            wrappedName.forEach((line) => {
+                doc.text(line, rightX + 20, yTo);
+                yTo += 12;
+            });
+            doc.text(wrappedToAddress, rightX + 20, yTo);
 
-        doc.setFontSize(9);
-        doc.setTextColor(...gray);
-        const footerText =
-            'Web Briks LLC — Excellence in Editing and Design. For inquiry info@webbriks.com';
-        const wrappedFooter = doc.splitTextToSize(footerText, pageWidth - 100);
-        doc.text(wrappedFooter, pageWidth / 2, footerY + 25, {
-            align: 'center',
-        });
+            // ===== TABLE =====
+            const tableY = infoY + dynamicBoxHeight + 35;
+            const tableColumns = [
+                'No.',
+                'Date',
+                'Order Name',
+                'Image QTY',
+                'Per Image',
+                'Sub Total',
+            ];
 
-        doc.setFillColor(...orange);
-        doc.circle(pageWidth / 2 - 200, footerY + 22, 2, 'F');
-        doc.circle(pageWidth / 2 + 200, footerY + 22, 2, 'F');
+            const tableRows = selectedData.map((o, i) => {
+                const qty = parseFloat(o.orderQTY) || 0;
+                const total = parseFloat(o.orderPrice) || 0;
+                const perImage = qty > 0 ? total / qty : 0;
+                return [
+                    i + 1,
+                    o.date || '—',
+                    o.orderName,
+                    qty,
+                    `${currencySymbol}${perImage.toFixed(2)}`,
+                    `${currencySymbol}${total.toFixed(2)}`,
+                ];
+            });
 
-        const fileName = `Invoice_${
-            clientInfo?.name?.replace(/\s+/g, '_') || 'Client'
-        }_${new Date().toISOString().slice(0, 10)}.pdf`;
+            const totalAmount = selectedData.reduce(
+                (acc, o) => acc + (parseFloat(o.orderPrice) || 0),
+                0
+            );
 
-        doc.save(fileName);
-        toast.success('🧾 Invoice PDF exported successfully!');
+            autoTable(doc, {
+                startY: tableY,
+                head: [tableColumns],
+                body: tableRows,
+                theme: 'plain',
+                showHead: 'firstPage',
+                styles: {
+                    fontSize: 9,
+                    cellPadding: 8,
+                    textColor: [50, 50, 50],
+                    lineColor: [220, 220, 220],
+                    lineWidth: 0.5,
+                },
+                headStyles: {
+                    fillColor: teal,
+                    textColor: white,
+                    fontStyle: 'bold',
+                    halign: 'center',
+                },
+                alternateRowStyles: { fillColor: lightGray },
+                tableWidth: 'auto',
+                columnStyles: {
+                    0: { halign: 'center' },
+                    1: { halign: 'center' },
+                    2: { halign: 'left' },
+                    3: { halign: 'center' },
+                    4: { halign: 'center' },
+                    5: { halign: 'center' },
+                },
+                margin: { left: margin, right: margin },
+            });
+
+            const tableEndY = doc.lastAutoTable.finalY;
+
+            // ===== TOTAL BLOCK =====
+            const totalY = tableEndY + 25;
+            const totalBlockWidth = 180;
+            const totalBlockHeight = 38;
+            const totalBlockX = pageWidth - margin - totalBlockWidth;
+
+            doc.setFillColor(...orange);
+            doc.rect(
+                totalBlockX,
+                totalY,
+                totalBlockWidth,
+                totalBlockHeight,
+                'F'
+            );
+            doc.setFillColor(...teal);
+            doc.rect(totalBlockX, totalY, 8, totalBlockHeight, 'F');
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.setTextColor(...white);
+            doc.text('TOTAL', totalBlockX + 22, totalY + 22);
+            doc.setFontSize(12);
+            doc.text(
+                `${currencySymbol}${totalAmount.toFixed(2)}`,
+                pageWidth - margin - 12,
+                totalY + 22,
+                { align: 'right' }
+            );
+
+            // ===== FOOTER =====
+            const footerY = pageHeight - 40;
+            doc.setFillColor(...teal);
+            doc.rect(0, footerY, pageWidth, 3, 'F');
+
+            doc.setFontSize(9);
+            doc.setTextColor(...gray);
+            const footerText =
+                'Web Briks LLC — Excellence in Editing and Design. For inquiry info@webbriks.com';
+            const wrappedFooter = doc.splitTextToSize(
+                footerText,
+                pageWidth - 100
+            );
+            doc.text(wrappedFooter, pageWidth / 2, footerY + 25, {
+                align: 'center',
+            });
+
+            doc.setFillColor(...orange);
+            doc.circle(pageWidth / 2 - 200, footerY + 22, 2, 'F');
+            doc.circle(pageWidth / 2 + 200, footerY + 22, 2, 'F');
+
+            const fileName = `Invoice_${
+                clientInfo?.name?.replace(/\s+/g, '_') || 'Client'
+            }_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+            doc.save(fileName);
+            toast.success('🧾 Invoice PDF exported successfully!');
+            fetchInvoiceNumber();
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to generate invoice');
+        }
     };
 
     return (
