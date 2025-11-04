@@ -34,10 +34,17 @@ import NoticeBoard from './Component/NoticeBoard/NoticeBoard';
 import DebitPage from './Pages/Debit';
 import ClientDetails from './Component/ClientDetails/ClientDetails';
 import ExportInvoice from './Pages/ExportInvoice';
+import CreatePassword from './Pages/CreatePassword';
+import CompleteProfile from './Pages/CompleteProfile';
 
 export const router = createBrowserRouter([
     { path: '/login', element: <Login /> },
     { path: '/resetPassword', element: <ResetPassword /> },
+    { path: '/create-account', element: <CreatePassword /> },
+    {
+        path: '/complete-profile',
+        element: <CompleteProfile />,
+    },
     {
         path: '/',
         element: (
@@ -55,6 +62,14 @@ export const router = createBrowserRouter([
                 element: (
                     <ProtectedRole>
                         <MyExpense />
+                    </ProtectedRole>
+                ),
+            },
+            {
+                path: '/complete-profile',
+                element: (
+                    <ProtectedRole>
+                        <CompleteProfile />
                     </ProtectedRole>
                 ),
             },
