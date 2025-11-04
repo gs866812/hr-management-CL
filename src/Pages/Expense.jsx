@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { FaRegEdit } from "react-icons/fa";
+import { FaRegEdit } from 'react-icons/fa';
 import { ContextData } from '../DataProvider';
 import DatePicker from 'react-datepicker';
 import { useDispatch, useSelector } from 'react-redux';
@@ -12,9 +12,15 @@ import { selectUserName } from '../redux/userNameSlice';
 import { setRefetch } from '../redux/refetchSlice';
 
 const Expense = () => {
-    const { categories, userName, currentPage, setCurrentPage, itemsPerPage, setItemsPerPage } = useContext(ContextData);
+    const {
+        categories,
+        userName,
+        currentPage,
+        setCurrentPage,
+        itemsPerPage,
+        setItemsPerPage,
+    } = useContext(ContextData);
     const axiosSecure = useAxiosSecure();
-
 
     // ***************************************************************************************************************
     const [expenseList, setExpenseList] = useState([]); // State to store categories
@@ -23,15 +29,13 @@ const Expense = () => {
     const [editId, setEditId] = useState(''); // State to store categories
 
     const [expenseCount, setExpenseCount] = useState(0); // State to store
-    
-
-
 
     const [formData, setFormData] = useState({
-        userName: "",
+        userName: '',
         expenseDate: new Date(),
         expenseName: '',
         expenseCategory: '',
+        office: '',
         expenseAmount: '',
         expenseStatus: '',
         expenseNote: '',
@@ -46,15 +50,17 @@ const Expense = () => {
     // ***************************************************************************************************************
     useEffect(() => {
         if (expenseList && editId) {
-            const foundExpense = expenseList.find(ex => ex._id === editId);
+            const foundExpense = expenseList.find((ex) => ex._id === editId);
             setExpenseItem(foundExpense);
 
             if (foundExpense) {
                 // Convert date string to Date object if needed
-                const expenseDate = foundExpense.expenseDate ? new Date(foundExpense.expenseDate) : new Date();
+                const expenseDate = foundExpense.expenseDate
+                    ? new Date(foundExpense.expenseDate)
+                    : new Date();
                 setFormData({ ...foundExpense, expenseDate: expenseDate });
             } else {
-                console.warn("Expense not found for ID:", editId); // Corrected ID variable
+                console.warn('Expense not found for ID:', editId); // Corrected ID variable
             }
         }
     }, [editId, expenseList]);
@@ -68,7 +74,6 @@ const Expense = () => {
         document.getElementById('edit-expense-modal').showModal();
         setEditId(id);
         formData.userName = presentUser?.userName;
-
     };
     // ***************************************************************************************************************
     const handleChange = (e) => {
@@ -84,10 +89,16 @@ const Expense = () => {
         e.preventDefault();
         const newAmount = parseFloat(formData.expenseAmount);
         // 1. Prepare the data:
-        const dataToUpdate = { ...formData, userName: userName, expenseAmount: newAmount }; // Create a copy  
+        const dataToUpdate = {
+            ...formData,
+            userName: userName,
+            expenseAmount: newAmount,
+        }; // Create a copy
         try {
-
-            const response = await axiosSecure.put(`/editExpense/${editId}`, dataToUpdate); // Or your API endpoint
+            const response = await axiosSecure.put(
+                `/editExpense/${editId}`,
+                dataToUpdate
+            ); // Or your API endpoint
 
             if (response.data.message == 'Expense updated successfully') {
                 dispatch(setRefetch(!refetch));
@@ -96,17 +107,17 @@ const Expense = () => {
                 toast.success(response.data.message);
             } else if (response.data.message == 'No changes found') {
                 toast.warn(response.data.message);
-            } else
-                toast.warn(response.data.message);
-
+            } else toast.warn(response.data.message);
         } catch (error) {
-            toast.error("Error updating expense", error.message);
+            toast.error('Error updating expense', error.message);
         }
     };
     // ***************************************************************************************************************
     const handleReset = () => {
         if (expenseItem) {
-            const expenseDate = expenseItem.expenseDate ? new Date(expenseItem.expenseDate) : new Date();
+            const expenseDate = expenseItem.expenseDate
+                ? new Date(expenseItem.expenseDate)
+                : new Date();
             setFormData({ ...expenseItem, expenseDate: expenseDate });
         }
     };
@@ -131,14 +142,18 @@ const Expense = () => {
                 for (let i = 1; i <= maxPagesToShow; i++) {
                     pageNumbers.push(i);
                 }
-                pageNumbers.push("...", totalPages);
+                pageNumbers.push('...', totalPages);
             } else if (currentPage > totalPages - halfMaxPagesToShow) {
-                pageNumbers.push(1, "...");
-                for (let i = totalPages - maxPagesToShow + 1; i <= totalPages; i++) {
+                pageNumbers.push(1, '...');
+                for (
+                    let i = totalPages - maxPagesToShow + 1;
+                    i <= totalPages;
+                    i++
+                ) {
                     pageNumbers.push(i);
                 }
             } else {
-                pageNumbers.push(1, "...");
+                pageNumbers.push(1, '...');
                 for (
                     let i = currentPage - halfMaxPagesToShow;
                     i <= currentPage + halfMaxPagesToShow;
@@ -146,7 +161,7 @@ const Expense = () => {
                 ) {
                     pageNumbers.push(i);
                 }
-                pageNumbers.push("...", totalPages);
+                pageNumbers.push('...', totalPages);
             }
         }
 
@@ -177,25 +192,33 @@ const Expense = () => {
     // ----------------------------------------------------------------
     // ***************************************************************************************************************
 
-
     return (
         <div>
             {/******************************************************************************************************/}
-            <div className='mt-3'>
-                <div className='flex items-center justify-between'>
-                    <h2 className='text-2xl'>Recent expense list:</h2>
+            <div className="mt-3">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-2xl">Recent expense list:</h2>
                     <div className="flex gap-2">
                         <label className="flex gap-1 items-center py-1 px-3 border rounded-md border-gray-500">
                             <input
                                 type="text"
                                 name="search"
                                 placeholder="Search"
-                                onChange={(e) => setSearchExpense(e.target.value)}
+                                onChange={(e) =>
+                                    setSearchExpense(e.target.value)
+                                }
                                 className=" hover:outline-none outline-none border-none"
                                 size="13"
                             />
                         </label>
-                        <button className="bg-[#6E3FF3] text-white px-2 rounded-md py-1 cursor-pointer" onClick={() => document.getElementById('add-new-expense-modal').showModal()}>
+                        <button
+                            className="bg-[#6E3FF3] text-white px-2 rounded-md py-1 cursor-pointer"
+                            onClick={() =>
+                                document
+                                    .getElementById('add-new-expense-modal')
+                                    .showModal()
+                            }
+                        >
                             Add new expense
                         </button>
                     </div>
@@ -212,74 +235,115 @@ const Expense = () => {
                             <th>Amount</th>
                             <th>Category</th>
                             <th>Status</th>
+                            <th>Office</th>
                             <th>Note</th>
                             <th>User</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {
-                            expenseList.length > 0 ? (
-                                expenseList.map((expenseList, index) => {
-                                    return (
-                                        <tr key={index}>
-                                            <td>{moment(expenseList.expenseDate).format("DD.MM.YYYY")}</td>
-                                            <td>{expenseList.expenseName}</td>
-                                            <td>{parseFloat(expenseList.expenseAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                            <td>{expenseList.expenseCategory}</td>
-                                            <td>{expenseList.expenseStatus}</td>
-                                            <td>{expenseList.expenseNote}</td>
-                                            <td>{expenseList.userName}</td>
-                                            <td className='w-[5%]'>
-                                                <div className='flex justify-center'>
-                                                    <FaRegEdit className='cursor-pointer' onClick={() => handleEditExpense(expenseList._id)} />
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            ) : (
-                                <tr>
-                                    <td colSpan="8" className="text-center">No record found</td>
-                                </tr>
-                            )
-                        }
+                        {expenseList.length > 0 ? (
+                            expenseList.map((expenseList, index) => {
+                                return (
+                                    <tr key={index}>
+                                        <td>
+                                            {moment(
+                                                expenseList.expenseDate
+                                            ).format('DD.MM.YYYY')}
+                                        </td>
+                                        <td>{expenseList.expenseName}</td>
+                                        <td>
+                                            {parseFloat(
+                                                expenseList.expenseAmount
+                                            ).toLocaleString(undefined, {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            })}
+                                        </td>
+                                        <td>{expenseList.expenseCategory}</td>
+                                        <td>{expenseList.expenseStatus}</td>
+                                        <td>{expenseList.office}</td>
+                                        <td>{expenseList.expenseNote}</td>
+                                        <td>{expenseList.userName}</td>
+                                        <td className="w-[5%]">
+                                            <div className="flex justify-center">
+                                                <FaRegEdit
+                                                    className="cursor-pointer"
+                                                    onClick={() =>
+                                                        handleEditExpense(
+                                                            expenseList._id
+                                                        )
+                                                    }
+                                                />
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        ) : (
+                            <tr>
+                                <td colSpan="9" className="text-center">
+                                    No record found
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
             {/******************************************************************************************************/}
-            <ExpenseModal onExpenseData={getExpenseData} searchOption={searchExpense} />
+            <ExpenseModal
+                onExpenseData={getExpenseData}
+                searchOption={searchExpense}
+            />
             {/****************************************Edit modal********************************************************/}
             <div>
-                <dialog id="edit-expense-modal" className="modal overflow-y-scroll">
+                <dialog
+                    id="edit-expense-modal"
+                    className="modal overflow-y-scroll"
+                >
                     <div className="modal-box">
                         <form method="dialog">
-                            <button className="btn btn-sm btn-circle btn-ghost absolute right-0 top-0">✕</button>
+                            <button className="btn btn-sm btn-circle btn-ghost absolute right-0 top-0">
+                                ✕
+                            </button>
                         </form>
                         <h3 className="font-bold text-lg">Edit Expense 99</h3>
-                        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto mt-5 custom-border rounded p-5">
+                        <form
+                            onSubmit={handleSubmit}
+                            className="max-w-2xl mx-auto mt-5 custom-border rounded p-5"
+                        >
                             <div className="grid grid-cols-2 gap-1">
                                 {/* Expense Name */}
                                 <div className="flex items-center">
-                                    <label htmlFor="expenseName" className="font-medium">Date:</label>
+                                    <label
+                                        htmlFor="expenseName"
+                                        className="font-medium"
+                                    >
+                                        Date:
+                                    </label>
                                 </div>
-                                <div className='border border-[#e2e8f0] rounded-md'>
+                                <div className="border border-[#e2e8f0] rounded-md">
                                     <label>
                                         <DatePicker
                                             dateFormat="dd.MM.yyyy"
                                             selected={formData.expenseDate} // Pass the Date object
-                                            onChange={handleDateChange}        // Handle Date object
+                                            onChange={handleDateChange} // Handle Date object
                                             placeholderText="Select date"
-                                            maxDate={new Date}
+                                            maxDate={new Date()}
                                             required
-                                            className="py-1 px-2 rounded-md !border-none"
+                                            className="py-1 px-2 rounded-md border-none!"
                                         />
                                     </label>
                                 </div>
                                 <div className="flex items-center">
-                                    <label htmlFor="expenseName" className="font-medium">Expense Name:</label>
+                                    <label
+                                        htmlFor="expenseName"
+                                        className="font-medium"
+                                    >
+                                        Expense Name:
+                                    </label>
                                 </div>
-                                <div className=''>
+                                <div className="">
                                     <input
                                         type="text"
                                         id="expenseName"
@@ -293,7 +357,12 @@ const Expense = () => {
 
                                 {/* Expense Category */}
                                 <div className="flex items-center">
-                                    <label htmlFor="expenseCategory" className="font-medium">Expense Category:</label>
+                                    <label
+                                        htmlFor="expenseCategory"
+                                        className="font-medium"
+                                    >
+                                        Expense Category:
+                                    </label>
                                 </div>
                                 <div>
                                     <select
@@ -304,19 +373,64 @@ const Expense = () => {
                                         className="w-full p-1 border border-gray-300 rounded-md custom-border"
                                         required
                                     >
-                                        <option value="">Select category</option>
+                                        <option value="">
+                                            Select category
+                                        </option>
                                         {categories.map((category) => (
-                                            <option key={category.expenseCategory} value={category.expenseCategory}>
+                                            <option
+                                                key={category.expenseCategory}
+                                                value={category.expenseCategory}
+                                            >
                                                 {category.expenseCategory}
                                             </option>
                                         ))}
                                     </select>
+                                </div>
 
+                                {/* Expense Category */}
+                                <div className="flex items-center">
+                                    <label
+                                        htmlFor="office"
+                                        className="font-medium"
+                                    >
+                                        Office:
+                                    </label>
+                                </div>
+                                <div>
+                                    <select
+                                        id="expenseCategory"
+                                        name="expenseCategory"
+                                        value={formData.office}
+                                        onChange={handleChange}
+                                        className="w-full p-1 border border-gray-300 rounded-md custom-border capitalize"
+                                        required
+                                    >
+                                        <option value="">Select office</option>
+                                        {['dhaka', 'gaibandha'].map(
+                                            (category) => (
+                                                <option
+                                                    key={
+                                                        category
+                                                    }
+                                                    value={
+                                                        category
+                                                    }
+                                                >
+                                                    {category}
+                                                </option>
+                                            )
+                                        )}
+                                    </select>
                                 </div>
 
                                 {/* Expense Amount */}
                                 <div className="flex items-center">
-                                    <label htmlFor="expenseAmount" className="font-medium">Expense Amount:</label>
+                                    <label
+                                        htmlFor="expenseAmount"
+                                        className="font-medium"
+                                    >
+                                        Expense Amount:
+                                    </label>
                                 </div>
                                 <div>
                                     <input
@@ -332,7 +446,12 @@ const Expense = () => {
 
                                 {/* Expense Status */}
                                 <div className="flex items-center">
-                                    <label htmlFor="expenseStatus" className="font-medium">Expense Status:</label>
+                                    <label
+                                        htmlFor="expenseStatus"
+                                        className="font-medium"
+                                    >
+                                        Expense Status:
+                                    </label>
                                 </div>
                                 <div>
                                     <select
@@ -346,13 +465,20 @@ const Expense = () => {
                                         <option value="">Select status</option>
                                         <option value="Pending">Pending</option>
                                         <option value="Paid">Paid</option>
-                                        <option value="Partial payment">Partial payment</option>
+                                        <option value="Partial payment">
+                                            Partial payment
+                                        </option>
                                     </select>
                                 </div>
 
                                 {/* Expense Note */}
                                 <div className="flex items-center">
-                                    <label htmlFor="expenseNote" className="font-medium">Expense Note:</label>
+                                    <label
+                                        htmlFor="expenseNote"
+                                        className="font-medium"
+                                    >
+                                        Expense Note:
+                                    </label>
                                 </div>
                                 <div>
                                     <textarea
@@ -369,8 +495,8 @@ const Expense = () => {
 
                             {/* Submit Button */}
                             <div className="mt-6 flex gap-2">
-
-                                <button onClick={handleReset}
+                                <button
+                                    onClick={handleReset}
                                     type="reset"
                                     className="w-full bg-yellow-500 text-white p-2 rounded-md transition-colors cursor-pointer"
                                 >
@@ -400,10 +526,14 @@ const Expense = () => {
                     {renderPageNumbers().map((page, index) => (
                         <button
                             key={index}
-                            onClick={() => typeof page === "number" && handlePageClick(page)}
-                            className={`py-2 px-5 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600 ${currentPage === page ? "!bg-yellow-600" : ""
-                                }`}
-                            disabled={typeof page !== "number"}
+                            onClick={() =>
+                                typeof page === 'number' &&
+                                handlePageClick(page)
+                            }
+                            className={`py-2 px-5 bg-[#6E3FF3] text-white rounded-md hover:bg-yellow-600 ${
+                                currentPage === page ? 'bg-yellow-600!' : ''
+                            }`}
+                            disabled={typeof page !== 'number'}
                         >
                             {page}
                         </button>
@@ -430,7 +560,6 @@ const Expense = () => {
                 </div>
             )}
             {/******************************************************************************************************/}
-
         </div>
     );
 };

@@ -222,6 +222,7 @@ const ExpenseTable = () => {
                             <th>Amount</th>
                             <th>Category</th>
                             <th>Status</th>
+                            <th>Office</th>
                             <th>Note</th>
                             <th>User</th>
                             <th>Action</th>
@@ -236,6 +237,7 @@ const ExpenseTable = () => {
                                     <td>{parseFloat(exp.expenseAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                     <td>{exp.expenseCategory}</td>
                                     <td>{exp.expenseStatus}</td>
+                                    <td className='capitalize'>{exp.office}</td>
                                     <td>{exp.expenseNote}</td>
                                     <td>{exp.userName}</td>
                                     <td><FaRegEdit/></td>
@@ -243,7 +245,7 @@ const ExpenseTable = () => {
                                 </tr>
                             ))
                         ) : (
-                            <tr><td colSpan="8" className="text-center">No record found</td></tr>
+                            <tr><td colSpan="9" className="text-center">No record found</td></tr>
                         )}
                     </tbody>
                 </table>
