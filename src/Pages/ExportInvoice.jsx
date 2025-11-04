@@ -112,7 +112,7 @@ export default function ExportInvoice() {
     };
 
     // 🪙 Determine currency symbol by client ID
-    const euroClients = ['WB_1008_69', 'WB_1025_92'];
+    const euroClients = ['WB_1008_69', 'WB_1025_92', 'WB1030-98'];
     const currencySymbol = euroClients.includes(clientId) ? '€' : '$';
 
     const handleSaveClient = async () => {
