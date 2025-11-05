@@ -102,6 +102,7 @@ const Earnings = () => {
                         page: currentPage,
                         size: itemsPerPage,
                         search: searchEarnings,
+                        month: selectedMonth
                     },
                 });
 
@@ -328,7 +329,7 @@ const Earnings = () => {
                 </h2>
                 <div className="flex gap-2 flex-wrap">
                     <input
-                        className="border border-gray-300 rounded px-2 py-1"
+                        className="border! border-gray-300! rounded px-2 py-1"
                         type="text"
                         placeholder="Search client, month, status, date"
                         value={searchEarnings}
@@ -338,7 +339,7 @@ const Earnings = () => {
                         }}
                     />
                     <select
-                        className="border border-gray-300 rounded px-2 py-1"
+                        className="border! border-gray-300! rounded px-2 py-1"
                         value={selectedMonth}
                         onChange={(e) => {
                             setSelectedMonth(e.target.value);
@@ -542,7 +543,7 @@ const Earnings = () => {
 
             {/* ===== Status Change Modal ===== */}
             <dialog id="status-change-modal" className="modal">
-                <div className="modal-box w-full max-w-lg border-2 !border-primary">
+                <div className="modal-box w-full max-w-lg border-2 border-primary!">
                     <form method="dialog">
                         <button className="btn btn-sm btn-circle btn-error absolute right-2 top-2 text-white">
                             ✕
@@ -602,7 +603,7 @@ const Earnings = () => {
                                                       )
                                                     : 'e.g., 320.00'
                                             }
-                                            className="input !border !border-primary w-full"
+                                            className="input border! border-primary! w-full"
                                         />
                                     </div>
                                     <div>
@@ -622,7 +623,7 @@ const Earnings = () => {
                                                     ? String(statusItem.charge)
                                                     : 'e.g., 5.00'
                                             }
-                                            className="input !border !border-primary w-full"
+                                            className="input border! border-primary! w-full"
                                         />
                                     </div>
                                 </div>
@@ -647,7 +648,7 @@ const Earnings = () => {
                                                       )
                                                     : 'e.g., 120.00'
                                             }
-                                            className="input !border !border-primary w-full"
+                                            className="input border! border-primary! w-full"
                                         />
                                     </div>
 
@@ -661,7 +662,7 @@ const Earnings = () => {
                                             type="text"
                                             value={fmt2(previewBdt)}
                                             readOnly
-                                            className="input !border !border-primary w-full bg-gray-100 font-semibold"
+                                            className="input border! border-primary! w-full bg-gray-100 font-semibold"
                                         />
                                         <p className="text-xs text-gray-500 mt-1">
                                             Formula: (Total USD − Charge) × Rate
