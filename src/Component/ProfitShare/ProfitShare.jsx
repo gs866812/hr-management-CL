@@ -244,40 +244,42 @@ const ProfitShare = () => {
     // *****************************************************************
     const handleTransferProfit = async (e) => {
         e.preventDefault();
-        if (!selectedMonth || !profitBalance) {
-            toast.error('Please fill all required fields');
+
+        if (!profitBalance) {
+            toast.error('Please enter an amount to transfer');
             return;
         }
 
-        const [month, year] = selectedMonth.split('-');
         const transferAmount = parseFloat(profitBalance);
+        const currentYear = new Date().getFullYear();
 
-        if (transferAmount > monthlyRemainingProfitBalance) {
-            toast.error('Cannot transfer more than available monthly profit');
+        if (transferAmount > final) {
+            toast.error('Cannot transfer more than available yearly profit');
             return;
         }
 
         try {
             const res = await axiosSecure.post('/transferMonthlyProfit', {
-                month,
-                year,
+                month: selectedMonth.split("-")[0],
+                year: currentYear,
                 transferAmount,
                 userName: currentUser?.userName,
+                useYearly: true,
             });
+            console.log(res)
 
             if (res.data.insertedId) {
-                toast.success('Balance transfer successful!');
+                toast.success('Yearly balance transfer successful!');
                 dispatch(setRefetch(!refetch));
                 setProfitBalance('');
-                setSelectedMonth('');
-                setMonthlyProfitBalance(0);
-                setMonthlyRemainingProfitBalance(0);
+                setSelectedMonth('')
                 document.getElementById('transfer-profit-balance').close();
             } else {
-                toast.error('Transfer failed');
+                toast.error(res.data.message || 'Transfer failed');
             }
         } catch (error) {
-            toast.error('Error transfer profit balance');
+            console.error('❌ Error transferring yearly profit:', error);
+            toast.error('Error transferring yearly profit');
         }
     };
     // *****************************************************************
@@ -330,7 +332,7 @@ const ProfitShare = () => {
 
                 <div className="flex gap-2">
                     <button
-                        className="!border-[#6E3FF3] border-[1px] px-4 py-2 rounded text-[#6E3FF3] hover:bg-[#6E3FF3] hover:text-white"
+                        className="border-[#6E3FF3]! border- px-4 py-2 rounded text-[#6E3FF3] hover:bg-[#6E3FF3] hover:text-white"
                         onClick={() =>
                             document
                                 .getElementById('add-shareholder-modal')
@@ -344,7 +346,7 @@ const ProfitShare = () => {
                     </button>
 
                     <button
-                        className="!border-[#6E3FF3] border-[1px] px-4 py-2 rounded text-[#6E3FF3] hover:bg-[#6E3FF3] hover:text-white"
+                        className="border-[#6E3FF3]! border- px-4 py-2 rounded text-[#6E3FF3] hover:bg-[#6E3FF3] hover:text-white"
                         onClick={() =>
                             document
                                 .getElementById('transfer-profit-balance')
@@ -463,7 +465,7 @@ const ProfitShare = () => {
                                         email: selectedUser?.email || '',
                                     });
                                 }}
-                                className="!border !border-gray-300 px-3 py-2 rounded w-full"
+                                className="border! border-gray-300! px-3 py-2 rounded w-full"
                             >
                                 <option value="">Select Shareholder</option>
                                 {shareHolders.map((s, i) => (
@@ -483,7 +485,7 @@ const ProfitShare = () => {
                                 required
                                 value={selectedMonth}
                                 onChange={handleMonthChange}
-                                className="!border !border-gray-300 px-3 py-2 rounded w-full"
+                                className="border! border-gray-300! px-3 py-2 rounded w-full"
                             >
                                 <option value="">Select Month</option>
                                 {availableMonths.map((m, i) => (
@@ -499,21 +501,21 @@ const ProfitShare = () => {
 
                         {/* 🔹 Yearly Profit Balance */}
                         <div>
-                            <label className="block font-semibold mb-1">
-                                Net Available Profit (This Year):
+                            <label className="block font-semibold">
+                                Available Yearly Profit:
                             </label>
                             <input
                                 type="text"
                                 readOnly
-                                value={numberFormat(final)}
+                                value={numberFormat(final || 0)}
                                 className="border px-3 py-2 rounded w-full bg-gray-100"
                             />
                         </div>
 
                         {/* 🔹 Distribution Amount */}
                         <div>
-                            <label className="block font-semibold mb-1">
-                                Amount to Distribute:
+                            <label className="block font-semibold">
+                                Amount to transfer:
                             </label>
                             <input
                                 type="number"
@@ -524,7 +526,7 @@ const ProfitShare = () => {
                                 onChange={(e) =>
                                     setProfitBalance(parseFloat(e.target.value))
                                 }
-                                className="!border !border-gray-300 px-3 py-2 rounded w-full"
+                                className="border! border-gray-300! px-3 py-2 rounded w-full"
                             />
                         </div>
 
@@ -543,7 +545,7 @@ const ProfitShare = () => {
                                         note: e.target.value,
                                     })
                                 }
-                                className="!border !border-gray-300 px-3 py-2 rounded w-full resize-none"
+                                className="border! border-gray-300! px-3 py-2 rounded w-full resize-none"
                             ></textarea>
                         </div>
 
@@ -567,7 +569,7 @@ const ProfitShare = () => {
                         </button>
                     </form>
                     <h3 className="font-bold text-lg mb-3">
-                        Transfer Monthly Profit
+                        Transfer Yearly Profit ({new Date().getFullYear()})
                     </h3>
 
                     <form onSubmit={handleTransferProfit} className="space-y-4">
@@ -579,7 +581,7 @@ const ProfitShare = () => {
                                 required
                                 value={selectedMonth}
                                 onChange={handleMonthChange}
-                                className="!border !border-gray-300 px-3 py-2 rounded w-full"
+                                className="border! border-gray-300! px-3 py-2 rounded w-full"
                             >
                                 <option value="">Select month</option>
                                 {availableMonths.map((m, i) => (
@@ -595,15 +597,13 @@ const ProfitShare = () => {
 
                         <div>
                             <label className="block font-semibold">
-                                Available Profit for selected month:{' '}
-                                {`Total: (${monthlyProfitBalance})`}
+                                Available Profit for this year:{' '}
+                                {`Total: (${final})`}
                             </label>
                             <input
                                 type="text"
                                 readOnly
-                                value={numberFormat(
-                                    monthlyRemainingProfitBalance || 0
-                                )}
+                                value={final}
                                 className="border px-3 py-2 rounded w-full bg-gray-100"
                             />
                         </div>
@@ -616,12 +616,12 @@ const ProfitShare = () => {
                                 type="number"
                                 required
                                 min={1}
-                                max={monthlyRemainingProfitBalance}
+                                max={final}
                                 value={profitBalance}
                                 onChange={(e) =>
                                     setProfitBalance(parseFloat(e.target.value))
                                 }
-                                className="!border !border-gray-300 px-3 py-2 rounded w-full"
+                                className="border! border-gray-300! px-3 py-2 rounded w-full"
                             />
                         </div>
 
@@ -656,7 +656,7 @@ const ProfitShare = () => {
                                 value={newShareholder.shareHoldersName}
                                 onChange={handleShareholderChange}
                                 required
-                                className="!border !border-gray-300 px-3 py-2 rounded w-full"
+                                className="border! border-gray-300! px-3 py-2 rounded w-full"
                             />
                         </div>
 
@@ -671,7 +671,7 @@ const ProfitShare = () => {
                                 onChange={handleShareholderChange}
                                 required
                                 maxLength={11}
-                                className="!border !border-gray-300 px-3 py-2 rounded w-full"
+                                className="border! border-gray-300! px-3 py-2 rounded w-full"
                                 pattern="\d*"
                                 inputMode="numeric"
                             />
@@ -687,7 +687,7 @@ const ProfitShare = () => {
                                 value={newShareholder.email}
                                 onChange={handleShareholderChange}
                                 required
-                                className="!border !border-gray-300 px-3 py-2 rounded w-full"
+                                className="border! border-gray-300! px-3 py-2 rounded w-full"
                             />
                         </div>
 
@@ -701,7 +701,7 @@ const ProfitShare = () => {
                                 value={newShareholder.userName}
                                 onChange={handleShareholderChange}
                                 required
-                                className="!border !border-gray-300 px-3 py-2 rounded w-full"
+                                className="border! border-gray-300! px-3 py-2 rounded w-full"
                             />
                         </div>
 
