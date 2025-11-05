@@ -8,6 +8,7 @@ import { ContextData } from '../DataProvider';
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { format } from 'date-fns';
 
 jsPDF.API.autoTable = autoTable;
 
@@ -257,7 +258,7 @@ export default function ExportInvoice() {
                 pageWidth - margin - 150,
                 95
             );
-            doc.text(`Date: ${exportDate}`, pageWidth - margin - 150, 110);
+            doc.text(`Date: ${format(exportDate, "PPP")}`, pageWidth - margin - 150, 110);
 
             // ===== BILL FROM / BILL TO =====
             const infoY = 135;
@@ -343,7 +344,7 @@ export default function ExportInvoice() {
                 const perImage = qty > 0 ? total / qty : 0;
                 return [
                     i + 1,
-                    o.date || '—',
+                    format(o.date, 'PPP'),
                     o.orderName,
                     qty,
                     `${currencySymbol}${perImage.toFixed(2)}`,
@@ -564,15 +565,15 @@ export default function ExportInvoice() {
                                             className="checkbox checkbox-sm border-2! border-violet-600!"
                                         />
                                     </td>
-                                    <td>{o.date || '—'}</td>
+                                    <td>{format(o.date, 'PPP')}</td>
                                     <td>{o.clientID}</td>
                                     <td>{o.orderName}</td>
                                     <td>{o.orderQTY}</td>
                                     <td>{o.orderPrice}</td>
-                                    <td>{o.orderDeadLine}</td>
+                                    <td>{format(o.orderDeadLine, 'PPP')}</td>
                                     <td>
                                         <span
-                                            className={`badge ${
+                                            className={`badge text-white ${
                                                 o.orderStatus === 'Delivered'
                                                     ? 'badge-success'
                                                     : o.orderStatus === 'Hold'
