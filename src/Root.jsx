@@ -13,15 +13,15 @@ const Root = () => {
             </header>
 
             {/* Main Content */}
-            <div className="flex flex-grow overflow-hidden">
+            <div className="flex grow overflow-hidden">
                 {/* Scrollable Sidebar */}
                 <div className="w-[20%] h-[calc(100vh-64px)] overflow-y-auto px-4 custom-scrollbar shadow-right shadow-xl my-2">
                     <Navbar />
                 </div>
 
                 {/* Scrollable Outlet Container */}
-                <div className="w-[80%] h-[calc(100vh-64px)] px-2 my-2">
-                    <div className="h-full overflow-y-auto pr-2">
+                <div className="w-[80%] h-[calc(100vh-64px)] my-2">
+                    <div className="h-full overflow-y-auto">
                         <Outlet />
                     </div>
                 </div>

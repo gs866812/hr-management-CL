@@ -13,6 +13,7 @@ const AdminAddEmployee = () => {
         email: '',
         eid: '',
         salary: '',
+        branch: 'dhaka',
         role: 'employee',
     });
     const [loading, setLoading] = useState(false);
@@ -85,7 +86,10 @@ const AdminAddEmployee = () => {
 
         setLoading(true);
         try {
-            const res = await axiosSecure.post('/employees/add-employee', payload);
+            const res = await axiosSecure.post(
+                '/employees/add-employee',
+                payload
+            );
 
             if (res?.data?.success) {
                 Swal.fire({
@@ -202,6 +206,24 @@ const AdminAddEmployee = () => {
                         required
                     >
                         {roles.map((r) => (
+                            <option key={r} value={r}>
+                                {r.toLowerCase()}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* branch */}
+                <div>
+                    <span className="label-text">Branch</span>
+                    <select
+                        name="branch"
+                        value={form.branch}
+                        onChange={handleChange}
+                        className="select border-2! border-primary! w-full capitalize"
+                        required
+                    >
+                        {['dhaka', 'gaibandha'].map((r) => (
                             <option key={r} value={r}>
                                 {r.toLowerCase()}
                             </option>

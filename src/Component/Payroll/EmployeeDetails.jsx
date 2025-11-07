@@ -593,7 +593,7 @@ const EmployeeDetails = () => {
         </div>
 
         {/* table */}
-        <div className="overflow-auto !rounded-b-2xl">
+        <div className="overflow-auto rounded-b-2xl!">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 sticky top-0 z-10">
               {isRoster ? (

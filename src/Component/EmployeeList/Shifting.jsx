@@ -30,6 +30,8 @@ const Shifting = () => {
     return arr.filter((e) => !isDeactivated(e));
   }, [employeeList]);
 
+  console.log(activeEmployees)
+
   const getEmpByEmail = (email) =>
     (Array.isArray(employeeList) ? employeeList : []).find((e) => e.email === email);
 
@@ -239,7 +241,7 @@ const Shifting = () => {
 
             {/* Active employees ONLY */}
             <div className="mb-4">
-              <div className="rounded p-2 h-40 overflow-y-auto !border !border-gray-300">
+              <div className="rounded p-2 h-40 overflow-y-auto border! border-gray-300!">
                 {activeEmployees.map((emp) => (
                   <label
                     key={emp.email}
@@ -247,7 +249,7 @@ const Shifting = () => {
                   >
                     <input
                       type="checkbox"
-                      className="checkbox !border !border-gray-300"
+                      className="checkbox border! border-gray-300!"
                       checked={selectedEmployees.some((e) => e.email === emp.email)}
                       onChange={(e) => handleEmployeeCheckboxChange(e, emp)}
                     />
@@ -266,7 +268,7 @@ const Shifting = () => {
             </div>
 
             <select
-              className="select select-bordered w-full mb-4 !border !border-gray-300"
+              className="select select-bordered w-full mb-4 border! border-gray-300!"
               value={selectedShift}
               onChange={handleShiftingChange}
               required
@@ -285,7 +287,7 @@ const Shifting = () => {
                   onChange={(e) => setOTHours(e.target.value)}
                   type="text"
                   placeholder="Enter OT hours"
-                  className="w-full mb-4 p-2 !border !border-gray-300 rounded-md"
+                  className="w-full mb-4 p-2 border! border-gray-300! rounded-md"
                   required
                 />
               </section>
