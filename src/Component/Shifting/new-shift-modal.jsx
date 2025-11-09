@@ -1,17 +1,13 @@
-'use client';
 import { useContext, useState } from 'react';
 import { toast } from 'react-toastify';
-import useAxiosSecure from '../../utils/useAxiosSecure';
 import { ContextData } from '../../DataProvider';
 
 export default function NewShiftModal({ refetch }) {
     const { user } = useContext(ContextData);
 
-    const axiosSecure = useAxiosSecure();
-
     const [form, setForm] = useState({
         shiftName: '',
-        branch: '',
+        branch: 'dhaka',
         startTime: '',
         endTime: '',
         lateAfterMinutes: 0,
@@ -30,44 +26,49 @@ export default function NewShiftModal({ refetch }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         if (!user) return;
-        
+
         try {
             setLoading(true);
 
-            const res = await fetch(`${import.meta.env.VITE_BASE_URL}/shifts/new-shift`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    ...form,
-                    userEmail: user?.email,
-                }),
-            });
+            const res = await fetch(
+                `${import.meta.env.VITE_BASE_URL}/shifts/new-shift`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ...form,
+                        userEmail: user?.email,
+                    }),
+                }
+            );
+            console.log(res);
 
             const data = await res.json();
-            console.log(data);
-            toast.success(data?.message || 'Shift created successfully');
 
-            setForm({
-                shiftName: '',
-                branch: '',
-                startTime: '',
-                endTime: '',
-                lateAfterMinutes: 5,
-                absentAfterMinutes: 60,
-                allowOT: true,
-            });
+            if (res.ok && data.success) {
+                toast.success(data?.message || 'Shift created successfully');
 
-            document.getElementById('new-shift-modal').close();
-            refetch?.();
+                setForm({
+                    shiftName: '',
+                    branch: 'dhaka',
+                    startTime: '',
+                    endTime: '',
+                    lateAfterMinutes: 0,
+                    absentAfterMinutes: 5,
+                    allowOT: true,
+                });
+
+                const modal = document.getElementById('new-shift-modal');
+                if (modal && typeof modal.close === 'function') modal.close();
+
+                refetch?.();
+            } else {
+                toast.error(data?.message || 'Failed to create shift');
+            }
         } catch (err) {
-            console.error(err);
-            toast.error(
-                err.response?.data?.message || 'Failed to create shift'
-            );
+            console.error('Error creating shift:', err);
+            toast.error('Something went wrong while creating the shift');
         } finally {
             setLoading(false);
         }
@@ -82,7 +83,9 @@ export default function NewShiftModal({ refetch }) {
                     {/* Shift Name */}
                     <div>
                         <label className="label">
-                            <span className="label-text">Shift Name</span>
+                            <span className="label-text" disabled>
+                                Shift Name
+                            </span>
                         </label>
                         <input
                             type="text"
@@ -105,9 +108,11 @@ export default function NewShiftModal({ refetch }) {
                             value={form.branch}
                             onChange={handleChange}
                             required
-                            className="select capitalize w-full border! border-primary!"
+                            className="select border! border-primary! w-full capitalize"
                         >
-                            <option disabled={true}>Select Branch</option>
+                            <option value="" disabled>
+                                Select Branch
+                            </option>
                             {['dhaka', 'gaibandha'].map((branch) => (
                                 <option key={branch} value={branch}>
                                     {branch}

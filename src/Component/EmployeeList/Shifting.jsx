@@ -6,22 +6,22 @@ import useAxiosProtect from '../../utils/useAxiosProtect';
 import { toast } from 'react-toastify';
 import { setRefetch } from '../../redux/refetchSlice';
 import Swal from 'sweetalert2';
-import { PlusIcon } from 'lucide-react';
+import { PlusIcon, Clock, Building2, CalendarClock, User } from 'lucide-react';
 import NewShiftModal from '../Shifting/new-shift-modal';
 
-const Shifting = () => {
+export default function Shifting() {
     const { employeeList, user, currentUser } = useContext(ContextData);
-
     const dispatch = useDispatch();
     const refetch = useSelector((state) => state.refetch.refetch);
 
-    const [selectedShift, setSelectedShift] = useState('');
-    const [selectedEmployees, setSelectedEmployees] = useState([]);
-    const [shiftedEmployees, setShiftedEmployees] = useState([]);
-    const [OTHours, setOTHours] = useState(0);
-
     const axiosSecure = useAxiosSecure();
     const axiosProtect = useAxiosProtect();
+
+    const [shiftList, setShiftList] = useState([]);
+    const [shiftedEmployees, setShiftedEmployees] = useState([]);
+    const [selectedEmployees, setSelectedEmployees] = useState([]);
+    const [selectedShift, setSelectedShift] = useState('');
+    const [OTHours, setOTHours] = useState(0);
 
     // ---------- Helpers ----------
     const isDeactivated = (emp) =>
@@ -32,18 +32,14 @@ const Shifting = () => {
         return arr.filter((e) => !isDeactivated(e));
     }, [employeeList]);
 
-    console.log(activeEmployees);
-
     const getEmpByEmail = (email) =>
         (Array.isArray(employeeList) ? employeeList : []).find(
             (e) => e.email === email
         );
 
-    // For a shift record, figure out the "real" employee email
     const getRealEmailFromShift = (rec) =>
         rec?.shiftName === 'OT list' ? rec?.actualEmail : rec?.email;
 
-    // Only show shift records whose underlying employee is ACTIVE
     const visibleShifted = useMemo(() => {
         const arr = Array.isArray(shiftedEmployees) ? shiftedEmployees : [];
         return arr.filter((rec) => {
@@ -53,7 +49,26 @@ const Shifting = () => {
         });
     }, [shiftedEmployees, employeeList]);
 
-    // ---------- Effects ----------
+    // ---------- Fetch Dynamic Shifts ----------
+    useEffect(() => {
+        const fetchShifts = async () => {
+            try {
+                const { data } = await axiosProtect.get('/shifts/get-shifts', {
+                    params: { userEmail: user?.email },
+                });
+                if (data.success) setShiftList(data.shifts || []);
+                else toast.error(data?.message || 'Failed to load shifts');
+            } catch (error) {
+                console.error('❌ Error fetching shift list:', error);
+                toast.error('Error fetching shift list');
+            }
+        };
+        if (user?.email) fetchShifts();
+    }, [user?.email, refetch]);
+
+    console.log(shiftList);
+
+    // ---------- Fetch Shifted Employees ----------
     useEffect(() => {
         const fetchShiftedEmployee = async () => {
             try {
@@ -65,23 +80,20 @@ const Shifting = () => {
                 );
                 setShiftedEmployees(Array.isArray(data) ? data : []);
             } catch (error) {
-                toast.error('Error fetching shift data');
+                toast.error('Error fetching shifted employees');
             }
         };
         fetchShiftedEmployee();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [refetch]);
+    }, [refetch, axiosProtect, user?.email]);
 
-    // ---------- Handlers ----------
+    // ---------- Assign Shifts ----------
     const handleEmployeeCheckboxChange = (e, employee) => {
         const { checked } = e.target;
-        if (checked) {
-            setSelectedEmployees((prev) => [...prev, employee]);
-        } else {
-            setSelectedEmployees((prev) =>
-                prev.filter((emp) => emp.email !== employee.email)
-            );
-        }
+        setSelectedEmployees((prev) =>
+            checked
+                ? [...prev, employee]
+                : prev.filter((emp) => emp.email !== employee.email)
+        );
     };
 
     const handleShiftingChange = (e) => {
@@ -97,114 +109,192 @@ const Shifting = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!selectedEmployees.length || !selectedShift) {
-            return toast.error(
-                'Please select at least one employee and a shift.'
-            );
-        }
+
+        if (!selectedEmployees.length || !selectedShift)
+            return toast.error('Select at least one employee and a shift.');
 
         try {
             const payload = {
-                employees: selectedEmployees, // these are already active-only
+                employees: selectedEmployees,
                 shift: selectedShift,
                 OTFor: Number(OTHours) || 0,
             };
 
-            const response = await axiosSecure.post('/assign-shift', payload);
+            const res = await axiosSecure.post('/assign-shift', payload);
             dispatch(setRefetch(!refetch));
 
             const {
                 insertedNames = [],
                 updatedNames = [],
                 skippedNames = [],
-            } = response.data || {};
+            } = res.data || {};
 
-            if (insertedNames.length) {
+            if (insertedNames.length)
                 Swal.fire({
-                    title: 'Added',
+                    title: '✅ Added',
                     text: insertedNames.join(', '),
                     icon: 'success',
                 });
-            }
-            if (updatedNames.length) {
+            if (updatedNames.length)
                 Swal.fire({
-                    title: 'Updated',
+                    title: 'ℹ️ Updated',
                     text: updatedNames.join(', '),
                     icon: 'info',
                 });
-            }
-            if (skippedNames.length) {
+            if (skippedNames.length)
                 Swal.fire({
-                    title: 'Skipped',
+                    title: '⚠️ Skipped',
                     text: skippedNames.join(', '),
                     icon: 'warning',
                 });
-            }
 
             handleReset();
             document.getElementById('addEmployeeToShift')?.close();
         } catch (err) {
-            toast.error('Failed to assign shift.');
+            console.error('Error assigning shift:', err);
+            toast.error('Failed to assign shift');
         }
     };
 
+    // ---------- Remove OT ----------
     const handleRemoveOT = async (id) => {
-        if (!id) return toast.error('Invalid ID for removal.');
+        if (!id) return toast.error('Invalid record');
         try {
             const response = await axiosSecure.delete(`/removeOT/${id}`);
             if (response.data.message === 'success') {
                 dispatch(setRefetch(!refetch));
                 toast.success('Removed successfully');
-            } else {
-                toast.error('Failed to remove');
-            }
+            } else toast.error('Failed to remove');
         } catch (error) {
             toast.error('Error removing OT');
         }
     };
 
-    // ---------- Render helpers ----------
+    // ---------- Render Shift Overview ----------
+    const renderShiftOverview = () => {
+        if (!shiftList.length)
+            return (
+                <p className="text-gray-500 text-sm italic text-center">
+                    No shifts found.
+                </p>
+            );
+
+        return (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                {shiftList.map((shift) => (
+                    <div
+                        key={shift._id}
+                        className="p-4 border rounded-xl bg-base-200 shadow-sm hover:shadow-md transition-all"
+                    >
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-lg font-semibold text-primary capitalize">
+                                {shift.shiftName}
+                            </h3>
+                            <span
+                                className={`text-xs px-2 py-1 rounded-full ${
+                                    shift.allowOT
+                                        ? 'bg-green-100 text-green-600'
+                                        : 'bg-red-100 text-red-600'
+                                }`}
+                            >
+                                {shift.allowOT ? 'OT Allowed' : 'No OT'}
+                            </span>
+                        </div>
+
+                        <div className="text-sm space-y-1">
+                            <p className="flex items-center gap-2">
+                                <Building2 size={14} />
+                                Branch:{' '}
+                                <span className="capitalize">
+                                    {shift.branch}
+                                </span>
+                            </p>
+                            <p className="flex items-center gap-2">
+                                <Clock size={14} />
+                                {shift.startTime} → {shift.endTime}
+                            </p>
+                            <p className="flex items-center gap-2">
+                                <CalendarClock size={14} />
+                                Late: {shift.lateAfterMinutes}m, Absent:{' '}
+                                {shift.absentAfterMinutes}m
+                            </p>
+                            <p className="flex items-center gap-2">
+                                <User size={14} /> {shift.createdBy}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                                {new Date(shift.createdAt).toLocaleDateString()}
+                            </p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
+    // ---------- Render Employees in Each Shift ----------
     const renderShiftList = (shiftName) => {
+        console.log('🔹 ShiftName:', shiftName);
+        console.log(
+            '🔹 visibleShifted:',
+            visibleShifted.map((e) => e.shiftName)
+        );
+
+        const shift = shiftList.find((s) => s.shiftName === shiftName);
         const rows = visibleShifted.filter(
             (emp) => emp.shiftName === shiftName
         );
         if (!rows.length) return null;
 
-        return rows.map((rec, idx) => {
-            const realEmail = getRealEmailFromShift(rec);
-            const emp = getEmpByEmail(realEmail);
-            const photo = emp?.photo;
-            const designation = emp?.designation;
-
-            return (
-                <div
-                    key={`${rec._id || idx}`}
-                    className="flex items-center gap-2 mb-4"
-                >
-                    <img
-                        src={photo}
-                        alt={rec.fullName}
-                        className="w-8 h-8 object-cover rounded-md border"
-                    />
-                    <div>
-                        <h2 className="text-xl font-bold">
-                            {rec.fullName}
-                            <span className="text-sm text-gray-500 ml-1">
-                                ({designation || '—'})
+        return (
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">{shiftName}</h3>
+                    {['admin', 'hr-admin', 'developer'].includes(
+                        currentUser?.role?.toLowerCase()
+                    ) &&
+                        shift?.branch && (
+                            <span className="text-sm text-gray-500">
+                                Branch: {shift.branch}
                             </span>
-                        </h2>
-                    </div>
-                    {shiftName === 'OT list' && (
-                        <button
-                            onClick={() => handleRemoveOT(rec._id)}
-                            className="ml-auto cursor-pointer text-red-500 text-sm"
-                        >
-                            Remove
-                        </button>
-                    )}
+                        )}
                 </div>
-            );
-        });
+
+                {rows.map((rec, idx) => {
+                    const realEmail = getRealEmailFromShift(rec);
+                    const emp = getEmpByEmail(realEmail);
+                    if (!emp) return null;
+
+                    return (
+                        <div
+                            key={rec._id || idx}
+                            className="flex items-center gap-3 bg-base-200 p-3 rounded-lg shadow-sm hover:shadow-md transition-all"
+                        >
+                            <img
+                                src={emp?.photo}
+                                alt={rec.fullName}
+                                className="w-10 h-10 object-cover rounded-md border"
+                            />
+                            <div>
+                                <h2 className="font-semibold text-gray-800">
+                                    {rec.fullName}
+                                </h2>
+                                <p className="text-xs text-gray-500">
+                                    {emp.designation || '—'}
+                                </p>
+                            </div>
+                            {shiftName === 'OT list' && (
+                                <button
+                                    onClick={() => handleRemoveOT(rec._id)}
+                                    className="ml-auto text-red-500 hover:text-red-600 text-sm font-medium"
+                                >
+                                    Remove
+                                </button>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        );
     };
 
     const currentShiftLetter = (email) => {
@@ -214,88 +304,83 @@ const Shifting = () => {
         return found?.shiftName ? found.shiftName.charAt(0).toUpperCase() : '';
     };
 
+    // ---------- Render ----------
     return (
-        <div className="p-6 space-y-6">
-            <div className='flex items-center justify-between'>
-                <h1 className="text-3xl font-bold">Employee Shifting</h1>
+        <div className="p-6 space-y-8">
+            {/* Header */}
+            <div className="flex items-center justify-between flex-wrap gap-3">
+                <h1 className="text-3xl font-bold text-gray-800">
+                    Employee Shifting
+                </h1>
 
-                <button className="btn btn-primary" onClick={() => document.getElementById('new-shift-modal').showModal()}>
-                    <PlusIcon size={18} />
-                    New Shift</button>
-
-            </div>
-            <section>
-                {/* Tabs (Morning, Evening, Night, General, OT list) */}
-                <div className="tabs tabs-box overflow-hidden mb-4">
-                    <input
-                        type="radio"
-                        name="my_tabs_6"
-                        className="tab"
-                        aria-label="Morning shift"
-                        defaultChecked
-                    />
-                    <div className="tab-content bg-base-100 border-base-300 p-6">
-                        {renderShiftList('Morning')}
-                    </div>
-
-                    <input
-                        type="radio"
-                        name="my_tabs_6"
-                        className="tab"
-                        aria-label="Evening shift"
-                    />
-                    <div className="tab-content bg-base-100 border-base-300 p-6">
-                        {renderShiftList('Evening')}
-                    </div>
-
-                    <input
-                        type="radio"
-                        name="my_tabs_6"
-                        className="tab"
-                        aria-label="Night shift"
-                    />
-                    <div className="tab-content bg-base-100 border-base-300 p-6">
-                        {renderShiftList('Night')}
-                    </div>
-
-                    {currentUser?.role !== 'teamLeader' && (
-                        <>
-                            <input
-                                type="radio"
-                                name="my_tabs_6"
-                                className="tab"
-                                aria-label="General shift"
-                            />
-                            <div className="tab-content bg-base-100 border-base-300 p-6">
-                                {renderShiftList('General')}
-                            </div>
-                        </>
-                    )}
-
-                    <input
-                        type="radio"
-                        name="my_tabs_6"
-                        className="tab"
-                        aria-label="OT list"
-                    />
-                    <div className="tab-content bg-base-100 border-base-300 p-6">
-                        {renderShiftList('OT list')}
-                    </div>
+                <div className="flex gap-2">
+                    <button
+                        className="btn btn-outline btn-primary flex items-center gap-1"
+                        onClick={() =>
+                            document
+                                .getElementById('new-shift-modal')
+                                .showModal()
+                        }
+                    >
+                        <PlusIcon size={18} /> New Shift
+                    </button>
 
                     <button
-                        className="btn text-x"
+                        className="btn btn-primary"
                         onClick={() =>
                             document
                                 .getElementById('addEmployeeToShift')
                                 .showModal()
                         }
                     >
-                        +
+                        + Assign Employees
                     </button>
+                </div>
+            </div>
+
+            {/* Shift Overview */}
+            <div>
+                <h2 className="text-xl font-semibold mb-2">
+                    📋 Shift Overview
+                </h2>
+                {renderShiftOverview()}
+            </div>
+
+            <section>
+                <div className="tabs tabs-lifted">
+                    {shiftList.map((shift, i) => (
+                        <>
+                            <input
+                                key={`tab-${shift._id}`}
+                                type="radio"
+                                name="shift_tabs"
+                                className="tab"
+                                aria-label={shift.shiftName}
+                                defaultChecked={i === 0}
+                            />
+                            <div
+                                key={`content-${shift._id}`}
+                                className="tab-content p-6 bg-base-100"
+                            >
+                                {renderShiftList(shift.shiftName)}
+                            </div>
+                        </>
+                    ))}
+
+                    {/* OT list tab */}
+                    <input
+                        type="radio"
+                        name="shift_tabs"
+                        className="tab"
+                        aria-label="OT list"
+                    />
+                    <div className="tab-content p-6 bg-base-100">
+                        {renderShiftList('OT list')}
+                    </div>
                 </div>
             </section>
 
-            {/* Add employee shifting modal */}
+            {/* ---------- Add Employee Modal ---------- */}
             <dialog id="addEmployeeToShift" className="modal">
                 <div className="modal-box max-w-md">
                     <form method="dialog">
@@ -305,21 +390,20 @@ const Shifting = () => {
                     </form>
 
                     <form onSubmit={handleSubmit}>
-                        <h2 className="text-2xl font-bold mb-4">
-                            Add Employees to Shift
+                        <h2 className="text-2xl font-bold mb-4 text-gray-800">
+                            Assign Employees to Shift
                         </h2>
 
-                        {/* Active employees ONLY */}
-                        <div className="mb-4">
-                            <div className="rounded p-2 h-40 overflow-y-auto border! border-gray-300!">
-                                {activeEmployees.map((emp) => (
+                        <div className="mb-4 border rounded-lg p-2 h-48 overflow-y-auto">
+                            {activeEmployees.length ? (
+                                activeEmployees.map((emp) => (
                                     <label
                                         key={emp.email}
-                                        className="flex items-center justify-start space-x-2 mb-1 shadow p-1 rounded-md"
+                                        className="flex items-center gap-2 mb-2 p-1 hover:bg-base-200 rounded cursor-pointer transition-all"
                                     >
                                         <input
                                             type="checkbox"
-                                            className="checkbox border! border-gray-300!"
+                                            className="checkbox border! border-primary!"
                                             checked={selectedEmployees.some(
                                                 (e) => e.email === emp.email
                                             )}
@@ -330,24 +414,23 @@ const Shifting = () => {
                                                 )
                                             }
                                         />
-                                        <span>
-                                            {emp.fullName} - {emp.designation}
+                                        <span className="flex-1 text-gray-800">
+                                            {emp.fullName} — {emp.designation}
                                         </span>
-                                        <span className="text-sm">
+                                        <span className="text-sm text-gray-500">
                                             ({currentShiftLetter(emp.email)})
                                         </span>
                                     </label>
-                                ))}
-                                {activeEmployees.length === 0 && (
-                                    <div className="text-sm text-gray-500 p-2">
-                                        No active employees.
-                                    </div>
-                                )}
-                            </div>
+                                ))
+                            ) : (
+                                <p className="text-sm text-gray-500 text-center">
+                                    No active employees found.
+                                </p>
+                            )}
                         </div>
 
                         <select
-                            className="select select-bordered w-full mb-4 border! border-gray-300!"
+                            className="select border! border-primary! w-full mb-4"
                             value={selectedShift}
                             onChange={handleShiftingChange}
                             required
@@ -355,48 +438,45 @@ const Shifting = () => {
                             <option value="" disabled>
                                 Select Shift
                             </option>
-                            <option>Morning</option>
-                            <option>Evening</option>
-                            <option>Night</option>
-                            {currentUser?.role !== 'teamLeader' && (
-                                <option>General</option>
-                            )}
+                            {shiftList.map((shift) => (
+                                <option key={shift._id} value={shift.shiftName} className="capitalize">
+                                    {shift.shiftName} — {shift.branch}
+                                </option>
+                            ))}
                             <option>OT list</option>
                         </select>
 
                         {selectedShift === 'OT list' && (
-                            <section>
-                                <input
-                                    onChange={(e) => setOTHours(e.target.value)}
-                                    type="text"
-                                    placeholder="Enter OT hours"
-                                    className="w-full mb-4 p-2 border! border-gray-300! rounded-md"
-                                    required
-                                />
-                            </section>
+                            <input
+                                onChange={(e) => setOTHours(e.target.value)}
+                                type="number"
+                                placeholder="Enter OT hours"
+                                className="input border! border-primary! w-full mb-4"
+                                required
+                            />
                         )}
 
-                        <div className="flex justify-end gap-1">
+                        <div className="flex justify-end gap-2">
                             <button
                                 type="reset"
-                                className="btn bg-yellow-600 text-white"
+                                className="btn btn-warning text-white"
                                 onClick={handleReset}
                             >
                                 Reset
                             </button>
                             <button
                                 type="submit"
-                                className="btn bg-[#6E3FF3] text-white"
+                                className="btn btn-primary text-white"
                             >
-                                Add to Shift
+                                Assign
                             </button>
                         </div>
                     </form>
                 </div>
             </dialog>
+
+            {/* Create New Shift */}
             <NewShiftModal refetch={refetch} />
         </div>
     );
-};
-
-export default Shifting;
+}
