@@ -58,7 +58,12 @@ export default function OrderManagement() {
                     </div>
                 </div>
 
-                <OrderStats selectedMonth={selectedMonth} />
+                {currentUser &&
+                    (currentUser?.role === 'Admin' ||
+                        currentUser?.role === 'HR-ADMIN' ||
+                        currentUser?.role === 'Developer') && (
+                        <OrderStats selectedMonth={selectedMonth} />
+                    )}
 
                 <OrderTable
                     selectedMonth={selectedMonth}
