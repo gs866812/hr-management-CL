@@ -7,7 +7,7 @@ import { ContextData } from '../../DataProvider';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import DatePicker from 'react-datepicker';
 
-const ExpenseModal = ({ onExpenseData, searchOption }) => {
+const ExpenseModal = ({ onExpenseData, searchOption, selectedBranch }) => {
     // *************************************************************************************************
     const {
         user,
@@ -51,6 +51,7 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
                         page: currentPage,
                         size: expenseItemsPerPage,
                         search: searchOption,
+                        branch: selectedBranch,
                     },
                 });
                 onExpenseData(response.data);
@@ -60,7 +61,7 @@ const ExpenseModal = ({ onExpenseData, searchOption }) => {
             }
         };
         fetchExpenseData();
-    }, [refetch, currentPage, expenseItemsPerPage, searchOption, axiosProtect]);
+    }, [refetch, currentPage, expenseItemsPerPage, searchOption, selectedBranch, axiosProtect]);
     // *************************************************************************************************
     const handleChange = (e) => {
         const { name, value } = e.target;

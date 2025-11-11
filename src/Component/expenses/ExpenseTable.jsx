@@ -13,8 +13,9 @@ import useAxiosSecure from '../../utils/useAxiosSecure';
 import { setRefetch } from '../../redux/refetchSlice';
 import { RiResetRightFill } from 'react-icons/ri';
 import { GrDocumentUpdate } from 'react-icons/gr';
+import { format } from 'date-fns';
 
-const ExpenseTable = ({selectedMonth}) => {
+const ExpenseTable = ({ selectedMonth, selectedBranch }) => {
     const {
         categories,
         userName,
@@ -121,7 +122,7 @@ const ExpenseTable = ({selectedMonth}) => {
 
     useEffect(() => {
         dispatch(setRefetch(!refetch));
-    }, [selectedMonth, searchExpense]);
+    }, [selectedMonth, searchExpense, selectedBranch]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -230,6 +231,7 @@ const ExpenseTable = ({selectedMonth}) => {
             <ExpenseModal
                 onExpenseData={getExpenseData}
                 searchOption={searchExpense}
+                selectedBranch={selectedBranch}
             />
 
             <div className="overflow-x-auto mt-5">
@@ -252,8 +254,9 @@ const ExpenseTable = ({selectedMonth}) => {
                             filteredExpenseList.map((exp, i) => (
                                 <tr key={i}>
                                     <td>
-                                        {moment(exp.expenseDate).format(
-                                            'DD.MM.YYYY'
+                                        {format(
+                                            new Date(exp.expenseDate),
+                                            'PPP'
                                         )}
                                     </td>
                                     <td>{exp.expenseName}</td>
