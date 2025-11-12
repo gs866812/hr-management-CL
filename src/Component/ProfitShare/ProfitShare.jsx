@@ -287,7 +287,7 @@ const ProfitShare = () => {
     return (
         <div>
             <section className="rounded-md">
-                <YearlySummary setProfit={setProfit} />
+                <YearlySummary />
             </section>
 
             <section className="flex flex-wrap gap-4 justify-start my-10">
