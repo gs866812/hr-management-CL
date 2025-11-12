@@ -19,6 +19,7 @@ const ProfitShare = () => {
         unpaidAmount,
         totalExpense,
         sharedProfit,
+        totalProfit
     } = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
     const axiosSecure = useAxiosSecure();
@@ -54,7 +55,7 @@ const ProfitShare = () => {
 
                 const loanBalance = result?.data?.total ?? 0;
 
-                setFinal(loanBalance + profit - sharedProfit - unpaidAmount);
+                setFinal(loanBalance + totalProfit - sharedProfit - unpaidAmount);
             } catch (err) {
                 console.error('Error fetching loan balance:', err);
                 setFinal(0);
@@ -62,7 +63,7 @@ const ProfitShare = () => {
         };
 
         fetchData();
-    }, [profit, sharedProfit]);
+    }, [profit, sharedProfit, totalProfit, unpaidAmount]);
 
     const totalSharedAmount = shareHolderInfo.reduce(
         (acc, info) =>
