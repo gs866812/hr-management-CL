@@ -1,8 +1,5 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useMemo } from 'react';
 import { ContextData } from '../../DataProvider';
-import { toast } from 'react-toastify';
-import { useSelector } from 'react-redux';
-import useAxiosProtect from '../../utils/useAxiosProtect';
 import {
     ComposedChart,
     Bar,
@@ -17,279 +14,121 @@ import {
 } from 'recharts';
 import YearlySummary from './YearlySummary';
 
-const Analytics = () => {
-    const {
-        user,
-        searchOption,
-        monthlyProfit,
-        unpaidAmount,
-        sharedProfit,
-    } = useContext(ContextData);
-    const axiosProtect = useAxiosProtect();
-    const [expenseList, setExpenseList] = useState([]);
-    const [earnings, setEarnings] = useState([]);
-    const [analyticsData, setAnalyticsData] = useState([]);
-    const [yearlyTotals, setYearlyTotals] = useState({
-        expense: 0,
-        earnings: 0,
-        profit: 0,
+const MONTHS = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+];
+
+const monthIndex = Object.fromEntries(
+    MONTHS.map((m, i) => [m.toLowerCase(), i])
+);
+
+const formatNumber = (num) =>
+    Number(num || 0).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
     });
-    const [activeIndex, setActiveIndex] = useState(0);
 
-    const [final, setFinal] = useState(0);
+export default function Analytics() {
+    const { monthlyProfit } = useContext(ContextData);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const res = await fetch(
-                    `${import.meta.env.VITE_BASE_URL}/loans/get-loan-balance`
-                );
-                const result = await res.json();
+    // Use only current year
+    const currentYear = new Date().getFullYear().toString();
 
-                if (result.success && result.data) {
-                    const loanBalance = result.data.total || 0;
-                    setFinal(loanBalance);
-                } else {
-                    setFinal(0);
-                }
-            } catch (err) {
-                console.error('Error fetching loan balance:', err);
-                setFinal(0);
-            }
-        };
-
-        fetchData();
-    }, []);
-
-    // *********************************************************************
-
-    const refetch = useSelector((state) => state.refetch.refetch);
-
-    const COLORS = ['#FF8042', '#8884d8', '#82ca9d'];
-
-    // **************************************************************************
-    useEffect(() => {
-        const fetchExpenseData = async () => {
-            try {
-                const response = await axiosProtect.get('/getExpense', {
-                    params: {
-                        userEmail: user?.email,
-                        // Remove pagination to get all expenses for analytics
-                        // page: currentPage,
-                        // size: expenseItemsPerPage,
-                        search: searchOption,
-                    },
-                });
-                setExpenseList(response.data.allExpense);
-            } catch (error) {
-                toast.error('Error fetching data:', error.message);
-            }
-        };
-
-        if (user?.email) {
-            fetchExpenseData();
-        }
-    }, [refetch, searchOption, axiosProtect, user?.email]);
-
-    // **************************************************************************
-    useEffect(() => {
-        const fetchEarnings = async () => {
-            try {
-                const response = await axiosProtect.get(`/getEarnings`, {
-                    params: {
-                        userEmail: user?.email,
-                    },
-                });
-                setEarnings(response.data.totalRev);
-            } catch (error) {
-                toast.error('Error fetching data:', error.message);
-            }
-        };
-
-        if (user?.email) {
-            fetchEarnings();
-        }
-    }, [refetch, user?.email, axiosProtect]);
-
-    // **************************************************************************
-    useEffect(() => {
-        // Process data for charts when both expenses and earnings are available
-        if (expenseList.length > 0 || earnings.length > 0) {
-            processDataForCharts();
-        }
-    }, [expenseList, earnings]);
-
-    // Format number to have 2 decimal places
-    const formatNumber = (num) => {
-        return Number(num).toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        });
-    };
-
-    // Process data for the charts
-    const processDataForCharts = () => {
-        const months = [
-            'January',
-            'February',
-            'March',
-            'April',
-            'May',
-            'June',
-            'July',
-            'August',
-            'September',
-            'October',
-            'November',
-            'December',
-        ];
-
-        // Initialize data structure for all months
-        const monthlyData = months.map((month) => ({
-            month,
+    // ✅ Build chart data directly from monthlyProfit
+    const analyticsData = useMemo(() => {
+        const base = MONTHS.map((m) => ({
+            month: m,
             expense: 0,
             earnings: 0,
             profit: 0,
         }));
 
-        // Process expense data - Debug logging
+        if (Array.isArray(monthlyProfit)) {
+            for (const row of monthlyProfit) {
+                const y = String(row?.year ?? currentYear);
+                if (y !== currentYear) continue;
 
-        if (expenseList && expenseList.length > 0) {
-            expenseList.forEach((expense) => {
-                try {
-                    const expenseDate = new Date(expense.expenseDate);
-                    const monthIndex = expenseDate.getMonth();
-                    if (isNaN(monthIndex)) {
-                        console.error('Invalid date for expense:', expense);
-                    } else {
-                        monthlyData[monthIndex].expense +=
-                            Number(expense.expenseAmount) || 0;
-                    }
-                } catch (error) {
-                    console.error('Error processing expense:', expense, error);
-                }
-            });
+                const idx = monthIndex[String(row?.month || '').toLowerCase()];
+                if (idx == null) continue;
+
+                const expense = Number(row?.expense || 0);
+                const earnings = Number(row?.earnings || 0);
+                const profit = Number(row?.profit || earnings - expense);
+
+                base[idx].expense += expense;
+                base[idx].earnings += earnings;
+                base[idx].profit += profit;
+            }
         }
 
-        // Process earnings data
+        // Round and return
+        return base.map((d) => ({
+            ...d,
+            expense: +d.expense.toFixed(2),
+            earnings: +d.earnings.toFixed(2),
+            profit: +(d.earnings - d.expense).toFixed(2),
+        }));
+    }, [monthlyProfit, currentYear]);
 
-        if (earnings && earnings.length > 0) {
-            earnings.forEach((earning) => {
-                try {
-                    const monthIndex = months.indexOf(earning.month);
-                    if (monthIndex !== -1) {
-                        monthlyData[monthIndex].earnings +=
-                            Number(earning.convertedBdt) || 0;
-                    } else {
-                        // Handle case where month string doesn't match
-                        // Try to extract month from date string if available
-                        if (earning.date) {
-                            const dateParts = earning.date.split('-');
-                            if (dateParts.length >= 2) {
-                                const monthNum = parseInt(dateParts[1]) - 1; // Month is 0-indexed in JS
-                                if (monthNum >= 0 && monthNum <= 11) {
-                                    monthlyData[monthNum].earnings +=
-                                        Number(earning.convertedBdt) || 0;
-                                }
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error processing earning:', earning, error);
-                }
-            });
-        }
+    // ===== Label renderers =====
+    const renderBarLabel = ({ x, y, width, value }) => (
+        <text
+            x={x + width / 2}
+            y={y - 10}
+            fill="#333"
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize="11"
+        >
+            {formatNumber(value)}
+        </text>
+    );
 
-        // Calculate profit and round all numbers to 2 decimal places
-        monthlyData.forEach((data) => {
-            data.expense = Number(parseFloat(data.expense).toFixed(2));
-            data.earnings = Number(parseFloat(data.earnings).toFixed(2));
-            data.profit = Number(
-                parseFloat(data.earnings - data.expense).toFixed(2)
-            );
-        });
+    const renderProfitLabel = ({ x, y, value }) => (
+        <g>
+            <rect
+                x={x - 25}
+                y={y - 18}
+                width="50"
+                height="16"
+                fill="#ecf0f1"
+                rx="4"
+                ry="4"
+                opacity="0.8"
+            />
+            <text
+                x={x}
+                y={y - 10}
+                fill={value >= 0 ? '#006400' : '#cc0000'}
+                textAnchor="middle"
+                fontWeight="bold"
+                fontSize="11"
+            >
+                {formatNumber(value)}
+            </text>
+        </g>
+    );
 
-        // Calculate yearly totals
-        const totals = {
-            expense: parseFloat(
-                monthlyData
-                    .reduce((sum, data) => sum + data.expense, 0)
-                    .toFixed(2)
-            ),
-            earnings: parseFloat(
-                monthlyData
-                    .reduce((sum, data) => sum + data.earnings, 0)
-                    .toFixed(2)
-            ),
-            profit: 0,
-        };
-
-        totals.profit = parseFloat(
-            (totals.earnings - totals.expense).toFixed(2)
-        );
-
-        setYearlyTotals(totals);
-        setAnalyticsData(monthlyData);
-    };
-
-    // **************************************************************************
-    const renderBarLabel = (props) => {
-        const { x, y, width, value } = props;
-
-        return (
-            <g>
-                <text
-                    x={x + width / 2}
-                    y={y - 10}
-                    fill="#333"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize="11"
-                >
-                    {formatNumber(value)}
-                </text>
-            </g>
-        );
-    };
-
-    const renderProfitLabel = (props) => {
-        const { x, y, value } = props;
-
-        return (
-            <g>
-                <rect
-                    x={x - 25}
-                    y={y - 18}
-                    width="50"
-                    height="16"
-                    fill="#ecf0f1"
-                    rx="4"
-                    ry="4"
-                    opacity="0.8"
-                />
-                <text
-                    x={x}
-                    y={y - 10}
-                    fill="#006400"
-                    textAnchor="middle"
-                    fontWeight="bold"
-                    fontSize="11"
-                >
-                    {formatNumber(value)}
-                </text>
-            </g>
-        );
-    };
-
-    // *************************************************************************
+    // ===== Render =====
     return (
         <div className="w-full p-4">
             <YearlySummary />
 
-            {/* Chart showing expense, earnings and profit */}
             <h2 className="text-xl font-bold mb-6 mt-5">
                 Monthly Financial Analytics
             </h2>
+
             <div className="bg-white rounded-lg shadow-lg p-4 mb-8">
                 <div className="h-96">
                     <ResponsiveContainer width="100%" height="100%">
@@ -306,9 +145,7 @@ const Analytics = () => {
                             <XAxis dataKey="month" />
                             <YAxis />
                             <Tooltip
-                                formatter={(value) =>
-                                    `${formatNumber(value)} BDT`
-                                }
+                                formatter={(v) => `${formatNumber(v)} BDT`}
                             />
                             <Legend wrapperStyle={{ bottom: 0 }} />
 
@@ -346,7 +183,7 @@ const Analytics = () => {
                                     stroke: '#82ca9d',
                                     strokeWidth: 2,
                                     r: 4,
-                                    fill: '#ffffff',
+                                    fill: '#fff',
                                 }}
                             >
                                 <LabelList
@@ -360,10 +197,10 @@ const Analytics = () => {
                 </div>
             </div>
 
+            {/* ✅ Table based on monthlyProfit */}
             <section>
                 <div className="overflow-x-auto">
                     <table className="table table-zebra">
-                        {/* head */}
                         <thead>
                             <tr>
                                 <th>Month</th>
@@ -372,60 +209,33 @@ const Analytics = () => {
                                 <th>Profit</th>
                                 <th>Shared Profit</th>
                                 <th>Remaining Profit</th>
-                                <th>Un-paid</th>
                                 <th>Year</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {monthlyProfit.length > 0 ? (
+                            {monthlyProfit?.length ? (
                                 monthlyProfit.map((info, i) => (
                                     <tr key={i}>
                                         <td>{info.month}</td>
+                                        <td>{formatNumber(info.earnings)}</td>
+                                        <td>{formatNumber(info.expense)}</td>
+                                        <td>{formatNumber(info.profit)}</td>
                                         <td>
-                                            {info.earnings
-                                                ? formatNumber(info.earnings)
-                                                : '0.00'}
+                                            {formatNumber(
+                                                (info.shared || []).reduce(
+                                                    (t, s) =>
+                                                        t + (s.amount || 0),
+                                                    0
+                                                )
+                                            )}
                                         </td>
-                                        <td>
-                                            {info.expense
-                                                ? formatNumber(info.expense)
-                                                : '0.00'}
-                                        </td>
-                                        <td>
-                                            {info.profit
-                                                ? formatNumber(info.profit)
-                                                : '0.00'}
-                                        </td>
-                                        <td>
-                                            {Array.isArray(info.shared) &&
-                                            info.shared.length > 0
-                                                ? formatNumber(
-                                                      info.shared.reduce(
-                                                          (total, s) =>
-                                                              total +
-                                                              (s.amount || 0),
-                                                          0
-                                                      )
-                                                  )
-                                                : '0.00'}
-                                        </td>
-
-                                        <td>
-                                            {info.remaining
-                                                ? formatNumber(info.remaining)
-                                                : '0.00'}
-                                        </td>
-                                        <td>
-                                            {info.unpaid
-                                                ? formatNumber(info.unpaid)
-                                                : '0.00'}
-                                        </td>
+                                        <td>{formatNumber(info.remaining)}</td>
                                         <td>{info.year}</td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="6" className="text-center">
+                                    <td colSpan="7" className="text-center">
                                         No record found
                                     </td>
                                 </tr>
@@ -436,6 +246,4 @@ const Analytics = () => {
             </section>
         </div>
     );
-};
-
-export default Analytics;
+}
