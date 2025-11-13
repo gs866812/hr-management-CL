@@ -1,7 +1,6 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { ContextData } from '../../DataProvider';
 import useAxiosProtect from '../../utils/useAxiosProtect';
-import useAxiosSecure from '../../utils/useAxiosSecure';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { setRefetch } from '../../redux/refetchSlice';
@@ -33,7 +32,6 @@ const niceMonth = (m) =>
 export default function EditEarnings({ id }) {
     const { user } = useContext(ContextData);
     const axiosProtect = useAxiosProtect();
-    const axiosSecure = useAxiosSecure();
 
     const dispatch = useDispatch();
     const refetch = useSelector((s) => s.refetch.refetch);
@@ -90,12 +88,17 @@ export default function EditEarnings({ id }) {
     // ---- Fetch earning by ID (normalize incoming fields)
     useEffect(() => {
         let mounted = true;
+        const controller = new AbortController();
         const fetchEarningById = async () => {
-            if (!id) return;
+            if (!id || !user?.email) return;
             setLoading(true);
             try {
                 const response = await axiosProtect.get(
-                    `/getSingleEarning/${id}`
+                    `/getSingleEarning/${id}`,
+                    {
+                        params: { userEmail: user.email },
+                        signal: controller.signal,
+                    }
                 );
                 const earning = response.data?.data;
 
@@ -124,8 +127,13 @@ export default function EditEarnings({ id }) {
                         status: earning.status || 'Unpaid',
                     });
                 }
-            } catch {
-                toast.error('Failed to load earning details');
+            } catch (error) {
+                if (!controller.signal.aborted) {
+                    toast.error(
+                        error?.response?.data?.message ||
+                            'Failed to load earning details'
+                    );
+                }
             } finally {
                 if (mounted) setLoading(false);
             }
@@ -134,8 +142,9 @@ export default function EditEarnings({ id }) {
         fetchEarningById();
         return () => {
             mounted = false;
+            controller.abort();
         };
-    }, [id, axiosProtect, refetch]);
+    }, [id, axiosProtect, refetch, user?.email]);
 
     // ---- Handle typed changes (kept as text)
     const handleChange = (e) => {
@@ -171,10 +180,14 @@ export default function EditEarnings({ id }) {
             toast.error('USD and Convert Rate must be positive numbers');
             return;
         }
+        if (!user?.email) {
+            toast.error('Authentication expired. Please log in again.');
+            return;
+        }
 
         const payload = {
-            userEmail: user?.email || '',
-            month: formData.month.toLowerCase(), // backend expects lowercase
+            userEmail: user.email,
+            month: niceMonth(formData.month),
             clientId: formData.clientId,
             imageQty, // numeric
             totalUsd, // numeric
@@ -184,8 +197,10 @@ export default function EditEarnings({ id }) {
         };
 
         try {
-            console.log(id);
-            const res = await axiosSecure.put(`/updateEarnings/${id}`, payload);
+            const res = await axiosProtect.put(
+                `/updateEarnings/${id}`,
+                payload
+            );
             if (res.data?.success) {
                 toast.success('Earning updated successfully!');
                 dispatch(setRefetch(!refetch));

@@ -1,6 +1,5 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { toast } from 'react-toastify';
-import useAxiosSecure from '../../utils/useAxiosSecure';
 import { useDispatch, useSelector } from 'react-redux';
 import { setRefetch } from '../../redux/refetchSlice';
 import useAxiosProtect from '../../utils/useAxiosProtect';
@@ -8,9 +7,8 @@ import { ContextData } from '../../DataProvider';
 
 const AddHrBalanceModal = () => {
 
-    const { user, userName } = useContext(ContextData);
+    const { user } = useContext(ContextData);
 
-    const axiosSecure = useAxiosSecure();
     const axiosProtect = useAxiosProtect();
 
 
@@ -45,25 +43,33 @@ const AddHrBalanceModal = () => {
 
         if (value === confirmValue) {
             const parseValue = parseFloat(value);
-            const balanceInfo = { parseValue, note, date: new Date() };
+            if (!user?.email) {
+                toast.error('Please log in again to add balance.');
+                return;
+            }
+
+            const balanceInfo = {
+                parseValue,
+                note,
+                userEmail: user.email,
+            };
             const addHrBalance = async () => {
                 try {
-                    const response = await axiosSecure.post('/addHrBalance', balanceInfo);
+                    const response = await axiosProtect.post('/addHrBalance', balanceInfo);
 
-                    if (response.data.message == "success") {
+                    if (response.data.success) {
                         dispatch(setRefetch(!refetch));
-                        toast.success("Balance added successfully");
+                        toast.success(response.data.message || "Balance added successfully");
 
                         setValue("");
                         setConfirmValue("");
                         setNote("");
                         document.getElementById('addHrBalance').close();
-                    } else if (response.data.message == "Not enough funds") {
-                        toast.error("Not enough funds");
-                        return;
+                    } else {
+                        toast.error(response.data.message || "Unable to add balance");
                     }
                 } catch (error) {
-                    toast.error('Error fetching data:', error.message);
+                    toast.error(error.response?.data?.message || 'Failed to add balance');
                 }
             };
             addHrBalance();
@@ -77,25 +83,33 @@ const AddHrBalanceModal = () => {
 
         if (value === confirmValue) {
             const parseValue = parseFloat(value);
-            const balanceInfo = { parseValue, note, date: new Date() };
+            if (!user?.email) {
+                toast.error('Please log in again to return balance.');
+                return;
+            }
+
+            const balanceInfo = {
+                parseValue,
+                note,
+                userEmail: user.email,
+            };
             const returnHrBalance = async () => {
                 try {
-                    const response = await axiosSecure.put('/returnHrBalance', balanceInfo);
+                    const response = await axiosProtect.put('/returnHrBalance', balanceInfo);
 
-                    if (response.data.message == "success") {
+                    if (response.data.success) {
                         dispatch(setRefetch(!refetch));
-                        toast.success("Balance return successfully");
+                        toast.success(response.data.message || "Balance return successfully");
 
                         setValue("");
                         setConfirmValue("");
                         setNote("");
                         document.getElementById('returnHrBalance').close();
-                    } else if (response.data.message == "unsuccess") {
-                        toast.error("No available funds to return");
-                        return;
+                    } else {
+                        toast.error(response.data.message || "No available funds to return");
                     }
                 } catch (error) {
-                    toast.error('Error fetching data:', error.message);
+                    toast.error(error.response?.data?.message || 'Failed to return balance');
                 }
             };
             returnHrBalance();
