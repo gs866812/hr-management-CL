@@ -70,7 +70,6 @@ export default function EditWithdrawModal({ id }) {
             .finally(() => setLoading(false));
     }, [id, axiosProtect, refetch]);
 
-    // 🧠 Load clients by month
     useEffect(() => {
         if (!form.month || !user?.email) return;
         (async () => {
@@ -88,7 +87,6 @@ export default function EditWithdrawModal({ id }) {
         })();
     }, [form.month, user?.email, axiosProtect]);
 
-    // 🔁 Auto-fill totalUsd if client selected
     useEffect(() => {
         if (form.clientId && clients.length > 0) {
             const client = clients.find((c) => c.clientID === form.clientId);
@@ -101,7 +99,6 @@ export default function EditWithdrawModal({ id }) {
         }
     }, [form.clientId, clients]);
 
-    // 🧮 Handle input and recalc derived fields
     const handleChange = (e) => {
         const { name, value } = e.target;
         const updated = { ...form, [name]: value };
@@ -119,7 +116,6 @@ export default function EditWithdrawModal({ id }) {
         setForm(updated);
     };
 
-    // 💾 Submit update
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!form.month) return toast.error('Please select a month');
@@ -177,7 +173,7 @@ export default function EditWithdrawModal({ id }) {
 
     return (
         <dialog id="edit-withdraw-modal" className="modal">
-            <div className="modal-box w-full max-w-lg border-2 !border-primary">
+            <div className="modal-box w-full max-w-lg border-2 border-primary!">
                 <form method="dialog">
                     <button className="btn btn-sm btn-circle btn-error absolute right-2 top-2 text-white">
                         <X size={16} />
@@ -201,7 +197,7 @@ export default function EditWithdrawModal({ id }) {
                         </label>
                         <select
                             name="month"
-                            className="select !border !border-primary w-full"
+                            className="select border! border-primary! w-full"
                             value={form.month}
                             onChange={handleChange}
                         >
@@ -223,7 +219,7 @@ export default function EditWithdrawModal({ id }) {
                         </label>
                         <select
                             name="clientId"
-                            className="select !border !border-primary w-full"
+                            className="select border! border-primary! w-full"
                             value={form.clientId}
                             onChange={handleChange}
                             disabled={!form.month}
@@ -249,7 +245,7 @@ export default function EditWithdrawModal({ id }) {
                             name="imageQty"
                             value={form.imageQty}
                             onChange={handleChange}
-                            className="input !border !border-primary w-full"
+                            className="input border! border-primary! w-full"
                         />
                     </div>
 
@@ -267,7 +263,7 @@ export default function EditWithdrawModal({ id }) {
                                 step="0.01"
                                 value={form.totalUsd}
                                 onChange={handleChange}
-                                className="input !border !border-primary w-full"
+                                className="input border! border-primary! w-full"
                             />
                         </div>
                         <div className="form-control">
@@ -282,7 +278,7 @@ export default function EditWithdrawModal({ id }) {
                                 step="0.01"
                                 value={form.charge}
                                 onChange={handleChange}
-                                className="input !border !border-primary w-full"
+                                className="input border! border-primary! w-full"
                             />
                         </div>
                     </div>
@@ -300,7 +296,7 @@ export default function EditWithdrawModal({ id }) {
                                 name="receivable"
                                 value={form.receivable}
                                 readOnly
-                                className="input !border !border-primary w-full bg-gray-100"
+                                className="input border! border-primary! w-full bg-gray-100"
                             />
                         </div>
                         <div className="form-control">
@@ -315,7 +311,7 @@ export default function EditWithdrawModal({ id }) {
                                 step="0.01"
                                 value={form.convertRate}
                                 onChange={handleChange}
-                                className="input !border !border-primary w-full"
+                                className="input border! border-primary! w-full"
                             />
                         </div>
                     </div>
@@ -332,7 +328,7 @@ export default function EditWithdrawModal({ id }) {
                             name="convertedBdt"
                             value={form.convertedBdt}
                             readOnly
-                            className="input !border !border-primary w-full bg-gray-100 font-semibold"
+                            className="input border! border-primary! w-full bg-gray-100 font-semibold"
                         />
                     </div>
 
@@ -345,7 +341,7 @@ export default function EditWithdrawModal({ id }) {
                         </label>
                         <select
                             name="status"
-                            className="select !border !border-primary w-full"
+                            className="select border! border-primary! w-full"
                             value={form.status}
                             onChange={handleChange}
                         >
