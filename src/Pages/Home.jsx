@@ -20,7 +20,7 @@ const Home = () => {
     useEffect(() => {
         const originalPath = localStorage.getItem('originalPath');
         if (user && currentUser?.role && originalPath && originalPath !== '/') {
-            localStorage.removeItem('originalPath'); // ✅ ✅ Clear it once used
+            localStorage.removeItem('originalPath');
             navigate(originalPath, { replace: true });
         }
     }, [user, currentUser, navigate]);

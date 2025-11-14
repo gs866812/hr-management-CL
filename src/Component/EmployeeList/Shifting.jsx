@@ -6,8 +6,9 @@ import useAxiosProtect from '../../utils/useAxiosProtect';
 import { toast } from 'react-toastify';
 import { setRefetch } from '../../redux/refetchSlice';
 import Swal from 'sweetalert2';
-import { PlusIcon, Clock, Building2, CalendarClock, User } from 'lucide-react';
+import { PlusIcon } from 'lucide-react';
 import NewShiftModal from '../Shifting/new-shift-modal';
+import ShiftCard from '../Shifting/shift-card';
 
 export default function Shifting() {
     const { employeeList, user, currentUser } = useContext(ContextData);
@@ -65,8 +66,6 @@ export default function Shifting() {
         };
         if (user?.email) fetchShifts();
     }, [user?.email, refetch]);
-
-    console.log(shiftList);
 
     // ---------- Fetch Shifted Employees ----------
     useEffect(() => {
@@ -182,63 +181,17 @@ export default function Shifting() {
         return (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                 {shiftList.map((shift) => (
-                    <div
+                    <ShiftCard
+                        shift={shift}
+                        refetch={refetch}
                         key={shift._id}
-                        className="p-4 border rounded-xl bg-base-200 shadow-sm hover:shadow-md transition-all"
-                    >
-                        <div className="flex justify-between items-center mb-2">
-                            <h3 className="text-lg font-semibold text-primary capitalize">
-                                {shift.shiftName}
-                            </h3>
-                            <span
-                                className={`text-xs px-2 py-1 rounded-full ${
-                                    shift.allowOT
-                                        ? 'bg-green-100 text-green-600'
-                                        : 'bg-red-100 text-red-600'
-                                }`}
-                            >
-                                {shift.allowOT ? 'OT Allowed' : 'No OT'}
-                            </span>
-                        </div>
-
-                        <div className="text-sm space-y-1">
-                            <p className="flex items-center gap-2">
-                                <Building2 size={14} />
-                                Branch:{' '}
-                                <span className="capitalize">
-                                    {shift.branch}
-                                </span>
-                            </p>
-                            <p className="flex items-center gap-2">
-                                <Clock size={14} />
-                                {shift.startTime} → {shift.endTime}
-                            </p>
-                            <p className="flex items-center gap-2">
-                                <CalendarClock size={14} />
-                                Late: {shift.lateAfterMinutes}m, Absent:{' '}
-                                {shift.absentAfterMinutes}m
-                            </p>
-                            <p className="flex items-center gap-2">
-                                <User size={14} /> {shift.createdBy}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                                {new Date(shift.createdAt).toLocaleDateString()}
-                            </p>
-                        </div>
-                    </div>
+                    />
                 ))}
             </div>
         );
     };
 
-    // ---------- Render Employees in Each Shift ----------
     const renderShiftList = (shiftName) => {
-        console.log('🔹 ShiftName:', shiftName);
-        console.log(
-            '🔹 visibleShifted:',
-            visibleShifted.map((e) => e.shiftName)
-        );
-
         const shift = shiftList.find((s) => s.shiftName === shiftName);
         const rows = visibleShifted.filter(
             (emp) => emp.shiftName === shiftName
@@ -253,7 +206,7 @@ export default function Shifting() {
                         currentUser?.role?.toLowerCase()
                     ) &&
                         shift?.branch && (
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-gray-500 capitalize">
                                 Branch: {shift.branch}
                             </span>
                         )}
@@ -272,7 +225,7 @@ export default function Shifting() {
                             <img
                                 src={emp?.photo}
                                 alt={rec.fullName}
-                                className="w-10 h-10 object-cover rounded-md border"
+                                className="w-10 h-10 object-cover rounded-full border"
                             />
                             <div>
                                 <h2 className="font-semibold text-gray-800">
@@ -314,16 +267,20 @@ export default function Shifting() {
                 </h1>
 
                 <div className="flex gap-2">
-                    <button
-                        className="btn btn-outline btn-primary flex items-center gap-1"
-                        onClick={() =>
-                            document
-                                .getElementById('new-shift-modal')
-                                .showModal()
-                        }
-                    >
-                        <PlusIcon size={18} /> New Shift
-                    </button>
+                    {user.role === 'Admin' ||
+                        user.role === 'Developer' ||
+                        (user.role === 'HR-ADMIN' && (
+                            <button
+                                className="btn btn-outline btn-primary flex items-center gap-1"
+                                onClick={() =>
+                                    document
+                                        .getElementById('new-shift-modal')
+                                        .showModal()
+                                }
+                            >
+                                <PlusIcon size={18} /> New Shift
+                            </button>
+                        ))}
 
                     <button
                         className="btn btn-primary"
@@ -394,16 +351,17 @@ export default function Shifting() {
                             Assign Employees to Shift
                         </h2>
 
-                        <div className="mb-4 border rounded-lg p-2 h-48 overflow-y-auto">
+                        <div className="mb-4 border rounded-xl p-3 h-96 overflow-y-auto bg-base-100 shadow-sm">
                             {activeEmployees.length ? (
                                 activeEmployees.map((emp) => (
                                     <label
                                         key={emp.email}
-                                        className="flex items-center gap-2 mb-2 p-1 hover:bg-base-200 rounded cursor-pointer transition-all"
+                                        className="flex items-center gap-3 p-2 mb-2 bg-base-50 border border-transparent rounded-lg cursor-pointer transition-all hover:border-primary/40 hover:bg-primary/5"
                                     >
+                                        {/* Checkbox */}
                                         <input
                                             type="checkbox"
-                                            className="checkbox border! border-primary!"
+                                            className="checkbox checkbox-primary"
                                             checked={selectedEmployees.some(
                                                 (e) => e.email === emp.email
                                             )}
@@ -414,23 +372,44 @@ export default function Shifting() {
                                                 )
                                             }
                                         />
-                                        <span className="flex-1 text-gray-800">
-                                            {emp.fullName} — {emp.designation}
-                                        </span>
-                                        <span className="text-sm text-gray-500">
-                                            ({currentShiftLetter(emp.email)})
-                                        </span>
+
+                                        {/* Employee Info */}
+                                        <div className="flex items-center justify-between w-full">
+                                            {/* Left - Image & Details */}
+                                            <div className="flex items-center gap-3">
+                                                <img
+                                                    src={emp.photo}
+                                                    alt={`${emp.fullName}'s photo`}
+                                                    className="size-10 rounded-full object-cover ring-2 ring-primary/50"
+                                                />
+
+                                                <div className="">
+                                                    <p className="font-semibold text-gray-800 capitalize">
+                                                        {emp.fullName}
+                                                    </p>
+                                                    <p className="text-sm text-gray-500 capitalize">
+                                                        {emp.designation} •{' '}
+                                                        {emp.branch}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Right - Current Shift */}
+                                            <span className="text-xs px-2 py-1 rounded-md bg-primary/10 text-primary font-medium">
+                                                {currentShiftLetter(emp.email)}
+                                            </span>
+                                        </div>
                                     </label>
                                 ))
                             ) : (
-                                <p className="text-sm text-gray-500 text-center">
+                                <p className="text-sm text-gray-500 text-center py-4">
                                     No active employees found.
                                 </p>
                             )}
                         </div>
 
                         <select
-                            className="select border! border-primary! w-full mb-4"
+                            className="select border-2! border-primary! w-full mb-4"
                             value={selectedShift}
                             onChange={handleShiftingChange}
                             required
@@ -439,8 +418,13 @@ export default function Shifting() {
                                 Select Shift
                             </option>
                             {shiftList.map((shift) => (
-                                <option key={shift._id} value={shift.shiftName} className="capitalize">
-                                    {shift.shiftName} — {shift.branch}
+                                <option
+                                    key={shift._id}
+                                    value={shift.shiftName}
+                                    className="capitalize flex items-center gap-2"
+                                >
+                                    <span>{shift.shiftName}</span>
+                                    <span>({shift.branch})</span>
                                 </option>
                             ))}
                             <option>OT list</option>

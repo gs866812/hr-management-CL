@@ -1,23 +1,41 @@
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { ContextData } from '../../DataProvider';
 import { useDispatch } from 'react-redux';
 import { setRefetch } from '../../redux/refetchSlice';
 
-export default function NewShiftModal({ refetch }) {
+export default function EditShiftModal({ refetch, data }) {
     const { user } = useContext(ContextData);
+    const dispatch = useDispatch();
 
     const [form, setForm] = useState({
+        _id: '',
         shiftName: '',
-        branch: 'dhaka',
+        branch: '',
         startTime: '',
         endTime: '',
         lateAfterMinutes: 0,
         absentAfterMinutes: 5,
         allowOT: true,
     });
+
     const [loading, setLoading] = useState(false);
-    const dispatch = useDispatch();
+
+    // Load data when modal opens
+    useEffect(() => {
+        if (data) {
+            setForm({
+                _id: data._id,
+                shiftName: data.shiftName,
+                branch: data.branch,
+                startTime: data.startTime,
+                endTime: data.endTime,
+                lateAfterMinutes: data.lateAfterMinutes,
+                absentAfterMinutes: data.absentAfterMinutes,
+                allowOT: data.allowOT,
+            });
+        }
+    }, [data]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -35,9 +53,9 @@ export default function NewShiftModal({ refetch }) {
             setLoading(true);
 
             const res = await fetch(
-                `${import.meta.env.VITE_BASE_URL}/shifts/new-shift`,
+                `${import.meta.env.VITE_BASE_URL}/shifts/update-shift`,
                 {
-                    method: 'POST',
+                    method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         ...form,
@@ -46,48 +64,38 @@ export default function NewShiftModal({ refetch }) {
                 }
             );
 
-            const data = await res.json();
+            const responseData = await res.json();
 
-            if (res.ok && data.success) {
-                toast.success(data?.message || 'Shift created successfully');
+            if (res.ok && responseData.success) {
+                toast.success(
+                    responseData?.message || 'Shift updated successfully'
+                );
 
-                setForm({
-                    shiftName: '',
-                    branch: 'dhaka',
-                    startTime: '',
-                    endTime: '',
-                    lateAfterMinutes: 0,
-                    absentAfterMinutes: 5,
-                    allowOT: true,
-                });
-
-                const modal = document.getElementById('new-shift-modal');
+                const modal = document.getElementById('edit-shift-modal');
                 if (modal && typeof modal.close === 'function') modal.close();
 
                 dispatch(setRefetch(!refetch));
             } else {
-                toast.error(data?.message || 'Failed to create shift');
+                toast.error(responseData?.message || 'Failed to update shift');
             }
         } catch (err) {
-            console.error('Error creating shift:', err);
-            toast.error('Something went wrong while creating the shift');
+            console.error('Error updating shift:', err);
+            toast.error('Something went wrong while updating the shift');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <dialog id="new-shift-modal" className="modal">
+        <dialog id="edit-shift-modal" className="modal">
             <div className="modal-box max-w-md">
-                <h3 className="font-bold text-lg mb-4">Create New Shift</h3>
+                <h3 className="font-bold text-lg mb-4">Update Shift</h3>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Shift Name */}
                     <div>
                         <label className="label">
-                            <span className="label-text" disabled>
-                                Shift Name
-                            </span>
+                            <span className="label-text">Shift Name</span>
                         </label>
                         <input
                             type="text"
@@ -95,7 +103,6 @@ export default function NewShiftModal({ refetch }) {
                             value={form.shiftName}
                             onChange={handleChange}
                             required
-                            placeholder="e.g. Morning"
                             className="input border! border-primary! w-full"
                         />
                     </div>
@@ -123,7 +130,7 @@ export default function NewShiftModal({ refetch }) {
                         </select>
                     </div>
 
-                    {/* Start Time / End Time */}
+                    {/* Times */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="label">
@@ -154,7 +161,7 @@ export default function NewShiftModal({ refetch }) {
                         </div>
                     </div>
 
-                    {/* Late & Absent thresholds */}
+                    {/* Late / Absent */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="label">
@@ -190,7 +197,7 @@ export default function NewShiftModal({ refetch }) {
                     </div>
 
                     {/* Allow OT */}
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center gap-2">
                         <input
                             type="checkbox"
                             name="allowOT"
@@ -206,18 +213,19 @@ export default function NewShiftModal({ refetch }) {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="btn bg-indigo-600 hover:bg-indigo-700 text-white"
+                            className="btn btn-primary"
                         >
-                            {loading ? 'Creating...' : 'Create Shift'}
+                            {loading ? 'Updating...' : 'Update Shift'}
                         </button>
+
                         <button
                             type="button"
+                            className="btn btn-soft"
                             onClick={() =>
                                 document
-                                    .getElementById('new-shift-modal')
-                                    .close()
+                                    .getElementById('edit-shift-modal')
+                                    ?.close()
                             }
-                            className="btn btn-ghost"
                         >
                             Cancel
                         </button>
