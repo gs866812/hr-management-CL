@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import { X } from 'lucide-react';
 import useAxiosProtect from '../../utils/useAxiosProtect';
 import { ContextData } from '../../DataProvider';
@@ -11,6 +11,7 @@ export default function EditWithdrawModal({ id }) {
     const { user } = useContext(ContextData);
     const dispatch = useDispatch();
     const refetch = useSelector((s) => s.refetch.refetch);
+    const dialogRef = useRef(null);
 
     const [loading, setLoading] = useState(true);
     const [clients, setClients] = useState([]);
@@ -31,6 +32,22 @@ export default function EditWithdrawModal({ id }) {
         'December',
     ];
 
+    const normalizeMonthLabel = (value) => {
+        if (!value) return '';
+        const text = String(value).trim();
+        return text
+            ? text.charAt(0).toUpperCase() + text.slice(1).toLowerCase()
+            : '';
+    };
+
+    const toFixedOrEmpty = (value, fractionDigits = 2) =>
+        Number.isFinite(Number(value))
+            ? Number(value).toFixed(fractionDigits)
+            : '';
+
+    const stringOrEmpty = (value) =>
+        value === undefined || value === null ? '' : String(value);
+
     const [form, setForm] = useState({
         month: '',
         clientId: '',
@@ -44,90 +61,160 @@ export default function EditWithdrawModal({ id }) {
     });
 
     useEffect(() => {
-        if (!id) return;
+        if (!id || !user?.email) return;
+        const controller = new AbortController();
+        let isActive = true;
+
         setLoading(true);
 
         axiosProtect
-            .get(`/getSingleEarning/${id}`)
+            .get(`/getSingleEarning/${id}`, {
+                params: { userEmail: user.email },
+                signal: controller.signal,
+            })
             .then(({ data }) => {
+                if (!isActive) return;
                 const earning = data?.data;
                 if (!earning) throw new Error('Earning not found');
-                console.log(earning);
 
                 setForm({
-                    month: earning.month || '',
+                    month: normalizeMonthLabel(earning.month || ''),
                     clientId: earning.clientId || earning.clientID || '',
-                    imageQty: earning.imageQty ?? '',
-                    totalUsd: earning.totalUsd ?? '',
-                    charge: earning.charge ?? 0,
-                    receivable: earning.receivable ?? '',
-                    convertRate: earning.convertRate ?? '',
-                    convertedBdt: earning.convertedBdt ?? '',
+                    imageQty: stringOrEmpty(earning.imageQty),
+                    totalUsd: toFixedOrEmpty(earning.totalUsd),
+                    charge: toFixedOrEmpty(earning.charge),
+                    receivable: toFixedOrEmpty(earning.receivable),
+                    convertRate: stringOrEmpty(earning.convertRate),
+                    convertedBdt: toFixedOrEmpty(earning.convertedBdt),
                     status: earning.status || 'Unpaid',
                 });
             })
-            .catch(() => toast.error('Failed to load earning details'))
-            .finally(() => setLoading(false));
-    }, [id, axiosProtect, refetch]);
+            .catch((error) => {
+                if (!controller.signal.aborted) {
+                    console.error(error);
+                    toast.error(
+                        error?.response?.data?.message ||
+                            'Failed to load earning details'
+                    );
+                }
+            })
+            .finally(() => {
+                if (isActive) setLoading(false);
+            });
+
+        return () => {
+            isActive = false;
+            controller.abort();
+        };
+    }, [id, axiosProtect, refetch, user?.email]);
 
     useEffect(() => {
-        if (!form.month || !user?.email) return;
+        if (!form.month || !user?.email) {
+            setClients([]);
+            return;
+        }
+
+        const controller = new AbortController();
+        const selectedMonth = form.month.toLowerCase();
+
         (async () => {
             try {
-                const { data } = await axiosProtect.get('/getClientsByMonth', {
-                    params: {
-                        userEmail: user.email,
-                        selectedMonth: form.month.toLowerCase(),
-                    },
-                });
+                const { data } = await axiosProtect.get(
+                    '/getClientsByMonth',
+                    {
+                        params: {
+                            userEmail: user.email,
+                            selectedMonth,
+                        },
+                        signal: controller.signal,
+                    }
+                );
                 setClients(data?.clients || []);
-            } catch {
-                toast.error('Failed to load clients');
+            } catch (error) {
+                if (!controller.signal.aborted) {
+                    toast.error(
+                        error?.response?.data?.message ||
+                            'Failed to load clients'
+                    );
+                }
             }
         })();
+
+        return () => controller.abort();
     }, [form.month, user?.email, axiosProtect]);
 
     useEffect(() => {
-        if (form.clientId && clients.length > 0) {
-            const client = clients.find((c) => c.clientID === form.clientId);
-            if (client) {
-                setForm((prev) => ({
-                    ...prev,
-                    totalUsd: Number(client.totalUsd || 0).toFixed(2),
-                }));
-            }
-        }
+        if (!form.clientId || clients.length === 0) return;
+
+        const client = clients.find(
+            (c) => String(c.clientID) === String(form.clientId)
+        );
+        if (!client) return;
+
+        setForm((prev) => {
+            const totalUsdValue = toFixedOrEmpty(client.totalUsd);
+            const total = parseFloat(totalUsdValue) || 0;
+            const charge = parseFloat(prev.charge) || 0;
+            const rate = parseFloat(prev.convertRate) || 0;
+            const receivable = Math.max(total - charge, 0);
+            return {
+                ...prev,
+                totalUsd: totalUsdValue,
+                receivable: receivable.toFixed(2),
+                convertedBdt:
+                    rate > 0
+                        ? (receivable * rate).toFixed(2)
+                        : prev.convertedBdt || '0.00',
+            };
+        });
     }, [form.clientId, clients]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        const updated = { ...form, [name]: value };
+        setForm((prev) => {
+            const next = { ...prev, [name]: value };
 
-        const total = parseFloat(updated.totalUsd) || 0;
-        const charge = parseFloat(updated.charge) || 0;
-        const rate = parseFloat(updated.convertRate) || 0;
+            if (name === 'month') {
+                next.month = normalizeMonthLabel(value);
+            }
 
-        const receivable = total - charge;
-        const convertedBdt = receivable * rate;
+            if (['totalUsd', 'charge', 'convertRate'].includes(name)) {
+                const total = parseFloat(next.totalUsd) || 0;
+                const charge = parseFloat(next.charge) || 0;
+                const rate = parseFloat(next.convertRate) || 0;
+                const receivable = Math.max(total - charge, 0);
 
-        updated.receivable = receivable.toFixed(2);
-        updated.convertedBdt = convertedBdt.toFixed(2);
+                next.receivable = receivable.toFixed(2);
+                next.convertedBdt =
+                    rate > 0 ? (receivable * rate).toFixed(2) : '0.00';
+            }
 
-        setForm(updated);
+            if (name === 'status') {
+                next.status = value === 'Paid' ? 'Paid' : 'Unpaid';
+            }
+
+            return next;
+        });
+    };
+
+    const closeModal = () => {
+        dialogRef.current?.close();
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!form.month) return toast.error('Please select a month');
         if (!form.clientId) return toast.error('Please select a client');
+        if (!user?.email)
+            return toast.error('Authentication expired. Please log in again.');
 
         try {
             setSubmitting(true);
 
             const payload = {
-                userEmail: user?.email || '',
-                month: String(form.month).toLowerCase(),
-                clientId: form.clientId,
+                userEmail: user.email,
+                month: normalizeMonthLabel(form.month),
+                clientId: String(form.clientId).trim(),
                 imageQty: Number(form.imageQty) || 0,
                 totalUsd: Number(form.totalUsd) || 0,
                 charge: Number(form.charge) || 0,
@@ -146,7 +233,7 @@ export default function EditWithdrawModal({ id }) {
             if (data?.success) {
                 dispatch(setRefetch(!refetch));
                 toast.success('Earning updated successfully');
-                document.getElementById('edit-withdraw-modal')?.close();
+                closeModal();
             } else {
                 throw new Error(data?.message || 'Update failed');
             }
@@ -164,7 +251,7 @@ export default function EditWithdrawModal({ id }) {
 
     if (loading)
         return (
-            <dialog id="edit-withdraw-modal" className="modal">
+            <dialog id="edit-withdraw-modal" className="modal" ref={dialogRef}>
                 <div className="modal-box">
                     <p>Loading earning data...</p>
                 </div>
@@ -172,10 +259,14 @@ export default function EditWithdrawModal({ id }) {
         );
 
     return (
-        <dialog id="edit-withdraw-modal" className="modal">
+        <dialog id="edit-withdraw-modal" className="modal" ref={dialogRef}>
             <div className="modal-box w-full max-w-lg border-2 border-primary!">
                 <form method="dialog">
-                    <button className="btn btn-sm btn-circle btn-error absolute right-2 top-2 text-white">
+                    <button
+                        type="button"
+                        onClick={closeModal}
+                        className="btn btn-sm btn-circle btn-error absolute right-2 top-2 text-white"
+                    >
                         <X size={16} />
                     </button>
                 </form>
@@ -203,7 +294,7 @@ export default function EditWithdrawModal({ id }) {
                         >
                             <option value="">-- Select Month --</option>
                             {months.map((m) => (
-                                <option key={m} value={m.toLowerCase()}>
+                                <option key={m} value={m}>
                                     {m}
                                 </option>
                             ))}
